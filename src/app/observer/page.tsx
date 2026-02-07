@@ -40,6 +40,10 @@ const OBSERVERS = [
     name: 'Meadowood',
     url: 'https://analyzer.letsmesh.net/node/7BC042F4C47C3539BBEF6C2FA520A9553B0C44E8EFEF2A3D90A39BE2FE7C7F4B',
   },
+  {
+    name: '🦉 CO-LFAYTE-OB01',
+    url: 'https://analyzer.letsmesh.net/node/71B12612421B83C340A756240B20B7CCEAFFAA0DD29E3BFF6A4A6D221E9ADE79',
+  },
 ];
 
 const breadcrumbData = generateBreadcrumbSchema([
