@@ -156,16 +156,11 @@ const advancedTopics = [
     description: "Set up a dedicated repeater to extend network coverage.",
     details: [
       "Flash with Repeater firmware from the web flasher",
-      "For mountain repeaters, use our custom optimized firmware",
       "Place at high elevation with good line of sight",
       "Use a quality external antenna for better range",
       "Ensure stable power supply (wall adapter or solar preferred)",
       "Configure via USB using the web config tool",
     ],
-    link: {
-      text: "Denver Mountain Repeater Firmware",
-      url: "https://github.com/Denver-MeshCore/MeshCore-Mountain-Repeater-Firmware/releases",
-    },
   },
   {
     title: "Solar-Powered Nodes",
@@ -254,11 +249,6 @@ const resources = [
     name: "MeshCore Web Flasher",
     url: "https://flasher.meshcore.co.uk/",
     description: "Flash MeshCore firmware directly from your browser",
-  },
-  {
-    name: "Denver Mountain Repeater Firmware",
-    url: "https://github.com/Denver-MeshCore/MeshCore-Mountain-Repeater-Firmware/releases",
-    description: "Custom optimized firmware for high-traffic mountain repeaters",
   },
   {
     name: "MeshCore GitHub",
