@@ -75,8 +75,12 @@ export const db: Pick<TursoClient, 'execute'> = {
 // Helper Functions
 // =============================================================================
 
-/** Data retention period in days */
-const RETENTION_DAYS = 30;
+/** Tiered data retention periods */
+const RETENTION = {
+  PACKETS_DAYS: 14,
+  DAILY_STATS_DAYS: 90,
+  QUERY_WINDOW_DAYS: 30,
+} as const;
 
 /**
  * Get today's date as ISO string (YYYY-MM-DD)
@@ -86,10 +90,10 @@ function getTodayDateString(): string {
 }
 
 /**
- * Get the timestamp for 30 days ago in ISO format
+ * Get the ISO timestamp for N days ago
  */
-function getThirtyDaysAgoISO(): string {
-  return new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+function getRetentionCutoff(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
 
 /**
@@ -189,7 +193,7 @@ export async function getNodeByPublicKey(publicKey: string): Promise<Node | null
  * Get all nodes with their computed statistics (30-day window)
  */
 export async function getNodesWithStats(): Promise<NodeWithStats[]> {
-  const thirtyDaysAgo = getThirtyDaysAgoISO();
+  const thirtyDaysAgo = getRetentionCutoff(RETENTION.QUERY_WINDOW_DAYS);
 
   const result = await db.execute({
     sql: `
@@ -322,7 +326,7 @@ export async function insertPacket(packet: CreatePacketInput): Promise<void> {
  * Get the count of packets received in the last 30 days
  */
 export async function getPacketCount30Days(): Promise<number> {
-  const thirtyDaysAgo = getThirtyDaysAgoISO();
+  const thirtyDaysAgo = getRetentionCutoff(RETENTION.QUERY_WINDOW_DAYS);
 
   const result = await db.execute({
     sql: 'SELECT COUNT(*) as count FROM packets WHERE timestamp >= ?',
@@ -349,7 +353,7 @@ export async function getPacketCountTotal(): Promise<number> {
  * Uses a single CTE query to reduce database round trips (5 queries -> 1)
  */
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const thirtyDaysAgo = getThirtyDaysAgoISO();
+  const thirtyDaysAgo = getRetentionCutoff(RETENTION.QUERY_WINDOW_DAYS);
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
   const result = await db.execute({
@@ -398,7 +402,7 @@ export async function getCommunityStats(): Promise<CommunityStats> {
  */
 export async function getNetworkHealth(): Promise<NetworkHealth> {
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const thirtyDaysAgo = getThirtyDaysAgoISO();
+  const thirtyDaysAgo = getRetentionCutoff(RETENTION.QUERY_WINDOW_DAYS);
 
   const result = await db.execute({
     sql: `
@@ -552,11 +556,10 @@ export async function incrementDailyPacketCount(
 // =============================================================================
 
 /**
- * Delete packets older than the retention period (30 days)
- * Returns the number of deleted rows
+ * Delete packets older than 14 days
  */
 export async function cleanupOldPackets(): Promise<number> {
-  const cutoffDate = getThirtyDaysAgoISO();
+  const cutoffDate = getRetentionCutoff(RETENTION.PACKETS_DAYS);
 
   const result = await db.execute({
     sql: 'DELETE FROM packets WHERE timestamp < ?',
@@ -567,11 +570,10 @@ export async function cleanupOldPackets(): Promise<number> {
 }
 
 /**
- * Delete daily stats older than the retention period (30 days)
- * Returns the number of deleted rows
+ * Delete daily stats older than 90 days
  */
 export async function cleanupOldDailyStats(): Promise<number> {
-  const cutoffDate = getThirtyDaysAgoISO().split('T')[0]; // Just the date part
+  const cutoffDate = getRetentionCutoff(RETENTION.DAILY_STATS_DAYS).split('T')[0];
 
   const result = await db.execute({
     sql: 'DELETE FROM node_stats_daily WHERE date < ?',
@@ -582,23 +584,171 @@ export async function cleanupOldDailyStats(): Promise<number> {
 }
 
 /**
- * Run all cleanup tasks to enforce data retention policy
- * Returns summary of deleted records
+ * Delete health history snapshots older than 90 days
+ */
+export async function cleanupOldHealthDaily(): Promise<number> {
+  const cutoffDate = getRetentionCutoff(RETENTION.DAILY_STATS_DAYS).split('T')[0];
+
+  const result = await db.execute({
+    sql: 'DELETE FROM network_health_daily WHERE date < ?',
+    args: [cutoffDate],
+  });
+
+  return result.rowsAffected;
+}
+
+/**
+ * Count nodes not seen in 90+ days (or never seen)
+ */
+export async function getStaleNodeCount(): Promise<number> {
+  const cutoff = getRetentionCutoff(RETENTION.DAILY_STATS_DAYS);
+
+  const result = await db.execute({
+    sql: 'SELECT COUNT(*) as count FROM nodes WHERE last_seen < ? OR last_seen IS NULL',
+    args: [cutoff],
+  });
+
+  return Number(result.rows[0]?.count) || 0;
+}
+
+/**
+ * Upsert a daily network health snapshot
+ */
+export async function upsertNetworkHealthDaily(data: {
+  score: number;
+  status: string;
+  active_nodes: number;
+  total_nodes: number;
+  avg_snr?: number | null;
+  messages_24h?: number | null;
+  max_hop_count?: number | null;
+  unique_contributors?: number | null;
+  geo_spread_km?: number | null;
+  score_breakdown?: Record<string, number> | null;
+}): Promise<void> {
+  const today = getTodayDateString();
+
+  await db.execute({
+    sql: `
+      INSERT INTO network_health_daily (
+        date, score, status, active_nodes, total_nodes,
+        avg_snr, messages_24h, max_hop_count, unique_contributors, geo_spread_km,
+        score_status, score_signal, score_recency, score_activity,
+        score_reach, score_diversity, score_geo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(date) DO UPDATE SET
+        score = excluded.score,
+        status = excluded.status,
+        active_nodes = excluded.active_nodes,
+        total_nodes = excluded.total_nodes,
+        avg_snr = excluded.avg_snr,
+        messages_24h = excluded.messages_24h,
+        max_hop_count = excluded.max_hop_count,
+        unique_contributors = excluded.unique_contributors,
+        geo_spread_km = excluded.geo_spread_km,
+        score_status = excluded.score_status,
+        score_signal = excluded.score_signal,
+        score_recency = excluded.score_recency,
+        score_activity = excluded.score_activity,
+        score_reach = excluded.score_reach,
+        score_diversity = excluded.score_diversity,
+        score_geo = excluded.score_geo
+    `,
+    args: [
+      today,
+      data.score,
+      data.status,
+      data.active_nodes,
+      data.total_nodes,
+      data.avg_snr ?? null,
+      data.messages_24h ?? null,
+      data.max_hop_count ?? null,
+      data.unique_contributors ?? null,
+      data.geo_spread_km ?? null,
+      data.score_breakdown?.status ?? 0,
+      data.score_breakdown?.signal ?? 0,
+      data.score_breakdown?.recency ?? 0,
+      data.score_breakdown?.activity ?? 0,
+      data.score_breakdown?.reach ?? 0,
+      data.score_breakdown?.diversity ?? 0,
+      data.score_breakdown?.geo_coverage ?? 0,
+    ],
+  });
+}
+
+/**
+ * Get network health history for the last N days
+ */
+export async function getNetworkHealthHistory(days: number = 30): Promise<Array<{
+  date: string;
+  score: number;
+  status: string;
+  active_nodes: number;
+  total_nodes: number;
+  avg_snr: number | null;
+  messages_24h: number | null;
+  max_hop_count: number | null;
+  unique_contributors: number | null;
+  geo_spread_km: number | null;
+  score_status: number;
+  score_signal: number;
+  score_recency: number;
+  score_activity: number;
+  score_reach: number;
+  score_diversity: number;
+  score_geo: number;
+}>> {
+  const result = await db.execute({
+    sql: 'SELECT * FROM network_health_daily ORDER BY date DESC LIMIT ?',
+    args: [days],
+  });
+
+  return result.rows.map((row) => ({
+    date: row.date as string,
+    score: Number(row.score),
+    status: row.status as string,
+    active_nodes: Number(row.active_nodes),
+    total_nodes: Number(row.total_nodes),
+    avg_snr: row.avg_snr as number | null,
+    messages_24h: row.messages_24h as number | null,
+    max_hop_count: row.max_hop_count as number | null,
+    unique_contributors: row.unique_contributors as number | null,
+    geo_spread_km: row.geo_spread_km as number | null,
+    score_status: Number(row.score_status) || 0,
+    score_signal: Number(row.score_signal) || 0,
+    score_recency: Number(row.score_recency) || 0,
+    score_activity: Number(row.score_activity) || 0,
+    score_reach: Number(row.score_reach) || 0,
+    score_diversity: Number(row.score_diversity) || 0,
+    score_geo: Number(row.score_geo) || 0,
+  }));
+}
+
+/**
+ * Run all cleanup tasks to enforce tiered data retention policy
  */
 export async function runDataCleanup(): Promise<{
   packetsDeleted: number;
   dailyStatsDeleted: number;
-  retentionDays: number;
+  healthSnapshotsDeleted: number;
+  staleNodes: number;
+  packetRetentionDays: number;
+  statsRetentionDays: number;
 }> {
-  const [packetsDeleted, dailyStatsDeleted] = await Promise.all([
+  const [packetsDeleted, dailyStatsDeleted, healthSnapshotsDeleted, staleNodes] = await Promise.all([
     cleanupOldPackets(),
     cleanupOldDailyStats(),
+    cleanupOldHealthDaily(),
+    getStaleNodeCount(),
   ]);
 
   return {
     packetsDeleted,
     dailyStatsDeleted,
-    retentionDays: RETENTION_DAYS,
+    healthSnapshotsDeleted,
+    staleNodes,
+    packetRetentionDays: RETENTION.PACKETS_DAYS,
+    statsRetentionDays: RETENTION.DAILY_STATS_DAYS,
   };
 }
 

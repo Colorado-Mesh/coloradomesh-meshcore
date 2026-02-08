@@ -291,14 +291,14 @@ export async function handleStatus(topic: string, payload: Buffer): Promise<void
         batteryMv: data.stats.battery_mv ?? null,
         noiseFloor: data.stats.noise_floor ?? null,
         uptimeSecs: data.stats.uptime_secs ?? null,
-        errorCount: data.stats.errors ?? null,
+        errorCount: data.stats.debug_flags ?? data.stats.errors ?? null,
         queueLen: data.stats.queue_len ?? null,
         txAirSecs: data.stats.tx_air_secs ?? null,
         rxAirSecs: data.stats.rx_air_secs ?? null,
       };
 
       await updateNodeStatus(statusUpdate);
-      console.log(`[PacketHandler] Updated status for ${data.origin}: battery=${data.stats.battery_mv}mV, uptime=${Math.round(data.stats.uptime_secs / 3600)}h, errors=${data.stats.errors}`);
+      console.log(`[PacketHandler] Updated status for ${data.origin}: battery=${data.stats.battery_mv}mV, uptime=${Math.round(data.stats.uptime_secs / 3600)}h, errors=${data.stats.debug_flags ?? data.stats.errors}`);
     }
 
     statusUpdates++;

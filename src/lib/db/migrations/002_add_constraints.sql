@@ -1,6 +1,11 @@
 -- Migration: Add database constraints for data integrity
 -- Created: 2024-12-31
 
+-- Remove duplicate (node_id, date) rows before adding unique constraint
+DELETE FROM node_stats_daily WHERE id NOT IN (
+  SELECT MIN(id) FROM node_stats_daily GROUP BY node_id, date
+);
+
 -- Add unique constraint on node_stats_daily for upsert operations
 -- This enables INSERT ... ON CONFLICT for atomic upserts
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stats_node_date_unique ON node_stats_daily(node_id, date);

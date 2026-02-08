@@ -44,11 +44,13 @@ export interface MqttStatus {
   stats?: {
     battery_mv: number;
     uptime_secs: number;
-    errors: number;
+    errors?: number;
+    debug_flags?: number;
     queue_len: number;
     noise_floor: number;
     tx_air_secs: number;
     rx_air_secs: number;
+    recv_errors?: number;
   };
 }
 
