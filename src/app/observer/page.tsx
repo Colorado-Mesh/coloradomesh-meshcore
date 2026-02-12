@@ -46,7 +46,7 @@ const OBSERVERS = [
   },
   {
     name: 'CO-CMRCE-TWR+96-OB01',
-    url: 'https://analyzer.letsmesh.net/node/9F39877225414E904FD982AB8782F526026A388D1A6106F2C821E158675A82AD',
+    url: 'https://analyzer.letsmesh.net/node/D00F58E430E141FB7C617F497A2A386E98903648B75FDFF57D693EA88D226764',
   },
 ];
 
