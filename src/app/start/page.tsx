@@ -278,47 +278,69 @@ const resources = [
   },
 ];
 
-// Naming Standard v1.0 data
+// Naming Standard v2.0 data
 const infraNodeTypes = [
   { code: "RC", description: "Core Repeater — Backbone. Mountain/tower. Battery backup." },
   { code: "RD", description: "Distribution Rpt — Bridges core to edge. Suburban elevated." },
   { code: "RE", description: "Edge Repeater — Rooftop/residential. Mains power OK." },
   { code: "RM", description: "Mobile Repeater — Vehicle or temporary." },
-  { code: "T", description: "Room Server — Fixed location." },
+  { code: "TS", description: "Room Server — Fixed location." },
   { code: "TM", description: "Mobile Room — Location changes." },
   { code: "TR", description: "Room + Repeat — Room server w/ repeat on." },
-  { code: "OB", description: "Observer — Listen-only/monitoring." },
 ];
 
 const infraExamples = [
-  { name: "CO-DENVER-CHSPARK-RC01", description: "Core rpt, Cheesman Park" },
-  { name: "CO-DENVER-SLOAN-RE01", description: "Edge rpt, Sloan\u2019s Lake" },
-  { name: "CO-LKWD-GRENMTN-RD01", description: "Dist rpt, Green Mtn" },
-  { name: "CO-REDROCKS-RC01", description: "Core rpt, Red Rocks (no city needed)" },
-  { name: "CO-DENVER-RINO-T01", description: "Room server, RiNo" },
+  { name: "DEN-DNVR-CHSPK-RC-9F2E", description: "Core repeater, Cheesman Park" },
+  { name: "DEN-DNVR-SLOAN-RE-9F2E", description: "Edge repeater, Sloan\u2019s Lake" },
+  { name: "DEN-LKWD-GRNMT-RD-9F2E", description: "Dist repeater, Green Mountain" },
+  { name: "DEN-REDROCKS-RC-9F2E", description: "Core repeater, Red Rocks (no city)" },
+  { name: "COS-PIKESPEAK-RC-9F2E", description: "Core repeater, Pikes Peak (no city)" },
+  { name: "DEN-DNVR-RINO-TS-9F2E", description: "Room server, RiNo" },
+];
+
+const regionCodes = [
+  { airport: "San Luis Valley Regional Airport", code: "ALS", city: "Alamosa" },
+  { airport: "Aspen/Pitkin County Airport", code: "ASE", city: "Aspen" },
+  { airport: "Cortez Municipal Airport", code: "CEZ", city: "Cortez" },
+  { airport: "City of Colorado Springs Municipal Airport", code: "COS", city: "Colorado Springs" },
+  { airport: "Denver International Airport", code: "DEN", city: "Denver" },
+  { airport: "Durango\u2013La Plata County Airport", code: "DRO", city: "Durango" },
+  { airport: "Eagle County Regional Airport", code: "EGE", city: "Eagle/Vail" },
+  { airport: "Northern Colorado Regional Airport", code: "FNL", city: "Fort Collins/Loveland" },
+  { airport: "Grand Junction Regional Airport", code: "GJT", city: "Grand Junction" },
+  { airport: "Gunnison\u2013Crested Butte Regional Airport", code: "GUC", city: "Gunnison" },
+  { airport: "Yampa Valley Airport", code: "HDH", city: "Hayden" },
+  { airport: "Montrose Regional Airport", code: "MTJ", city: "Montrose" },
+  { airport: "Pueblo Memorial Airport", code: "PUB", city: "Pueblo" },
+  { airport: "Telluride Regional Airport", code: "TEX", city: "Telluride" },
 ];
 
 const cityCodes = [
-  "DENVER", "AURORA", "LKWD", "ARVADA", "WSTMNR", "THRTON", "CENTL", "BROOM",
-  "LTTN", "ENGL", "CMRCE", "GLDN", "BOULDR", "PARKER", "CSTLRK", "HGHLND",
-  "CSPRGS", "LSVL", "LFAYTE",
+  "DENVR", "AURRA", "LKWD", "ARVDA", "WSTMR", "THRTN", "CENTL", "BROOM",
+  "LTTN", "ENGL", "CMRCE", "GLDN", "BOULR", "PARKR", "CSTLR", "HGHLN",
+  "CSPRG", "LSVL", "LFYTE", "LVLND",
 ];
 
 const landmarkExamples = [
-  { code: "CHSPARK", name: "Cheesman" },
-  { code: "SLOAN", name: "Sloan\u2019s" },
-  { code: "WSHPARK", name: "Wash Park" },
-  { code: "RINO", name: "RiNo" },
-  { code: "LODO", name: "LoDo" },
-  { code: "CAPHILL", name: "Cap Hill" },
+  { code: "CHSPK", name: "Cheesman Park" },
+  { code: "SLOAN", name: "Sloan\u2019s Lake" },
+  { code: "WSHPK", name: "Washington Park" },
+  { code: "RINO", name: "RiNo Arts District" },
+  { code: "LODO", name: "Lower Downtown" },
+  { code: "CPHIL", name: "Cap Hill" },
   { code: "UNION", name: "Union Station" },
-  { code: "COLFAX", name: "Colfax" },
-  { code: "REDRKS", name: "Red Rocks" },
-  { code: "CONFLU", name: "Confluence" },
-  { code: "16THST", name: "16th St" },
-  { code: "STAPLE", name: "Stapleton" },
-  { code: "DIA", name: "DIA" },
-  { code: "SPR+I25", name: "Speer & I-25" },
+  { code: "CLFAX", name: "Colfax Avenue" },
+  { code: "RDRKS", name: "Red Rocks" },
+  { code: "16ST", name: "16th Street Mall" },
+  { code: "DIA", name: "Denver Intl Airport" },
+  { code: "SR+25", name: "Speer + I-25" },
+];
+
+const landmarkSpecialChars = [
+  { char: "+", usage: "Intersections or \"and\" (e.g. SR+25)" },
+  { char: ".", usage: "Separator/space replacement (e.g. 16.ST)" },
+  { char: "_", usage: "Separator/space replacement (e.g. 16_ST)" },
+  { char: "|", usage: "Separate multiple items (e.g. 16TH|STAPLE)" },
 ];
 
 const companionExamples = [
@@ -656,10 +678,10 @@ export default function StartPage() {
       <section id="naming" className="px-6 py-16 bg-background-secondary">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
-            Naming Standard
+            Naming Standard <span className="text-base font-normal text-foreground-muted">v2.0</span>
           </h2>
           <p className="text-foreground-muted text-center mb-12 max-w-2xl mx-auto">
-            All MeshCore node names are limited to <span className="text-mesh font-semibold">23 characters</span> — this is a hard limit in the firmware. Follow the conventions below so the network stays organized and readable.
+            All MeshCore node names are limited to <span className="text-mesh font-semibold">23 characters</span> — this is a hard limit in the firmware. Follow the conventions below so the network stays organized and readable. Names should always be expressed in all uppercase letters, with hyphens as block separators.
           </p>
 
           {/* Part 1: Infrastructure Nodes */}
@@ -672,17 +694,17 @@ export default function StartPage() {
             {/* Format Card */}
             <div className="card-mesh p-6 mb-8">
               <p className="font-mono text-lg text-mesh mb-4 text-center">
-                CO-[CITY]-[LANDMARK]-[TYPE][##]
+                [REGION]-[CITY]-[LANDMARK]-[TYPE]-[PUBKEY]
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-foreground-muted">
-                <div><span className="font-semibold text-foreground">CO</span> — State prefix (Colorado)</div>
-                <div><span className="font-semibold text-foreground">CITY</span> — City code from the list below</div>
-                <div><span className="font-semibold text-foreground">LANDMARK</span> — Recognizable location</div>
-                <div><span className="font-semibold text-foreground">TYPE</span> — Node type code</div>
-                <div><span className="font-semibold text-foreground">##</span> — Two-digit sequence number</div>
+                <div><span className="font-semibold text-foreground">REGION</span> — 3-char IATA airport code</div>
+                <div><span className="font-semibold text-foreground">CITY</span> — Up to 5 chars</div>
+                <div><span className="font-semibold text-foreground">LANDMARK</span> — Up to 5 chars (park, intersection, etc.)</div>
+                <div><span className="font-semibold text-foreground">TYPE</span> — Node type code (2 chars)</div>
+                <div><span className="font-semibold text-foreground">PUBKEY</span> — First 4 chars of public key</div>
               </div>
               <p className="text-sm text-foreground-muted mt-4">
-                When the landmark is prominent enough on its own (e.g., Red Rocks), you can drop CITY — the landmark gets up to 14 characters.
+                If the landmark is prominent enough on its own (e.g., Red Rocks), CITY can be dropped and LANDMARK gets up to 11 characters.
               </p>
             </div>
 
@@ -700,6 +722,37 @@ export default function StartPage() {
                     <tr key={ex.name} className="hover:bg-night-800/30 transition-colors">
                       <td className="px-6 py-3 font-mono text-mesh text-sm">{ex.name}</td>
                       <td className="px-6 py-3 text-foreground-muted text-sm">{ex.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Region Codes Table */}
+            <h4 className="text-lg font-semibold text-foreground mb-3">Region Codes (IATA)</h4>
+            <div className="card-mesh overflow-hidden mb-8">
+              <div className="p-4 border-b border-card-border">
+                <p className="text-sm text-foreground-muted">
+                  The REGION block uses the 3-character IATA code of the nearest major airport. Not sure which airport is closest? Check{" "}
+                  <a href="https://www.travelmath.com/nearest-airport/" target="_blank" rel="noopener noreferrer" className="text-mesh hover:text-mesh-light">
+                    travelmath.com
+                  </a>.
+                </p>
+              </div>
+              <table className="w-full">
+                <thead className="bg-night-800/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Code</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">City</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-foreground hidden md:table-cell">Airport</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-card-border">
+                  {regionCodes.map((r) => (
+                    <tr key={r.code} className="hover:bg-night-800/30 transition-colors">
+                      <td className="px-4 py-2 font-mono font-semibold text-mountain-500">{r.code}</td>
+                      <td className="px-4 py-2 text-foreground-muted text-sm">{r.city}</td>
+                      <td className="px-4 py-2 text-foreground-muted text-sm hidden md:table-cell">{r.airport}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -738,7 +791,7 @@ export default function StartPage() {
                 ))}
               </div>
               <p className="text-sm text-foreground-muted mt-4">
-                Don&apos;t see your city? Propose a code in{" "}
+                Cities should contain between 1 and 5 alphabetic characters only. Don&apos;t see your city? Propose a code in{" "}
                 <a href="https://discord.gg/QpaW8FTTCE" className="text-mesh hover:text-mesh-light">
                   our Discord
                 </a>.
@@ -748,7 +801,10 @@ export default function StartPage() {
             {/* Landmark Examples Grid */}
             <h4 className="text-lg font-semibold text-foreground mb-3">Landmark Examples</h4>
             <div className="card-mesh p-6 mb-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <p className="text-sm text-foreground-muted mb-4">
+                Landmarks should contain between 1 and 5 characters (up to 11 if no city). Alphanumeric characters and a limited set of special characters are allowed.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
                 {landmarkExamples.map((lm) => (
                   <div key={lm.code} className="text-sm">
                     <span className="font-mono text-mesh">{lm.code}</span>
@@ -756,16 +812,31 @@ export default function StartPage() {
                   </div>
                 ))}
               </div>
+              <h5 className="text-sm font-semibold text-foreground mb-2">Allowed Special Characters</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {landmarkSpecialChars.map((sc) => (
+                  <div key={sc.char} className="text-sm flex items-start gap-2">
+                    <span className="font-mono text-mountain-500 font-semibold w-6 text-center">{sc.char}</span>
+                    <span className="text-foreground-muted">{sc.usage}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-foreground-muted mt-3">
+                Hyphens (-) are reserved for block separation. Spaces, ampersands (&amp;), slashes, and other special characters are not allowed.
+              </p>
             </div>
 
-            {/* Public Key Prefixes Card */}
-            <div className="card-mesh p-6">
+            {/* Public Key Prefix Card */}
+            <div className="card-mesh p-6 mb-8">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl">🔑</span>
-                <h4 className="text-lg font-semibold text-foreground">Public Key Prefixes</h4>
+                <h4 className="text-lg font-semibold text-foreground">Public Key Prefix</h4>
               </div>
               <p className="text-foreground-muted text-sm mb-4">
-                Repeaters and room servers should use a unique public key prefix to avoid collisions. Check current prefix utilization and generate a key with a chosen prefix.
+                Every node on the local mesh should have a unique 4-character code derived from the first 4 characters of the node&apos;s public key. This is used for identification and route tracing — avoid using the same prefix on multiple nodes.
+              </p>
+              <p className="text-foreground-muted text-sm mb-4">
+                <strong className="text-foreground">Note:</strong> MeshCore currently uses the first 2 characters of the public key as the prefix (limited to 256 unique prefixes). Work is underway to expand this to 4 characters (65,536 unique prefixes). We are adopting 4 characters as the standard now for future-proofing.
               </p>
               <div className="flex flex-wrap gap-3">
                 <a
@@ -790,6 +861,50 @@ export default function StartPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
+              </div>
+            </div>
+
+            {/* Other Settings Card */}
+            <div className="card-mesh p-6 mb-8">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">&#9881;&#65039;</span>
+                <h4 className="text-lg font-semibold text-foreground">Other Settings</h4>
+              </div>
+              <div className="space-y-4 text-sm text-foreground-muted">
+                <div>
+                  <h5 className="font-semibold text-foreground mb-1">Ownership</h5>
+                  <p>
+                    Do not put emojis in repeater names — they eat 2+ bytes and don&apos;t render properly on all firmware. Instead, set the ownership field to <span className="font-mono text-mesh">@yourdiscordname</span> (requires firmware 1.12.0+). This info is visible to all mesh users.
+                  </p>
+                </div>
+                <div>
+                  <h5 className="font-semibold text-foreground mb-1">Region Setting</h5>
+                  <p>
+                    Set your repeater&apos;s region setting to match its IATA airport code (e.g., <span className="font-mono text-mesh">DEN</span> for Denver area repeaters).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Changes from v1.1 Card */}
+            <div className="card-mesh overflow-hidden">
+              <div className="p-6 bg-mountain-500/10 border-b border-card-border">
+                <h4 className="text-lg font-semibold text-foreground flex items-center gap-3">
+                  <span className="text-xl">&#128196;</span>
+                  Changes from v1.1
+                </h4>
+              </div>
+              <div className="p-6">
+                <ul className="space-y-2 text-sm text-foreground-muted">
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span><span className="font-mono">CO-</span> state prefix replaced with IATA airport code (<span className="font-mono text-mesh">DEN</span>, <span className="font-mono text-mesh">COS</span>, <span className="font-mono text-mesh">FNL</span>, etc.)</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>Counter (##) replaced with 4-char public key prefix</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>Room Server type <span className="font-mono">T</span> changed to <span className="font-mono text-mesh">TS</span> (all types now 2 chars)</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>Emojis removed from repeater names</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>Ownership tracked via ownership field (@discord), not emoji</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>City field reduced from 7 to 5 characters</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>Landmark field reduced from 7 to 5 characters</span></li>
+                  <li className="flex items-start gap-2"><span className="text-mountain-500 mt-0.5">&#8594;</span><span>IATA code also used for repeater region settings</span></li>
+                </ul>
               </div>
             </div>
           </div>
