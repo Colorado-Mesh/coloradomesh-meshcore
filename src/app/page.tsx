@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { StatsSection } from '@/components';
 import JsonLd from '@/components/JsonLd';
+import NamingWizard from '@/components/NamingWizard';
 import { generateBreadcrumbSchema } from '@/lib/schemas/breadcrumb';
 import { BASE_URL } from '@/lib/constants';
 
@@ -102,6 +103,21 @@ export default function Home() {
 
         {/* Quick Stats Section */}
         <StatsSection />
+
+        {/* Node Name Generator */}
+        <section id="naming" className="bg-background-secondary py-16 sm:py-24">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                Node Name Generator <span className="text-base font-normal text-foreground-muted">v2.0</span>
+              </h2>
+              <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+                Build a valid name for your <span className="text-mesh font-semibold">repeater or room server</span> following our naming standard. All names are limited to 23 characters.
+              </p>
+            </div>
+            <NamingWizard />
+          </div>
+        </section>
 
         {/* Mission Statement */}
         <section className="bg-background py-16 sm:py-24">
