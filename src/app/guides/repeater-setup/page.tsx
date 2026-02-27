@@ -411,33 +411,8 @@ set guest.password`}</pre>
           </div>
         </section>
 
-        {/* Solar-Powered Repeaters */}
-        <section className="px-6 py-16 bg-background-secondary">
-          <div className="max-w-4xl mx-auto">
-            <div className="card-mesh p-6 md:p-8">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-sunset-500/10 flex items-center justify-center">
-                  <span className="text-2xl">☀️</span>
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground mb-2">Solar-Powered Repeaters</h2>
-                  <p className="text-foreground-muted mb-4">
-                    Building a solar-powered repeater? We have a detailed guide covering panel selection, charge controllers, battery sizing, and weatherproofing.
-                  </p>
-                  <Link href="/blog/solar-powered-repeater-setup" className="text-mesh hover:text-mesh-light inline-flex items-center gap-2 font-medium">
-                    Read the Solar Repeater Guide
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Owner Info */}
-        <section className="px-6 py-16">
+        <section className="px-6 py-16 bg-background-secondary">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
               Setting Owner Info
