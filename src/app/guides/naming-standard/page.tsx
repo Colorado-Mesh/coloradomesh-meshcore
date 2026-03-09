@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import NamingWizard from "@/components/NamingWizard";
+import PrefixMatrix from "@/components/PrefixMatrix";
 import { generateBreadcrumbSchema } from "@/lib/schemas/breadcrumb";
 import { BASE_URL } from "@/lib/constants";
 
@@ -47,6 +48,13 @@ export default function NamingStandardPage() {
         <section className="px-6 pb-16 md:pb-24">
           <div className="max-w-4xl mx-auto">
             <NamingWizard />
+          </div>
+        </section>
+
+        {/* Prefix Matrix */}
+        <section id="prefix-matrix" className="px-6 pb-16 md:pb-24">
+          <div className="max-w-6xl mx-auto">
+            <PrefixMatrix />
           </div>
         </section>
       </div>
