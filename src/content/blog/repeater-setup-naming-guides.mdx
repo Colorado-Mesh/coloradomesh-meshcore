@@ -35,9 +35,7 @@ The solution is deceptively simple: **make higher nodes wait longer before retra
 
 The `txdelay` setting controls how long a repeater waits before retransmitting a flood packet it received. The actual delay is randomized within a window proportional to the setting, so two nodes with the same txdelay won't always collide.
 
-A hilltop backbone repeater with `txdelay 2` creates a wider random window than a rooftop edge node with `txdelay 0.8`. The edge node is more likely to retransmit first. If the edge node's retransmission reaches the destination, the hilltop node hears it and cancels its own retransmission. The message gets delivered without the backbone node ever needing to fire.
-
-This is how the mesh self-organizes: local nodes handle local traffic, and backbone nodes only step in when needed for long-range hops.
+A hilltop backbone repeater with `txdelay 2` creates a wider random window than a rooftop edge node with `txdelay 0.8`. The edge node is statistically more likely to retransmit first. Both nodes will still retransmit the packet once — MeshCore does not cancel queued retransmissions — but the staggered timing reduces the chance of collisions. Combined with `rxdelay`, which can cause weaker copies to be dropped as duplicates before they're ever queued for retransmission, the net effect is that local nodes tend to handle local traffic while backbone nodes provide coverage for longer-range hops.
 
 ### rxdelay: Signal-Quality Filtering
 
