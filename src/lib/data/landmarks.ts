@@ -4,7 +4,7 @@ export interface Landmark {
 }
 
 /**
- * Known landmarks for the Denver MeshCore naming standard.
+ * Known landmarks for the Colorado MeshCore naming standard.
  * Codes are 1-5 uppercase chars (A-Z, 0-9, +, ., _, |).
  */
 export const landmarks: Landmark[] = [

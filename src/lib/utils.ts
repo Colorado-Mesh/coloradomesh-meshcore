@@ -1,5 +1,5 @@
 /**
- * Shared utility functions for the Denver MeshCore platform
+ * Shared utility functions for the Colorado MeshCore platform
  */
 
 import { ONLINE_THRESHOLD_MS, REPEATER_ONLINE_THRESHOLD_MS } from './constants';
