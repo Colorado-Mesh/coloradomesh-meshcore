@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ============================================
-   Denver MeshCore Community Platform
-   Colorado-Themed Design System
+   Colorado MeshCore Community Platform
+   Night-Sky Operations Console Design System
    ============================================ */
 
 /* === CSS Custom Properties (Design Tokens) === */
@@ -18,7 +18,7 @@
   --forest-green-900: #1a3d2a;
   --forest-green-700: #2d5a3d;
   --forest-green-500: #3d7a4d;
-  --forest-green-300: #4d9a5d;
+  --forest-green-300: #5fb37a;
   --forest-green-100: #a8d5b8;
 
   /* Sunset Oranges - Rocky Mountain sunsets */
@@ -35,74 +35,93 @@
   --snow-white-300: #dee2e6;
   --snow-white-400: #ced4da;
 
-  /* Night Sky - Colorado stargazing */
-  --night-sky-950: #0d1b2a;
-  --night-sky-900: #1b263b;
-  --night-sky-800: #2c3e50;
-  --night-sky-700: #415a77;
-  --night-sky-600: #527594;
+  /* Night Sky - Operations console base palette */
+  --night-sky-950: #050a12;
+  --night-sky-900: #0a1420;
+  --night-sky-800: #0f1d2e;
+  --night-sky-700: #162a40;
+  --night-sky-600: #1f3550;
+  --night-sky-500: #2a456a;
+
+  /* Operations text scale on dark */
+  --ops-text: #eef2f8;
+  --ops-text-mid: #a6b6cc;
+  --ops-text-dim: #6b7d97;
+  --ops-line: #1f3550;
+  --ops-line-strong: #2a456a;
 
   /* Accent Colors */
   --mesh-accent: #00d4aa;
   --mesh-accent-light: #4de8c7;
-  --mesh-accent-dark: #00a88a;
+  --mesh-accent-dark: #0a8a72;
+  --sky-accent: #5fa3d6;
+  --signal-amber: #f59e0b;
+  --signal-red: #ef4444;
 
   /* Semantic Colors */
-  --success: var(--forest-green-500);
+  --success: var(--mesh-accent);
   --warning: var(--sunset-orange-500);
-  --error: #dc2626;
-  --info: var(--mountain-blue-500);
+  --error: var(--signal-red);
+  --info: var(--sky-accent);
 
-  /* Background & Foreground (Light Mode) */
-  --background: var(--snow-white-100);
-  --foreground: var(--night-sky-900);
-  --background-secondary: var(--snow-white-50);
-  --foreground-muted: var(--night-sky-600);
+  /* Background & Foreground - Dark operations console default */
+  --background: var(--night-sky-900);
+  --background-secondary: var(--night-sky-800);
+  --background-tertiary: var(--night-sky-700);
+  --foreground: var(--ops-text);
+  --foreground-muted: var(--ops-text-mid);
+  --foreground-dim: var(--ops-text-dim);
 
   /* Card & Surface */
-  --card-background: var(--snow-white-50);
-  --card-border: var(--snow-white-300);
+  --card-background: var(--night-sky-800);
+  --card-background-elevated: var(--night-sky-700);
+  --card-border: var(--ops-line);
+  --card-border-strong: var(--ops-line-strong);
 
   /* Design Tokens - Spacing & Sizing */
-  --radius-sm: 0.375rem;
+  --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
-  --radius-mesh: 0.625rem; /* Special radius for mesh node cards */
+  --radius-mesh: 0.625rem;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-glow: 0 0 20px rgba(0, 212, 170, 0.3);
-  --shadow-mountain: 0 4px 14px 0 rgba(30, 58, 95, 0.15);
+  /* Shadows tuned for dark operations console */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.45);
+  --shadow-glow: 0 0 24px rgba(0, 212, 170, 0.35);
+  --shadow-glow-strong: 0 0 36px rgba(0, 212, 170, 0.55);
+  --shadow-mountain: 0 4px 14px 0 rgba(0, 0, 0, 0.45);
+  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.02) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Telemetry typography */
+  --letter-spacing-mono: 0.08em;
+  --letter-spacing-eyebrow: 0.18em;
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--night-sky-950);
-    --foreground: var(--snow-white-100);
-    --background-secondary: var(--night-sky-900);
-    --foreground-muted: var(--snow-white-300);
-    --card-background: var(--night-sky-900);
-    --card-border: var(--night-sky-700);
-
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
-    --shadow-glow: 0 0 30px rgba(0, 212, 170, 0.4);
-    --shadow-mountain: 0 4px 14px 0 rgba(0, 0, 0, 0.4);
+/* Optional light-mode override — dark operations console remains the primary
+   experience, but legacy consumers and printing benefit from a softened palette. */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --background: var(--snow-white-100);
+    --background-secondary: var(--snow-white-50);
+    --background-tertiary: var(--snow-white-200);
+    --foreground: var(--night-sky-900);
+    --foreground-muted: var(--night-sky-700);
+    --foreground-dim: var(--night-sky-600);
+    --card-background: var(--snow-white-50);
+    --card-background-elevated: var(--snow-white-100);
+    --card-border: var(--snow-white-300);
+    --card-border-strong: var(--snow-white-400);
   }
 }
 
@@ -142,11 +161,15 @@
   --color-night-800: var(--night-sky-800);
   --color-night-700: var(--night-sky-700);
   --color-night-600: var(--night-sky-600);
+  --color-night-500: var(--night-sky-500);
 
   /* Colors - Mesh Accent */
   --color-mesh: var(--mesh-accent);
   --color-mesh-light: var(--mesh-accent-light);
   --color-mesh-dark: var(--mesh-accent-dark);
+  --color-sky-signal: var(--sky-accent);
+  --color-amber-signal: var(--signal-amber);
+  --color-red-signal: var(--signal-red);
 
   /* Semantic Colors */
   --color-success: var(--success);
@@ -158,13 +181,17 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-background-secondary: var(--background-secondary);
+  --color-background-tertiary: var(--background-tertiary);
   --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-dim: var(--foreground-dim);
   --color-card: var(--card-background);
+  --color-card-elevated: var(--card-background-elevated);
   --color-card-border: var(--card-border);
+  --color-card-border-strong: var(--card-border-strong);
 
   /* Typography - Font Families */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, "JetBrains Mono", monospace;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   /* Font Sizes */
@@ -193,13 +220,16 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-glow: var(--shadow-glow);
+  --shadow-glow-strong: var(--shadow-glow-strong);
   --shadow-mountain: var(--shadow-mountain);
+  --shadow-panel: var(--shadow-panel);
 
   /* Animations */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.4s ease-out;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-mesh-flow: mesh-flow 3s ease-in-out infinite;
+  --animate-ops-pulse: ops-pulse 2s ease-in-out infinite;
 }
 
 /* === Custom Animations === */
@@ -241,7 +271,22 @@
   }
 }
 
+@keyframes ops-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
 /* === Base Styles === */
+html {
+  background: var(--night-sky-950);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -253,21 +298,39 @@ body {
 
 /* === Background Patterns === */
 
-/* Topographic Pattern */
+/* Topographic contour pattern — Front Range terrain motif */
 .bg-topo {
   background-color: var(--background);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0 50 Q25 30 50 50 T100 50' fill='none' stroke='%233d7ab0' stroke-width='0.5' opacity='0.15'/%3E%3Cpath d='M0 60 Q25 40 50 60 T100 60' fill='none' stroke='%233d7ab0' stroke-width='0.5' opacity='0.12'/%3E%3Cpath d='M0 40 Q25 20 50 40 T100 40' fill='none' stroke='%233d7ab0' stroke-width='0.5' opacity='0.1'/%3E%3Cpath d='M0 70 Q25 50 50 70 T100 70' fill='none' stroke='%232d5a3d' stroke-width='0.5' opacity='0.12'/%3E%3Cpath d='M0 30 Q25 10 50 30 T100 30' fill='none' stroke='%232d5a3d' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath d='M0 100 Q50 70 100 100 T200 100' fill='none' stroke='%232a456a' stroke-width='0.6' opacity='0.45'/%3E%3Cpath d='M0 130 Q50 100 100 130 T200 130' fill='none' stroke='%232a456a' stroke-width='0.6' opacity='0.35'/%3E%3Cpath d='M0 70 Q50 40 100 70 T200 70' fill='none' stroke='%232a456a' stroke-width='0.6' opacity='0.35'/%3E%3Cpath d='M0 160 Q50 130 100 160 T200 160' fill='none' stroke='%2300d4aa' stroke-width='0.5' opacity='0.18'/%3E%3Cpath d='M0 40 Q50 10 100 40 T200 40' fill='none' stroke='%2300d4aa' stroke-width='0.5' opacity='0.18'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
 }
 
-/* Mesh Network Pattern */
+/* Operations grid — light topo + grid for map / panel surfaces */
+.bg-grid {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(to right, rgba(31, 53, 80, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 53, 80, 0.5) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-topo-grid {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(to right, rgba(31, 53, 80, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 53, 80, 0.45) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath d='M0 100 Q50 70 100 100 T200 100' fill='none' stroke='%232a456a' stroke-width='0.5' opacity='0.4'/%3E%3Cpath d='M0 130 Q50 100 100 130 T200 130' fill='none' stroke='%232a456a' stroke-width='0.5' opacity='0.3'/%3E%3Cpath d='M0 70 Q50 40 100 70 T200 70' fill='none' stroke='%232a456a' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E");
+  background-size: 40px 40px, 40px 40px, 200px 200px;
+}
+
+/* Mesh Network Pattern — radial blooms over a low-density node field */
 .bg-mesh {
   background-color: var(--background);
   background-image:
-    radial-gradient(circle at 20% 80%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(61, 122, 176, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(77, 154, 93, 0.06) 0%, transparent 30%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='2' fill='%2300d4aa' opacity='0.2'/%3E%3Ccircle cx='10' cy='10' r='1.5' fill='%233d7ab0' opacity='0.15'/%3E%3Ccircle cx='50' cy='10' r='1.5' fill='%233d7ab0' opacity='0.15'/%3E%3Ccircle cx='10' cy='50' r='1.5' fill='%233d7ab0' opacity='0.15'/%3E%3Ccircle cx='50' cy='50' r='1.5' fill='%233d7ab0' opacity='0.15'/%3E%3Cline x1='30' y1='30' x2='10' y2='10' stroke='%2300d4aa' stroke-width='0.5' opacity='0.1'/%3E%3Cline x1='30' y1='30' x2='50' y2='10' stroke='%2300d4aa' stroke-width='0.5' opacity='0.1'/%3E%3Cline x1='30' y1='30' x2='10' y2='50' stroke='%2300d4aa' stroke-width='0.5' opacity='0.1'/%3E%3Cline x1='30' y1='30' x2='50' y2='50' stroke='%2300d4aa' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+    radial-gradient(circle at 20% 80%, rgba(0, 212, 170, 0.10) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(95, 163, 214, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(244, 140, 6, 0.05) 0%, transparent 35%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='2' fill='%2300d4aa' opacity='0.25'/%3E%3Ccircle cx='10' cy='10' r='1.5' fill='%235fa3d6' opacity='0.2'/%3E%3Ccircle cx='50' cy='10' r='1.5' fill='%235fa3d6' opacity='0.2'/%3E%3Ccircle cx='10' cy='50' r='1.5' fill='%235fa3d6' opacity='0.2'/%3E%3Ccircle cx='50' cy='50' r='1.5' fill='%235fa3d6' opacity='0.2'/%3E%3Cline x1='30' y1='30' x2='10' y2='10' stroke='%2300d4aa' stroke-width='0.4' opacity='0.15' stroke-dasharray='2 4'/%3E%3Cline x1='30' y1='30' x2='50' y2='10' stroke='%2300d4aa' stroke-width='0.4' opacity='0.15' stroke-dasharray='2 4'/%3E%3Cline x1='30' y1='30' x2='10' y2='50' stroke='%2300d4aa' stroke-width='0.4' opacity='0.15' stroke-dasharray='2 4'/%3E%3Cline x1='30' y1='30' x2='50' y2='50' stroke='%2300d4aa' stroke-width='0.4' opacity='0.15' stroke-dasharray='2 4'/%3E%3C/svg%3E");
   background-size: 60px 60px;
 }
 
@@ -275,63 +338,180 @@ body {
 .bg-mountain-gradient {
   background: linear-gradient(
     to bottom,
-    var(--mountain-blue-500) 0%,
-    var(--mountain-blue-700) 30%,
+    var(--mountain-blue-700) 0%,
+    var(--night-sky-800) 60%,
     var(--night-sky-900) 100%
   );
 }
 
-/* Sunset Gradient */
+/* Sunset Gradient — Front Range golden hour into night */
 .bg-sunset-gradient {
   background: linear-gradient(
     to bottom,
-    var(--sunset-orange-300) 0%,
-    var(--sunset-orange-500) 30%,
-    var(--sunset-orange-700) 60%,
-    var(--night-sky-800) 100%
+    var(--sunset-orange-500) 0%,
+    var(--sunset-orange-700) 35%,
+    var(--mountain-blue-900) 70%,
+    var(--night-sky-900) 100%
   );
 }
 
-/* Colorado Sky Gradient */
+/* Colorado Sky Gradient — soft hero wash */
 .bg-colorado-sky {
   background: linear-gradient(
     135deg,
-    var(--mountain-blue-100) 0%,
-    var(--snow-white-100) 50%,
-    var(--sunset-orange-100) 100%
+    var(--mountain-blue-900) 0%,
+    var(--night-sky-800) 50%,
+    var(--night-sky-900) 100%
   );
 }
 
 /* Night Sky Gradient with Stars */
 .bg-night-stars {
   background:
-    radial-gradient(1px 1px at 20px 30px, white, transparent),
-    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 50px 160px, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 90px 40px, white, transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 50px 160px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.8), transparent),
     linear-gradient(to bottom, var(--night-sky-950) 0%, var(--night-sky-900) 100%);
   background-size: 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px, 100% 100%;
 }
 
-/* === Utility Classes === */
+/* === Operations Panel Surfaces === */
 
-/* Mesh Node Card Style */
+/* Operations panel — flat, hairline border, deep navy */
+.panel {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+.panel-elevated {
+  background: var(--card-background-elevated);
+  border: 1px solid var(--card-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-mountain);
+}
+
+.panel-mesh {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 212, 170, 0.06),
+    rgba(0, 212, 170, 0.0)
+  ), var(--card-background);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Mesh Node Card Style — kept for legacy callers; tuned to operations look */
 .card-mesh {
   background: var(--card-background);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-mesh);
-  box-shadow: var(--shadow-mountain);
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  box-shadow: var(--shadow-panel);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
 }
 
 .card-mesh:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  border-color: var(--card-border-strong);
 }
 
-/* Active Node Indicator */
+/* === Telemetry Utilities === */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: var(--letter-spacing-eyebrow);
+  text-transform: uppercase;
+  color: var(--mesh-accent);
+}
+
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 1.75rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.eyebrow-sunset {
+  color: var(--sunset-orange-500);
+}
+
+.eyebrow-sky {
+  color: var(--sky-accent);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: var(--letter-spacing-mono);
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--foreground);
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--foreground-dim);
+}
+
+.tag-mono {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
+  background: var(--card-background);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--mesh-accent);
+  box-shadow: 0 0 10px var(--mesh-accent);
+  flex-shrink: 0;
+}
+
+.status-dot-pulse {
+  animation: ops-pulse 2s ease-in-out infinite;
+}
+
+.status-dot-amber {
+  background: var(--signal-amber);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+.status-dot-red {
+  background: var(--signal-red);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+/* Active Node Indicator — preserved for legacy callers */
 .node-active {
   position: relative;
 }
@@ -349,12 +529,12 @@ body {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Gradient Text */
+/* === Gradient Text === */
 .text-gradient-colorado {
   background: linear-gradient(
     135deg,
-    var(--mountain-blue-500) 0%,
-    var(--forest-green-500) 50%,
+    var(--mesh-accent) 0%,
+    var(--sky-accent) 50%,
     var(--sunset-orange-500) 100%
   );
   -webkit-background-clip: text;
@@ -366,49 +546,72 @@ body {
   background: linear-gradient(
     90deg,
     var(--mesh-accent) 0%,
-    var(--mountain-blue-300) 50%,
-    var(--mesh-accent-light) 100%
+    var(--mesh-accent-light) 50%,
+    var(--sky-accent) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Button Styles */
+/* === Buttons === */
+
+/* Primary action — mesh teal CTA */
 .btn-primary {
-  background: var(--mountain-blue-500);
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--mesh-accent);
+  color: var(--night-sky-950);
+  border: 1px solid var(--mesh-accent);
   border-radius: var(--radius-md);
-  padding: 0.625rem 1.25rem;
-  font-weight: 500;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .btn-primary:hover {
-  background: var(--mountain-blue-700);
+  background: var(--mesh-accent-light);
+  border-color: var(--mesh-accent-light);
+  box-shadow: var(--shadow-glow);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--forest-green-500);
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--card-border-strong);
   border-radius: var(--radius-md);
-  padding: 0.625rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   font-weight: 500;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  font-size: 0.9375rem;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .btn-secondary:hover {
-  background: var(--forest-green-700);
+  background: var(--card-background-elevated);
+  border-color: var(--mesh-accent);
   transform: translateY(-1px);
 }
 
 .btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: var(--mesh-accent);
   color: var(--night-sky-950);
   border-radius: var(--radius-md);
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.125rem;
   font-weight: 600;
+  font-size: 0.875rem;
   transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -418,21 +621,26 @@ body {
 }
 
 .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: transparent;
-  border: 2px solid var(--mountain-blue-500);
-  color: var(--mountain-blue-500);
+  border: 1px solid var(--mesh-accent);
+  color: var(--mesh-accent);
   border-radius: var(--radius-md);
-  padding: 0.5rem 1.125rem;
+  padding: 0.625rem 1.125rem;
   font-weight: 500;
+  font-size: 0.875rem;
   transition: all var(--transition-fast);
 }
 
 .btn-outline:hover {
-  background: var(--mountain-blue-500);
-  color: white;
+  background: rgba(0, 212, 170, 0.1);
+  color: var(--mesh-accent-light);
 }
 
-/* Focus Ring */
+/* === Focus Ring === */
 .focus-ring {
   outline: none;
 }
@@ -442,51 +650,38 @@ body {
   outline-offset: 2px;
 }
 
-/* Selection Colors */
+/* === Selection === */
 ::selection {
-  background: var(--mountain-blue-300);
-  color: var(--night-sky-950);
+  background: rgba(0, 212, 170, 0.35);
+  color: var(--ops-text);
 }
 
-/* Scrollbar Styling */
+/* === Scrollbar Styling === */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--snow-white-200);
-  border-radius: var(--radius-full);
+  background: var(--night-sky-900);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--mountain-blue-300);
+  background: var(--night-sky-600);
   border-radius: var(--radius-full);
+  border: 2px solid var(--night-sky-900);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--mountain-blue-500);
+  background: var(--mesh-accent-dark);
 }
 
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-track {
-    background: var(--night-sky-800);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--night-sky-600);
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--mountain-blue-500);
-  }
-}
-
-/* === Prose/Typography Styles for Blog Content === */
+/* === Prose / Typography for blog and guide content === */
 .prose {
   color: var(--foreground);
   max-width: 65ch;
   line-height: 1.75;
+  font-size: 1.0625rem;
 }
 
 .prose > * + * {
@@ -496,8 +691,9 @@ body {
 /* Headings */
 .prose h1 {
   font-size: 2.25rem !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em !important;
   margin-top: 2rem !important;
   margin-bottom: 1rem !important;
   color: var(--foreground) !important;
@@ -506,7 +702,8 @@ body {
 .prose h2 {
   font-size: 1.75rem !important;
   font-weight: 600 !important;
-  line-height: 1.3 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.015em !important;
   margin-top: 2rem !important;
   margin-bottom: 0.75rem !important;
   color: var(--foreground) !important;
@@ -517,7 +714,7 @@ body {
 .prose h3 {
   font-size: 1.375rem !important;
   font-weight: 600 !important;
-  line-height: 1.4 !important;
+  line-height: 1.35 !important;
   margin-top: 1.5rem !important;
   margin-bottom: 0.5rem !important;
   color: var(--foreground) !important;
@@ -526,7 +723,7 @@ body {
 .prose h4 {
   font-size: 1.125rem !important;
   font-weight: 600 !important;
-  line-height: 1.5 !important;
+  line-height: 1.45 !important;
   margin-top: 1.25rem !important;
   margin-bottom: 0.5rem !important;
   color: var(--foreground) !important;
@@ -536,6 +733,7 @@ body {
 .prose p {
   margin-top: 1.25em !important;
   margin-bottom: 1.25em !important;
+  color: var(--foreground-muted);
 }
 
 /* Links */
@@ -543,12 +741,13 @@ body {
   color: var(--mesh-accent) !important;
   text-decoration: none !important;
   font-weight: 500 !important;
-  transition: color var(--transition-fast);
+  border-bottom: 1px solid rgba(0, 212, 170, 0.35);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .prose a:hover {
   color: var(--mesh-accent-light) !important;
-  text-decoration: underline !important;
+  border-bottom-color: var(--mesh-accent-light);
 }
 
 /* Strong/Bold */
@@ -582,6 +781,7 @@ body {
   margin-bottom: 0.5em !important;
   padding-left: 0.25rem !important;
   display: list-item !important;
+  color: var(--foreground-muted);
 }
 
 .prose li::marker {
@@ -599,19 +799,21 @@ body {
 
 /* Code */
 .prose code {
-  background: var(--night-sky-800);
+  background: var(--night-sky-700);
   color: var(--mesh-accent-light);
-  padding: 0.2em 0.4em;
+  padding: 0.15em 0.4em;
   border-radius: var(--radius-sm);
   font-size: 0.875em;
   font-family: var(--font-mono);
+  border: 1px solid var(--card-border);
 }
 
 .prose pre {
-  background: var(--night-sky-900);
-  color: var(--snow-white-100);
+  background: var(--night-sky-950);
+  color: var(--ops-text);
   padding: 1rem 1.25rem;
   border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
   overflow-x: auto;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -622,11 +824,12 @@ body {
   padding: 0;
   border-radius: 0;
   font-size: 0.875rem;
+  border: none;
 }
 
 /* Blockquotes */
 .prose blockquote {
-  border-left: 4px solid var(--mesh-accent);
+  border-left: 3px solid var(--mesh-accent);
   padding-left: 1rem;
   margin: 1.5rem 0;
   font-style: italic;
@@ -646,6 +849,7 @@ body {
   height: auto;
   border-radius: var(--radius-lg);
   margin: 1.5rem 0;
+  border: 1px solid var(--card-border);
 }
 
 /* Tables */
@@ -657,21 +861,26 @@ body {
 }
 
 .prose th {
-  background: var(--night-sky-800);
-  color: var(--snow-white-100);
+  background: var(--night-sky-700);
+  color: var(--foreground);
   font-weight: 600;
   text-align: left;
   padding: 0.75rem 1rem;
   border: 1px solid var(--card-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .prose td {
   padding: 0.75rem 1rem;
   border: 1px solid var(--card-border);
+  color: var(--foreground-muted);
 }
 
 .prose tr:nth-child(even) {
-  background: var(--background-secondary);
+  background: rgba(15, 29, 46, 0.4);
 }
 
 /* Prose size variants */

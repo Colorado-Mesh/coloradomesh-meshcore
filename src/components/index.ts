@@ -1,6 +1,16 @@
 export { default as Navigation } from './Navigation';
 export { default as MobileMenu } from './MobileMenu';
 export { default as Footer } from './Footer';
+export {
+  BrandMark,
+  TopoBackground,
+  SectionEyebrow,
+  HeroPanel,
+  MetricStrip,
+  ToolCard,
+  NetworkPanel,
+} from './brand';
+export type { MetricItem } from './brand';
 export { default as JsonLd } from './JsonLd';
 export { StatsSection } from './StatsSection';
 export { ObserverStats } from './ObserverStats';

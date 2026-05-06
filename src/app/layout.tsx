@@ -65,11 +65,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/win/colorado-mesh.ico", sizes: "any" },
+      { url: "/brand/linux/16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/brand/linux/32x32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/brand/linux/256x256.png",
   },
   manifest: "/manifest.json",
   alternates: {

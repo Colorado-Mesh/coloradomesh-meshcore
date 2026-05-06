@@ -26,8 +26,8 @@ export const BRAND = {
   meshcoreDocsUrl: 'https://meshcore.co',
   letsMeshUrl: 'https://letsmesh.net',
   githubOrgUrl: 'https://github.com/Colorado-Mesh',
-  logoPath: '/logo-512.png',
-  iconPath: '/favicon.ico',
+  logoPath: '/brand/linux/256x256.png',
+  iconPath: '/brand/win/colorado-mesh.ico',
 } as const;
 
 // =============================================================================
