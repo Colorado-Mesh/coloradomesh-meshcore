@@ -1,0 +1,59 @@
+{
+  "verdict": "APPROVED",
+  "blocking_issues": 0,
+  "reviewed_files": [
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-8-plan.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.dockerignore",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.env.example",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.gitignore",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/CONTRIBUTING.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/Dockerfile",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/README.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/compose.yaml",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/netlify.toml",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/next.config.js",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/_headers",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/package.json"
+  ],
+  "diff_basis": "provided_list",
+  "plan_section": "Step 8: Docker-primary runtime, Compose examples, and migrated headers",
+  "dimensions": {
+    "plan_alignment": {
+      "score": "PASS",
+      "notes": "Changes align with Step 8: standalone output is enabled, Dockerfile and Compose are added, environment examples are documented, Netlify is marked legacy, and existing docs are updated without adding extra documentation files."
+    },
+    "correctness_safety": {
+      "score": "FLAG",
+      "notes": "Docker runtime uses a non-root user and does not bake secrets into the image. Security headers are migrated to Next config. Minor CSP note: connect-src is static and may need future expansion if browser-side WebSocket/MQTT origins become runtime-configurable."
+    },
+    "code_quality": {
+      "score": "PASS",
+      "notes": "Configuration is straightforward, readable, and follows existing project style. Dockerfile stages and Compose service are simple and maintainable."
+    },
+    "completeness": {
+      "score": "PASS",
+      "notes": "Acceptance criteria are satisfied based on reported verification: build, standalone output, Docker build, Compose config, container route smoke tests, and header checks passed."
+    },
+    "patterns": {
+      "score": "PASS",
+      "notes": "Implementation follows the planned Docker-primary architecture while preserving Netlify only as a legacy/secondary configuration."
+    },
+    "integration": {
+      "score": "PASS",
+      "notes": "The Docker image runs the Next standalone server on port 3000, Compose passes runtime configuration, and the documented API/runtime behavior matches the current supported map endpoints."
+    }
+  },
+  "flags": [
+    {
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/next.config.js",
+      "line": 17,
+      "note": "CSP connect-src is fixed to known hosts. If a later step adds browser-side WebSocket/MQTT or arbitrary runtime provider URLs, update this policy or move CSP ownership to a runtime-aware proxy."
+    },
+    {
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/compose.yaml",
+      "line": 8,
+      "note": "Compose uses explicit environment interpolation from .env, which satisfies current runtime configuration needs. If literal Compose env_file semantics are desired, add an env_file entry in a future polish pass."
+    }
+  ]
+}

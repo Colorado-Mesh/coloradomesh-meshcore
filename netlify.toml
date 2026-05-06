@@ -1,40 +1,28 @@
-# Netlify configuration for Colorado MeshCore Community Platform
-# Uses Next.js 16+ with App Router
+# Legacy Netlify configuration for Colorado MeshCore.
+# Docker is the primary runtime; keep this file only for secondary Netlify previews.
 
 [build]
-  # Build command for Next.js - use npm ci for clean install
   command = "npm ci && npm run build"
-  # Publish directory for Next.js with Netlify
   publish = ".next"
 
 [build.environment]
-  # Use Node.js 24
   NODE_VERSION = "24"
-  # Ensure npm version compatibility
   NPM_VERSION = "10"
-  # Skip dependency cache to ensure fresh install
   NPM_FLAGS = "--prefer-offline=false"
 
-# Netlify Next.js Runtime (automatically detected, but explicit is better)
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Security and caching headers
 [[headers]]
   for = "/*"
   [headers.values]
-    # Security headers
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    # HSTS - enforce HTTPS
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    # Content Security Policy - production hardened
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.letsmesh.net https://*.mapbox.com https://*.supabase.co wss://*.supabase.co https://*.basemaps.cartocdn.com https://*.carto.com; frame-ancestors 'none';"
 
-# Cache static assets aggressively
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
@@ -44,6 +32,7 @@
   for = "/fonts/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+    Access-Control-Allow-Origin = "*"
 
 [[headers]]
   for = "/images/*"
@@ -55,15 +44,11 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
 
-# API routes - allow CDN caching with short TTL
-# Let the API routes control their own Cache-Control headers (s-maxage, stale-while-revalidate)
-# This enables Netlify's edge cache to reduce function invocations
 [[headers]]
   for = "/api/*"
   [headers.values]
     Cache-Control = "public, max-age=0, s-maxage=30, stale-while-revalidate=60"
 
-# Preview context - clear cache to avoid stale artifacts
 [context.deploy-preview]
   command = "rm -rf .next && npm ci && npm run build"
   [context.deploy-preview.environment]
@@ -74,26 +59,14 @@
   [context.branch-deploy.environment]
     NODE_ENV = "production"
 
-# Production context - clear cache to avoid stale artifacts
 [context.production]
   command = "rm -rf .next && npm ci && npm run build"
   [context.production.environment]
     NODE_ENV = "production"
 
-# Redirects for common patterns
 [[redirects]]
   from = "/home"
   to = "/"
   status = 301
 
-# Let Next.js handle all routing and 404s - don't add catch-all redirects
-
-# Edge Functions configuration (if needed in future)
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-# Form handling (if needed)
-# Uncomment if using Netlify Forms
-# [[plugins]]
-#   package = "@netlify/plugin-form-detector"
+# Let Next.js handle all other routing and 404s.

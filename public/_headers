@@ -1,38 +1,31 @@
-# Netlify _headers file for Colorado MeshCore Community Platform
-# These headers supplement netlify.toml headers
+# Legacy Netlify _headers file for Colorado MeshCore.
+# Docker/standalone runtime headers are defined in next.config.js.
 
-# Global security headers
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
-  X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
-# Static assets - aggressive caching
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Images
 /images/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# Fonts
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
   Access-Control-Allow-Origin: *
 
-# API routes - no caching
 /api/*
-  Cache-Control: no-store, no-cache, must-revalidate
+  Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60
 
-# Favicon and app icons
 /favicon.ico
   Cache-Control: public, max-age=86400
 
 /*.png
   Cache-Control: public, max-age=86400
 
-# SVG files
 /*.svg
   Cache-Control: public, max-age=604800
   Content-Type: image/svg+xml

@@ -17,7 +17,7 @@ Colorado MeshCore is the public website for Colorado Mesh's MeshCore community. 
 | Styling | Tailwind CSS 4 | Utility-first styling |
 | Maps | Leaflet, react-leaflet | Interactive network visualization |
 | Content | MDX | Blog and guide content |
-| Runtime | Node.js 24 | Development and production server |
+| Runtime | Node.js 24, Docker | Development and production server |
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ Colorado MeshCore is the public website for Colorado Mesh's MeshCore community. 
 - Node.js 24 or later, matching the `package.json` engine range
 - npm
 
-### Install and run
+### Install and run locally
 
 ```bash
 npm install
@@ -42,6 +42,38 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+## Docker Runtime
+
+Build and run the standalone Docker image:
+
+```bash
+docker build -t colorado-meshcore-site:local .
+docker run --rm -p 3000:3000 --env-file .env.example colorado-meshcore-site:local
+```
+
+Or run with Compose:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The container listens on port `3000` and defaults to sample map data when MQTT settings are not configured. Runtime settings are provided through environment variables; secrets should stay in `.env` or the deployment environment, not in the image.
+
+## Runtime Environment
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SITE_URL` | No | Public site URL for metadata and canonical links. |
+| `NEXT_PUBLIC_MAP_TILE_URL` | No | Leaflet tile URL template. |
+| `MESHCORE_MAP_SAMPLE_DATA` | No | Use bundled sample data when MQTT is not configured. |
+| `MESHCORE_MQTT_URL` | No | Optional MQTT broker URL for live map ingestion. |
+| `MESHCORE_MQTT_USERNAME` | No | Optional MQTT username. |
+| `MESHCORE_MQTT_PASSWORD` | No | Optional MQTT password. |
+| `MESHCORE_MQTT_TOPIC` | No | MQTT topic filter; defaults to `meshcore/#`. |
+| `MESHCORE_MQTT_CLIENT_ID` | No | MQTT client ID. |
+| `MESHCORE_MAP_HISTORY_ENABLED` | No | Reserved flag for future map history support. |
 
 ## API Overview
 
@@ -69,7 +101,9 @@ denvermc-org/
 │   ├── components/             # React components
 │   ├── hooks/                  # Custom React hooks
 │   └── lib/                    # Shared constants, map contracts, and utilities
-├── next.config.ts
+├── compose.yaml                # Local Docker Compose service
+├── Dockerfile                  # Production standalone image
+├── next.config.js
 └── package.json
 ```
 

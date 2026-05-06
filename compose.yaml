@@ -1,0 +1,32 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${IMAGE_NAME:-colorado-meshcore-site}:local
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_MAP_TILE_URL: ${NEXT_PUBLIC_MAP_TILE_URL:-https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png}
+      MESHCORE_MAP_SAMPLE_DATA: ${MESHCORE_MAP_SAMPLE_DATA:-true}
+      MESHCORE_MAP_HISTORY_ENABLED: ${MESHCORE_MAP_HISTORY_ENABLED:-false}
+      MESHCORE_MQTT_URL: ${MESHCORE_MQTT_URL:-}
+      MESHCORE_MQTT_USERNAME: ${MESHCORE_MQTT_USERNAME:-}
+      MESHCORE_MQTT_PASSWORD: ${MESHCORE_MQTT_PASSWORD:-}
+      MESHCORE_MQTT_TOPIC: ${MESHCORE_MQTT_TOPIC:-meshcore/#}
+      MESHCORE_MQTT_CLIENT_ID: ${MESHCORE_MQTT_CLIENT_ID:-colorado-meshcore-site}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:3000/api/map/stats').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
