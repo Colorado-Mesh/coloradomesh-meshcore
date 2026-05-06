@@ -1,6 +1,23 @@
+export type {
+  MapBattery,
+  MapConnectionState,
+  MapConnectionStatus,
+  MapCoordinates,
+  MapLink,
+  MapNode,
+  MapNodeRole,
+  MapNodeStatus,
+  MapRadioMetrics,
+  MapRoute,
+  MapSnapshot,
+  MapSnapshotSource,
+  MapSnapshotSourceType,
+  MapStats,
+} from './map';
+
 /**
- * TypeScript types for Denver MeshCore Community Platform
- * These types align with the Turso database schema
+ * TypeScript types for Colorado MeshCore Community Platform
+ * These legacy types align with the Turso database schema.
  */
 
 // =============================================================================
