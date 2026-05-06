@@ -18,7 +18,10 @@ Validate the redesigned Colorado MeshCore site across automated checks, browser 
 - `.forge/steps/step-10-plan.md` — record Step 10 execution and any discovered fixes before editing.
 - `src/lib/utils.ts` — remove stale Denver MeshCore wording from a file header comment.
 - `src/lib/data/landmarks.ts` — update the stale naming-standard comment to Colorado MeshCore.
-- Additional files only if validation reveals integration defects that are in scope for Step 10.
+- `src/lib/map/store.ts` — replace the configured-MQTT placeholder with a lazy MQTT-backed snapshot adapter that caches normalized node data from configured broker/topic messages.
+- `src/app/api/map/nodes/route.ts` — force Node.js dynamic runtime for MQTT-backed runtime configuration.
+- `src/app/api/map/stats/route.ts` — force Node.js dynamic runtime for MQTT-backed runtime configuration.
+- `.github/workflows/docker-release.yml` — correct the OCI image license label so the release image metadata does not claim MIT for GPL-derived map work.
 
 ## Ordered Implementation Checklist
 1. Write this focused Step 10 execution plan from the master plan and current code observations.
@@ -29,8 +32,11 @@ Validate the redesigned Colorado MeshCore site across automated checks, browser 
 6. Start the Docker runtime and repeat golden-path browser/API validation against the container-served app.
 7. Inspect browser console and network output for hydration errors, missing assets, blocked CSP, failed map/API requests, or unexpected legacy endpoint calls.
 8. Fix only integration defects discovered by validation, updating this plan before any additional file edits.
-9. Stage Step 10 files, request Forge review, save `.forge/reviews/claude-step-10.json`, and commit if approved.
-10. Run final full-project Claude review, save `.forge/reviews/final-claude-review.json`, and address blockers if any.
+9. Address final review FIX-1 by implementing lazy MQTT ingestion in `src/lib/map/store.ts`: connect only when MQTT is configured and sample data is off, subscribe to the configured topic, normalize JSON payloads into `MapNode` records, cache latest nodes in memory, merge incremental per-node messages without discarding unrelated cached nodes, and report connection/message state through `MapSnapshot.connection` and `MapStats.connectionState`.
+10. Address final review FIX-2 by replacing the release workflow OCI license label with a GPL-compatible SPDX expression for the distributed image.
+11. Address focused re-review feedback by including the MQTT password in the config key so credential changes recreate the client.
+12. Re-run automated checks and targeted MQTT-config smoke checks.
+13. Stage Step 10 files, request Forge re-review/final review, save updated review artifacts, and commit if approved.
 
 ## Interfaces and Data Contracts
 - Supported public live-data endpoints remain `GET /api/map/nodes` and `GET /api/map/stats`.

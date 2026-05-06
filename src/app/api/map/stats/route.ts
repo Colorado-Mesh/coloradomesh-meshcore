@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getMapStats } from '@/lib/map';
 import type { ApiResponse, MapStats } from '@/lib/types';
 
-export const revalidate = 10;
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
