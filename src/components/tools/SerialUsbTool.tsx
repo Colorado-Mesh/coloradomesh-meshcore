@@ -10,6 +10,10 @@ import {
   type SerialActionStep,
   type SerialLineEnding,
 } from '@/lib/tools/serial-commands';
+import {
+  buildSerialSettingsPlan,
+  type SerialSettingsPlanResult,
+} from '@/lib/meshcore-tools/serial-settings';
 
 type SerialPortReadyState = 'opened' | 'closed';
 
@@ -84,6 +88,8 @@ export default function SerialUsbTool() {
     PROFILE.serial.defaultLineEnding
   );
   const [manualInput, setManualInput] = useState('');
+  const [settingsInput, setSettingsInput] = useState('');
+  const [settingsFileName, setSettingsFileName] = useState<string | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [runningActionId, setRunningActionId] = useState<string | null>(null);
 
@@ -301,6 +307,32 @@ export default function SerialUsbTool() {
     if (ok) setManualInput('');
   }, [connection, lineEnding, manualInput, sendCommand]);
 
+  const settingsResult = useMemo<SerialSettingsPlanResult | null>(() => {
+    if (!settingsInput.trim()) return null;
+    return buildSerialSettingsPlan(settingsInput);
+  }, [settingsInput]);
+
+  const handleSettingsFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      try {
+        const text = await file.text();
+        setSettingsInput(text);
+        setSettingsFileName(file.name);
+      } catch (err) {
+        appendLog('error', `Could not read settings file: ${(err as Error).message}`);
+      }
+    },
+    [appendLog]
+  );
+
+  const handleSettingsClear = useCallback(() => {
+    setSettingsInput('');
+    setSettingsFileName(null);
+  }, []);
+
   const runAction = useCallback(
     async (action: SerialAction) => {
       if (connection !== 'connected' || runningActionId) return;
@@ -513,6 +545,164 @@ export default function SerialUsbTool() {
             );
           })}
         </div>
+      </div>
+
+      <div className="card-mesh p-5 space-y-3" data-testid="serial-settings-card">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Apply settings JSON</h3>
+          <span className="text-xs text-foreground-dim mono uppercase tracking-wider">
+            {settingsResult?.ok
+              ? `Preview · ${settingsResult.action.steps.length} step${
+                  settingsResult.action.steps.length === 1 ? '' : 's'
+                }`
+              : settingsResult && !settingsResult.ok
+                ? 'Errors'
+                : 'Idle'}
+          </span>
+        </div>
+        <p className="text-xs text-foreground-dim">
+          Paste a MeshCore settings JSON (or upload a <code className="text-mesh">.json</code> file) to
+          preview the exact serial commands that would be sent. Nothing is transmitted until you click
+          <strong className="text-foreground"> Apply previewed settings</strong> and confirm.
+        </p>
+
+        <textarea
+          value={settingsInput}
+          onChange={(e) => {
+            setSettingsInput(e.target.value);
+            if (settingsFileName) setSettingsFileName(null);
+          }}
+          placeholder={'{\n  "name": "DEN-GLDN-LKVST-RC-A10F",\n  "node_type": "RC",\n  ...\n}'}
+          spellCheck={false}
+          rows={6}
+          data-testid="serial-settings-input"
+          aria-label="MeshCore settings JSON"
+          className="w-full bg-night-800/50 border border-card-border rounded-lg px-3 py-2 text-foreground font-mono text-xs leading-relaxed focus:ring-2 focus:ring-mesh focus:border-mesh outline-none placeholder:text-foreground-muted/40"
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="btn-outline cursor-pointer inline-flex items-center">
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={handleSettingsFileSelect}
+              data-testid="serial-settings-file"
+              className="sr-only"
+            />
+            Upload JSON…
+          </label>
+          <button
+            type="button"
+            onClick={handleSettingsClear}
+            disabled={!settingsInput && !settingsFileName}
+            className="btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Clear
+          </button>
+          {settingsFileName && (
+            <span className="text-xs text-foreground-muted mono truncate max-w-[16rem]">
+              {settingsFileName}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (settingsResult?.ok) void runAction(settingsResult.action);
+            }}
+            disabled={
+              connection !== 'connected' ||
+              !settingsResult?.ok ||
+              !!runningActionId
+            }
+            data-testid="serial-settings-apply"
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed sm:ml-auto"
+          >
+            {runningActionId === 'apply-settings-json'
+              ? 'Applying…'
+              : 'Apply previewed settings'}
+          </button>
+        </div>
+
+        {settingsResult && !settingsResult.ok && (
+          <div
+            data-testid="serial-settings-error"
+            role="alert"
+            className="rounded-lg border border-red-500/40 bg-red-500/5 p-3 text-xs text-red-300 space-y-1"
+          >
+            <p className="font-semibold text-red-200">Cannot apply these settings:</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {settingsResult.errors.map((err, idx) => (
+                <li key={`${idx}-${err}`}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {settingsResult?.ok && (
+          <div data-testid="serial-settings-preview" className="space-y-3">
+            <div className="rounded-lg border border-card-border bg-night-900/60 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-foreground-dim mono mb-2">
+                Command preview
+              </p>
+              <ol className="space-y-0.5 font-mono text-xs">
+                {settingsResult.action.steps.map((step, idx) => (
+                  <li key={idx} className="flex gap-2">
+                    <span className="text-foreground-dim w-6 text-right shrink-0">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    {step.type === 'send' ? (
+                      <span className="text-foreground">
+                        <span className="text-mesh mr-2">→</span>
+                        {step.command}
+                      </span>
+                    ) : (
+                      <span className="text-foreground-muted">
+                        wait {step.durationMs}ms
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {settingsResult.warnings.length > 0 && (
+              <div
+                data-testid="serial-settings-warnings"
+                className="rounded-lg border border-sunset-500/40 bg-sunset-500/5 p-3 text-xs text-foreground-muted space-y-1"
+              >
+                <p className="font-semibold text-foreground">Warnings</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {settingsResult.warnings.map((w, idx) => (
+                    <li key={`${idx}-${w}`}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {settingsResult.unsupportedKeys.length > 0 && (
+              <div
+                data-testid="serial-settings-unsupported"
+                className="rounded-lg border border-card-border bg-night-800/30 p-3 text-xs text-foreground-muted"
+              >
+                <p className="font-semibold text-foreground mb-1">
+                  Keys not auto-applied
+                </p>
+                <p className="font-mono break-all leading-relaxed">
+                  {settingsResult.unsupportedKeys.join(', ')}
+                </p>
+                <p className="text-foreground-dim mt-1">
+                  Review and apply these manually if needed.
+                </p>
+              </div>
+            )}
+
+            {connection !== 'connected' && (
+              <p className="text-xs text-foreground-dim">
+                Connect a device above to enable Apply.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="card-mesh p-0 overflow-hidden">

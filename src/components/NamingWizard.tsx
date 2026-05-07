@@ -164,18 +164,14 @@ export default function NamingWizard() {
     setLookupResult(null);
 
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressInput)}&countrycodes=us&limit=1`,
-        { headers: { "User-Agent": "ColoradoMeshCore-NamingWizard/1.0" } }
-      );
-      const data = await res.json();
-      if (!data.length) {
-        setLookupError("Location not found. Try a more specific address.");
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(addressInput)}`);
+      const body = await res.json();
+      if (!res.ok || !body.success || !body.data) {
+        setLookupError(body.error || "Location not found. Try a more specific address.");
         return;
       }
-      const { lat, lon } = data[0];
-      const userLat = parseFloat(lat);
-      const userLng = parseFloat(lon);
+      const userLat = body.data.lat;
+      const userLng = body.data.lon;
 
       // Find nearest airport
       let nearest = airports[0];
@@ -298,7 +294,7 @@ export default function NamingWizard() {
             <p className="text-xs text-red-500 mt-2">{lookupError}</p>
           )}
           <p className="text-[10px] text-foreground-muted/50 mt-2">
-            Your address is sent to OpenStreetMap&apos;s Nominatim service to find coordinates. No data is stored — it is only used for this lookup.
+            Your address is sent through this site&apos;s geocode proxy to OpenStreetMap&apos;s Nominatim service only when you click lookup. No data is stored.
           </p>
         </div>
       </div>

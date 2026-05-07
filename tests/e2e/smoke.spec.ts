@@ -20,6 +20,32 @@ test.describe('critical page smoke', () => {
     await expect(diagnostics).toBeVisible({ timeout: 15_000 });
   });
 
+  test('serial-usb tool previews settings JSON and disables Apply without a connection', async ({ page }) => {
+    await page.goto('/tools/serial-usb');
+    await expect(page.getByRole('heading', { name: /USB serial/i })).toBeVisible();
+
+    const input = page.getByTestId('serial-settings-input');
+    await expect(input).toBeVisible();
+
+    const settingsJson = JSON.stringify({
+      name: 'DEN-GLDN-LKVST-RC-A10F',
+      radio_settings: { tx_power: 22 },
+    });
+    await input.fill(settingsJson);
+
+    const preview = page.getByTestId('serial-settings-preview');
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText('set name DEN-GLDN-LKVST-RC-A10F');
+    await expect(preview).toContainText('set tx 22');
+
+    const apply = page.getByTestId('serial-settings-apply');
+    await expect(apply).toBeDisabled();
+
+    await input.fill('{not json');
+    await expect(page.getByTestId('serial-settings-error')).toBeVisible();
+    await expect(apply).toBeDisabled();
+  });
+
   test('prefix-matrix page exposes search, suggestion, and 4-char grid', async ({ page }) => {
     await page.goto('/tools/prefix-matrix');
     await expect(page.getByRole('heading', { name: /prefix matrix/i })).toBeVisible();

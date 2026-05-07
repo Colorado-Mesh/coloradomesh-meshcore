@@ -123,10 +123,17 @@ export const PARITY_MANIFEST: ParityItem[] = [
         path: 'src/lib/parity/fixtures/utilities/serial_commands.schema.json',
       },
     ],
-    local: ['src/components/tools/SerialUsbTool.tsx', 'src/lib/tools/serial-commands.ts'],
-    status: 'planned',
-    coverage: [],
-    notes: 'Add preview and explicit confirmations before settings-derived commands are sent to hardware.',
+    local: [
+      'src/components/tools/SerialUsbTool.tsx',
+      'src/lib/tools/serial-commands.ts',
+      'src/lib/meshcore-tools/serial-settings.ts',
+    ],
+    status: 'implemented',
+    coverage: [
+      { type: 'unit', ref: 'src/lib/meshcore-tools/__tests__/serial-settings.test.ts' },
+      { type: 'e2e', ref: 'tests/e2e/smoke.spec.ts (/tools/serial-usb)' },
+    ],
+    notes: 'Settings JSON can be pasted or uploaded for an explicit command preview and confirmation-gated apply flow. Only locally documented name/radio write commands are auto-applied; node type, role, region, owner info, companion metadata, and other unverified keys remain visible as unsupported manual-review fields.',
   },
   {
     id: 'live-map-service-api-consumer',
