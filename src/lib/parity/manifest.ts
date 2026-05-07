@@ -117,14 +117,19 @@ export const PARITY_MANIFEST: ParityItem[] = [
     ],
     local: [
       'src/lib/map/store.ts',
+      'src/lib/live-map/client.ts',
       'src/app/api/map/snapshot/route.ts',
       'src/app/api/map/runtime/route.ts',
       'src/app/api/map/nodes/route.ts',
       'src/app/api/map/stats/route.ts',
+      'src/app/api/live-map/*/route.ts',
     ],
-    status: 'partial',
-    coverage: [{ type: 'unit', ref: 'src/lib/map/__tests__/store.test.ts' }],
-    notes: 'Current site exposes canonical snapshot/runtime contracts with bearer-auth live-map fetches; planned work adds advanced proxy routes.',
+    status: 'implemented',
+    coverage: [
+      { type: 'unit', ref: 'src/lib/map/__tests__/store.test.ts' },
+      { type: 'unit', ref: 'src/lib/live-map/__tests__/client.test.ts' },
+    ],
+    notes: 'Current site exposes canonical snapshot/runtime contracts plus server-side advanced HTTP proxy routes with bearer-auth upstream fetches; WebSocket, debug, and Turnstile upstream routes are intentionally deferred.',
   },
   {
     id: 'live-map-full-in-site-ui',
@@ -155,8 +160,11 @@ export const PARITY_MANIFEST: ParityItem[] = [
     ],
     local: ['Dockerfile', 'compose.yaml', '.env.example'],
     status: 'partial',
-    coverage: [{ type: 'ci', ref: '.github/workflows/ci.yml docker-build' }],
-    notes: 'Current Docker build exists; planned work adds opt-in sidecar profile and runtime smoke.',
+    coverage: [
+      { type: 'ci', ref: '.github/workflows/ci.yml docker-build' },
+      { type: 'manual', ref: 'docker compose --profile live-map config' },
+    ],
+    notes: 'Current Docker build exists and Compose now includes an opt-in live-map sidecar profile; Step 8 adds blocking Docker runtime smoke.',
   },
   {
     id: 'ci-pr-quality-gates',

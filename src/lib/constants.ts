@@ -70,6 +70,14 @@ export const API_ROUTES = {
   MAP_NODES: '/api/map/nodes',
   MAP_STATS: '/api/map/stats',
   MAP_STREAM: '/api/map/stream',
+  LIVE_MAP_STATUS: '/api/live-map/status',
+  LIVE_MAP_SNAPSHOT: '/api/live-map/snapshot',
+  LIVE_MAP_STATS: '/api/live-map/stats',
+  LIVE_MAP_NODES: '/api/live-map/nodes',
+  LIVE_MAP_COVERAGE: '/api/live-map/coverage',
+  LIVE_MAP_LOS: '/api/live-map/los',
+  LIVE_MAP_LOS_ELEVATIONS: '/api/live-map/los/elevations',
+  LIVE_MAP_WEATHER_RADAR_COUNTRY_BOUNDS: '/api/live-map/weather/radar/country-bounds',
 } as const;
 
 // =============================================================================

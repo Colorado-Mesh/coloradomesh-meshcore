@@ -1,4 +1,32 @@
+# To use the optional live-map sidecar profile, set:
+# MESHCORE_LIVE_MAP_API_URL=http://live-map:8080/api/nodes
+# MESHCORE_LIVE_MAP_API_TOKEN=<shared token>
+# The sidecar runs PROD_MODE=true by default and is not published to the host.
 services:
+  live-map:
+    profiles:
+      - live-map
+    image: ${LIVE_MAP_IMAGE:-meshcore-mqtt-live-map:local}
+    environment:
+      PROD_MODE: ${LIVE_MAP_PROD_MODE:-true}
+      PROD_TOKEN: ${MESHCORE_LIVE_MAP_API_TOKEN:-}
+      MQTT_HOST: ${LIVE_MAP_MQTT_HOST:-localhost}
+      MQTT_PORT: ${LIVE_MAP_MQTT_PORT:-1883}
+      MQTT_USERNAME: ${LIVE_MAP_MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${LIVE_MAP_MQTT_PASSWORD:-}
+      MQTT_TRANSPORT: ${LIVE_MAP_MQTT_TRANSPORT:-tcp}
+      MQTT_WS_PATH: ${LIVE_MAP_MQTT_WS_PATH:-/mqtt}
+      MQTT_TLS: ${LIVE_MAP_MQTT_TLS:-false}
+      MQTT_TOPIC: ${LIVE_MAP_MQTT_TOPIC:-meshcore/#}
+      ROUTE_INFRA_ONLY: ${LIVE_MAP_ROUTE_INFRA_ONLY:-true}
+      COVERAGE_API_URL: ${LIVE_MAP_COVERAGE_API_URL:-}
+      COVERAGE_API_KEY: ${LIVE_MAP_COVERAGE_API_KEY:-}
+      WEATHER_RADAR_ENABLED: ${LIVE_MAP_WEATHER_RADAR_ENABLED:-true}
+      WEATHER_RADAR_COUNTRY_BOUNDS_ENABLED: ${LIVE_MAP_WEATHER_RADAR_COUNTRY_BOUNDS_ENABLED:-false}
+    volumes:
+      - live-map-data:/data
+    restart: unless-stopped
+
   web:
     build:
       context: .
@@ -23,6 +51,8 @@ services:
       MESHCORE_LIVE_MAP_API_URL: ${MESHCORE_LIVE_MAP_API_URL:-}
       MESHCORE_LIVE_MAP_API_TOKEN: ${MESHCORE_LIVE_MAP_API_TOKEN:-}
       MESHCORE_LIVE_MAP_API_REFRESH_SECONDS: ${MESHCORE_LIVE_MAP_API_REFRESH_SECONDS:-30}
+      MESHCORE_LIVE_MAP_PROXY_TIMEOUT_MS: ${MESHCORE_LIVE_MAP_PROXY_TIMEOUT_MS:-8000}
+      MESHCORE_LIVE_MAP_PROXY_MAX_RESPONSE_BYTES: ${MESHCORE_LIVE_MAP_PROXY_MAX_RESPONSE_BYTES:-2000000}
       MESHCORE_MQTT_URL: ${MESHCORE_MQTT_URL:-}
       MESHCORE_MQTT_USERNAME: ${MESHCORE_MQTT_USERNAME:-}
       MESHCORE_MQTT_PASSWORD: ${MESHCORE_MQTT_PASSWORD:-}
@@ -38,3 +68,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+volumes:
+  live-map-data:

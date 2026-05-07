@@ -124,8 +124,10 @@ function buildMapFeatures(config: Pick<MapRuntimeConfig, 'liveMapApiConfigured'>
     {
       id: 'advanced-live-map-proxy',
       label: 'Advanced live-map operator endpoints',
-      status: 'deferred',
-      message: 'Advanced live-map proxy endpoints are planned for the next implementation step.',
+      status: config.liveMapApiConfigured ? 'available' : 'unavailable',
+      message: config.liveMapApiConfigured
+        ? 'Advanced live-map proxy endpoints are configured.'
+        : 'Configure MESHCORE_LIVE_MAP_API_URL to enable advanced live-map proxy endpoints.',
     },
   ];
 }
