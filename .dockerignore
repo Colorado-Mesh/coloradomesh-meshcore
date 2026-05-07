@@ -1,5 +1,6 @@
 .claude
 .forge
+.forge.bak.*
 .git
 .github
 .next
@@ -8,6 +9,10 @@ coverage
 node_modules
 out
 build
+playwright-report
+playwright/.cache
+test-results
+.lighthouseci
 *.log
 npm-debug.log*
 yarn-debug.log*

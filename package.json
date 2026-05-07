@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test --grep @a11y",
+    "test:lighthouse": "lhci autorun"
   },
   "engines": {
     "node": ">=24 <26"
@@ -40,5 +45,17 @@
   },
   "overrides": {
     "postcss": "8.5.14"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "ajv": "^8.20.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.5",
+    "zod": "^4.4.3"
   }
 }

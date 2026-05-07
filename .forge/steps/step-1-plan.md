@@ -1,56 +1,58 @@
-# Step 1 Execution Plan: Brand foundation, runtime configuration, and URL baseline
+# Step 1 Execution Plan: Test, validation, and parity-manifest foundation
 
 ## Goal
-Establish Colorado MeshCore brand/runtime constants, update app-shell metadata and generated discovery files, move CI/security runtime declarations to Node 24, and add a reusable typecheck script.
+Add the tooling and machine-readable parity foundation that later Forge steps can use to prove upstream utility/live-map coverage and enforce quality checks.
 
 ## Current Code Observations
-- `src/lib/constants.ts` is the main shared constants file but still identifies the app as Denver MeshCore, uses `https://denvermc.com`, points GitHub to a personal account, and names the bot as `denvermc.com BOT`.
-- `src/app/layout.tsx` hard-codes Denver MeshCore in metadata, OpenGraph, Twitter handles, author/publisher fields, and logo alt text instead of consuming constants.
-- `src/components/JsonLd.tsx` hard-codes Denver MeshCore organization/community names, Discord URL, logo path, and Denver-specific schema comments.
-- `src/app/sitemap.ts` uses `BASE_URL` correctly but still includes `/observer`; full removal is Step 7, so this step will not remove it yet.
-- `src/app/feed.xml/route.ts`, `public/manifest.json`, `public/robots.txt`, `public/_headers`, and `netlify.toml` contain stale Denver naming or `denvermc.com` URLs.
-- `.github/workflows/ci.yml` and `.github/workflows/security.yml` both use `node-version: '20'`.
-- `package.json` lacks a `typecheck` script and an `engines.node` declaration; local Node is `v25.8.2`, which satisfies the planned `>=24 <26` range.
-- Broad grep shows many Denver references in pages/content that are intentionally covered by later content redesign/rebrand steps, not this foundation step.
+- `package.json` currently has `dev`, `build`, `start`, `lint`, and `typecheck` scripts, but no test, Playwright, Lighthouse, or accessibility scripts.
+- Existing dependencies include Next 16, React 19, TypeScript, Leaflet, MQTT, and `tsx`, but no Vitest, Playwright, axe, Lighthouse CI, Zod, or AJV.
+- `.github/workflows/ci.yml` currently runs npm ci, lint, typecheck, and build plus a Docker build smoke in a separate job.
+- `.github/workflows/security.yml` runs `npm audit --audit-level=high`.
+- `.dockerignore` already excludes `.forge`, `.claude`, `.next`, node_modules, env files, logs, and common build artifacts, but not `.forge.bak.*`, Playwright/Lighthouse reports, or test result folders.
+- `tsconfig.json` supports `resolveJsonModule`, so JSON fixtures can be imported directly if needed.
+- Upstream fixture sources are available at `/tmp/meshcore-utilities-site/static/data/*` and `/tmp/meshcore-utilities-site/serial_commands.schema.json`.
 
 ## Files to Change
-- `src/lib/constants.ts` — add central brand/runtime config while preserving existing named exports for current callers.
-- `src/app/layout.tsx` — consume brand constants for metadata/OpenGraph/Twitter/image alt text.
-- `src/components/JsonLd.tsx` — consume brand/link constants for schema data and remove Denver-specific schema strings.
-- `src/app/feed.xml/route.ts` — use shared description/community naming.
-- `public/manifest.json` — update PWA app name/short name/description.
-- `public/robots.txt` — update comments and sitemap URL.
-- `public/_headers` — update stale file comment only.
-- `.github/workflows/ci.yml` — update Node 24 and use `npm run typecheck`.
-- `.github/workflows/security.yml` — update Node 24.
-- `netlify.toml` — update stale app comment and Node version to 24 while leaving broader Netlify migration for Docker step.
-- `package.json` — add `typecheck` script and `engines.node`.
-- `package-lock.json` — mirror root package engine metadata if needed.
+- `package.json` — add scripts and dev dependencies for unit/browser/a11y/Lighthouse validation.
+- `package-lock.json` — update after installing dependencies.
+- `vitest.config.ts` — configure unit tests for TS path aliases and Node/jsdom environment as needed.
+- `playwright.config.ts` — configure Chromium smoke/a11y tests against a local Next server.
+- `.lighthouserc.json` — configure blocking Lighthouse CI budgets for critical pages.
+- `.dockerignore` — exclude archived Forge folders and generated test/report artifacts from Docker builds.
+- `src/lib/parity/manifest.ts` — add typed upstream parity manifest.
+- `src/lib/parity/report.ts` — add report helper for maintainer-facing parity summaries.
+- `src/lib/parity/fixtures/*` — add minimal adapted upstream fixture files and provenance metadata.
+- `src/lib/parity/__tests__/manifest.test.ts` — validate manifest and fixture loadability.
+- `tests/e2e/smoke.spec.ts` — add initial Playwright smoke/a11y test scaffold for critical pages.
 
 ## Ordered Implementation Checklist
-1. Rewrite `src/lib/constants.ts` to export `BRAND`, `RUNTIME_ENV`, `API_ROUTES`, and backwards-compatible named constants for existing imports.
-2. Update `src/app/layout.tsx` metadata fields to reference constants and Colorado MeshCore naming.
-3. Update `src/components/JsonLd.tsx` schemas to reference constants for organization/community names, URLs, logos, Discord, and descriptions.
-4. Update feed, manifest, robots, `_headers`, Netlify config, and GitHub workflows for the Step 1 brand/runtime baseline.
-5. Add `typecheck` and `engines.node` to `package.json`, and keep `package-lock.json` root metadata in sync.
-6. Run grep guards for Step 1 stale strings in touched files and leave later-step page/content references untouched.
-7. Run lint, typecheck, and build; fix any Step 1 regressions.
-8. Stage only Step 1 files, request Forge reviewer review, save review JSON, fix findings if needed, then commit.
+1. Install targeted dev/test dependencies and update npm scripts.
+2. Create Vitest config and a first parity manifest test that runs in Node without browser dependencies.
+3. Create Playwright config with a local web server and Chromium-only defaults for now.
+4. Create Lighthouse CI config with stable local URLs and initial budgets that can run locally/CI.
+5. Add parity manifest types/data covering utilities, repeater config, serial USB, PrefixMatrix, live-map API/UI, Docker, and CI.
+6. Add minimal upstream-derived fixtures plus provenance metadata for recommended settings, regions, serial commands/schema, and live-map node payloads.
+7. Add maintainer report helper that produces a markdown/text summary from the manifest without exposing it as public UI.
+8. Update `.dockerignore` for `.forge.bak.*`, Playwright reports, Lighthouse output, coverage, and test-results.
+9. Run lint, typecheck, unit tests, and build; fix Step 1 issues before staging.
 
 ## Interfaces and Data Contracts
-- `BRAND.baseUrl` resolves from `NEXT_PUBLIC_SITE_URL` when set, otherwise `https://meshcore.coloradomesh.org`.
-- Existing imports of `BASE_URL`, `SITE_NAME`, `SITE_TAGLINE`, `SITE_DESCRIPTION`, `DISCORD_INVITE_URL`, `MESHCORE_DOCS_URL`, `LETSMESH_URL`, `GITHUB_ORG_URL`, `API_ROUTES`, and threshold constants remain valid.
-- New runtime env names are exported in `RUNTIME_ENV`: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_MAP_TILE_URL`, `MESHCORE_MQTT_URL`, `MESHCORE_MQTT_USERNAME`, `MESHCORE_MQTT_PASSWORD`, `MESHCORE_MQTT_TOPIC`, `MESHCORE_MQTT_CLIENT_ID`, `MESHCORE_MAP_HISTORY_ENABLED`, and `MESHCORE_MAP_SAMPLE_DATA`.
-- CI/security workflows use Node 24.
-- `npm run typecheck` runs `tsc --noEmit`.
+- `PARITY_MANIFEST` exports a typed list of parity items with `id`, `domain`, `upstream`, `local`, `status`, `coverage`, and `notes` fields.
+- `buildParityReport()` returns a maintainer-facing markdown string from the manifest.
+- `npm run test:unit` runs Vitest.
+- `npm run test:e2e` runs Playwright Chromium smoke tests.
+- `npm run test:a11y` runs the same Playwright suite with axe assertions or an a11y-focused project.
+- `npm run test:lighthouse` runs Lighthouse CI against local URLs.
 
 ## Verification Plan
-- Automated: `npm run lint`, `npm run typecheck`, `npm run build`.
-- Grep: `grep -R "Denver MeshCore\|denvermc.com\|@denver_meshcore\|node-version: '20'\|NODE_VERSION = \"20\"" -n src/lib/constants.ts src/app/layout.tsx src/components/JsonLd.tsx src/app/feed.xml/route.ts public/manifest.json public/robots.txt public/_headers .github/workflows package.json package-lock.json netlify.toml || true`.
-- Manual: No browser validation is required for this foundation-only step; page-source/browser checks are scheduled after visual and route work, but build metadata must compile.
-- Regression: Existing callers of constants must continue compiling without import changes.
+- Automated: `npm run lint`
+- Automated: `npm run typecheck`
+- Automated: `npm run test:unit`
+- Automated: `npm run build`
+- Optional smoke if install completes cleanly: `npx playwright install --with-deps chromium` is CI-oriented and should not be required for unit-only Step 1 verification.
+- Regression: verify `.dockerignore` excludes `.forge.bak.*` and generated reports.
 
 ## Stop Conditions
-- Pause if adding `engines.node >=24 <26` conflicts with installed dependencies during `npm ci`/build.
-- Pause if metadata needs a real social handle that is not known; do not invent a Colorado Mesh social account.
-- Pause if Step 1 changes would require removing `/observer` or legacy APIs, because those are reserved for later steps.
+- Stop and ask before adding broad visual UI changes; this step is foundation only.
+- Stop if dependency installation reveals major version incompatibilities with Next 16/React 19 that would require changing the stack.
+- Stop if Lighthouse/Playwright setup cannot run locally due to platform dependencies; record the limitation and keep configs ready for CI.

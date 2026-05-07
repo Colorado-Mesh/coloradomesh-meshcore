@@ -1,61 +1,54 @@
 # Forge Project
 
 ## Description
-Redesign the entire Denver MeshCore site using `/Users/cjvana/Downloads/meshcore` as strong inspiration while changing branding to Colorado Mesh. The new site URL will be `meshcore.coloradomesh.org` and should use Colorado Mesh logos from `https://github.com/Colorado-Mesh/icons`. Make the webpage Docker-primary, able to run in a Docker container, and add CD for Docker on GitHub releases. Replace the current map and network health metrics with functionality from `https://github.com/yellowcooln/meshcore-mqtt-live-map/`. Research how to integrate `https://github.com/Colorado-Mesh/meshcore-utilities-site` as a submodule or alternative, and replace a lot of the existing tools with those utilities where appropriate.
+Run a fresh hardening and completeness pass on the current Colorado MeshCore site. Make sure all UI/UX makes sense and works properly. Verify that enough useful functionality/content has been brought over from `https://github.com/Colorado-Mesh/meshcore-utilities-site`, including repeater configs from the original repo. Verify the live map is using `https://github.com/yellowcooln/meshcore-mqtt-live-map/` properly. Add any new dependencies or features that make sense, and harden CI.
 
 ## Constraints
-- Site redesign should be inspired by `/Users/cjvana/Downloads/meshcore`, not a direct clone.
-- Branding must change to Colorado Mesh.
-- Use Colorado Mesh logos from `https://github.com/Colorado-Mesh/icons`.
-- New public URL: `meshcore.coloradomesh.org`.
-- Docker should be the primary deployment target.
-- External repo integration approach was researched before deciding implementation direction.
-- Live map and utilities should be ported into the main site experience rather than launched as separate subdomains/services first.
-- Exact public node locations are acceptable for the live map.
-- Docker Compose should support runtime environment-variable configuration.
-- Removed legacy pages should be hard-removed rather than preserved as redirects or archives.
+- This is a fresh Forge run; previous `.forge/` artifacts were archived and must not be reused as the active plan.
+- Treat the current committed codebase as the starting point and audit/improve from there.
+- Do not push, publish images, create releases, or affect shared services without explicit user approval.
+- UI/UX visual implementation in this Codex-backed session must be delegated to native Opus 4.7 xhigh via `co-ui` or `/opus-ui`; this session can handle non-visual code, API, CI, tests, Docker, and verification work.
+- Source repositories to evaluate:
+  - `https://github.com/Colorado-Mesh/meshcore-utilities-site`
+  - `https://github.com/yellowcooln/meshcore-mqtt-live-map/`
 
 ## Context
-- Greenfield/Brownfield: Brownfield existing site redesign and integration project.
-- Platform: Web app/site, Docker container, GitHub Releases CD.
+- Greenfield/Brownfield: Brownfield audit and improvement pass on an existing Next.js site.
+- Platform: Web app/site, Docker runtime, GitHub Actions CI/CD.
 - Deliverable type: hybrid
-- Date: 2026-05-05
+- Date: 2026-05-06
 
 ## Initial Q&A
-1. Deliverable type: Hybrid — code changes plus significant architecture, deployment, and integration documentation.
-2. Redesign approach: Strong inspiration from `/Users/cjvana/Downloads/meshcore`, with Colorado Mesh branding.
-3. Deployment target: Docker primary.
-4. External repo integration approach: Research first.
+1. Pass type: Max parity — audit the current site against upstream utilities and live-map repositories, then pursue as much useful parity as feasible.
+2. UI/UX handling: Delegate visual/frontend aesthetic work to native Opus UI; this Codex-backed session handles non-visual code, APIs, tests, CI, Docker, and verification.
+3. CI scope: Pragmatic hardening — add high-value checks that are fast enough for normal PRs.
 
 ## Follow-up Q&A
-1. Live map routing: Port into site, not subdomain/path proxy as a separate app.
-2. Utilities launch approach: Port utilities into the site.
-3. GPL/live-map strategy: Fork and brand the live map while preserving license compliance.
-4. Logo assets: Authorized to redistribute Colorado Mesh logo assets from `Colorado-Mesh/icons` in this site and Docker images.
-5. Public map privacy: Show all node locations exactly.
-6. MQTT configuration: Use runtime environment configuration for broker URL, topics, and credentials; do not commit secrets.
-7. Existing content: Preserve core docs while rebranding from Denver MeshCore to Colorado MeshCore.
-8. First release topology: Publish a main Docker image and include Docker Compose examples/options for environment variables.
-9. Utilities priority: Port all feasible tools from `meshcore-utilities-site` and replace overlapping current tools.
-10. Network metrics replacement: Use map-derived stats.
-11. Runtime baseline: Use Node 24 LTS/current for Docker and CI unless compatibility testing finds a blocker.
-12. Docker release CD: Publish to GHCR with semver tags and `latest` on GitHub releases.
-13. Branding: Fully rename visible Denver MeshCore branding to Colorado MeshCore.
-14. Browser serial utilities: Include all feasible Web Serial/USB utilities with support/fallback behavior.
-15. Removed URLs: Hard remove old map, observer, and replaced tool routes without redirects.
-16. Primary homepage audience: Balanced between newcomers, operators, and maintainers.
+1. Repeater and companion settings JSON: Implement downloadable MeshCore settings JSON for both repeater and companion tools in this pass.
+2. Utilities repo code/data: Treat `Colorado-Mesh/meshcore-utilities-site` as allowed for direct copying/adaptation where useful.
+3. Live-map experience: Pursue full in-site live-map parity, while still using the upstream live-map service as the decoder/runtime where appropriate.
+4. Production live source: Production will run `meshcore-mqtt-live-map` as a separate sidecar/service, and this site should consume it server-side.
+5. Live-map API token handling: Prefer bearer tokens for protected server-side live-map API access; avoid query-string tokens.
+6. Sample-data production behavior: Keep sample data for demos, but add clear production warnings and CI/runtime smoke guards unless demo mode is explicit.
+7. PrefixMatrix parity: Port full 4-character planning, reserved IDs, and collision severity using current map snapshot data.
+8. Serial settings JSON application: Add guarded serial USB support for uploading/generated settings JSON and turning it into apply-settings commands.
+9. Contacts export: Leave public contacts export out for this pass.
+10. Geocoding/Nominatim: Move location lookup behind a server-side proxy with identifying headers, rate limiting, caching, and no autocomplete.
+11. Advanced live-map feature proxying: Proxy as many upstream live-map endpoints/features as feasible after `/api/nodes` stabilization, including LOS/weather/coverage/WebSocket if practical.
+12. Public runtime configuration: Add a server-provided runtime config endpoint for map tile URL/attribution and public settings that operators expect to change after image build.
+13. PR CI budget: Target about 10 minutes for normal PR checks.
+14. Accessibility/performance checks: Make both axe and Lighthouse CI blocking immediately.
+15. Parity report: Keep upstream parity manifest/report for maintainers only, not public UI.
 
 ## Refined Project Understanding
-The build should produce a Docker-primary Colorado MeshCore Next.js site at `meshcore.coloradomesh.org`. The existing site should be fully rebranded from Denver MeshCore to Colorado MeshCore while preserving useful technical docs and blog content. The visual redesign should draw strong inspiration from the local MeshCore prototype but must use Colorado Mesh assets and should not copy prototype code blindly.
-
-Unlike the research default recommendation of sidecar services, the chosen product direction is deeper integration: fork/brand the GPL live-map project, port live-map functionality into the main site experience, port all feasible utilities from the Colorado Mesh utilities site, and replace legacy map/observer metrics with live-map-derived stats. MQTT and deployment configuration should be runtime-driven through Docker environment variables and Compose examples.
+This fresh pass should treat the current committed Colorado MeshCore site as the baseline and pursue a high-parity hardening increment. The main product work is to close gaps against `meshcore-utilities-site` and `meshcore-mqtt-live-map`: generated repeater and companion settings JSON, full 4-character PrefixMatrix behavior, guarded serial application of settings JSON, production-safe live-map service integration with bearer-token auth, advanced live-map feature proxying where feasible, runtime public map configuration, and stronger UI/UX verification through delegated Opus visual review plus blocking accessibility/performance CI. Contacts export is explicitly out of scope.
 
 ## Decisions Made
-- Main app remains the implementation target for map and tools integration.
-- External live-map code may be forked/branded with GPL compliance rather than avoided.
-- Colorado Mesh icon assets are approved for redistribution in this repo and published images.
-- Public map shows exact locations for all nodes.
-- Runtime configuration is required for MQTT and deployment settings.
-- Node 24 is the desired Docker/CI runtime baseline.
-- Docker/GHCR release CD is required.
-- Old map/observer/replaced tool routes should be removed, not redirected.
+- Max parity is preferred over a minimal audit pass.
+- Direct adaptation from `Colorado-Mesh/meshcore-utilities-site` is allowed where useful.
+- Production topology uses a separate `meshcore-mqtt-live-map` service; the Next app should not become the raw MeshCore MQTT decoder of record.
+- Full in-site live-map parity is desired, but implementation should be grounded in upstream service APIs and practical feasibility.
+- Bearer tokens are preferred for protected live-map API calls.
+- Production sample-data usage must be obvious and guarded.
+- Normal PR CI may include lint, typecheck, unit tests, Chromium Playwright smoke, build, Docker smoke, blocking axe, and blocking Lighthouse within roughly 10 minutes.
+- Public contacts export is out of scope.

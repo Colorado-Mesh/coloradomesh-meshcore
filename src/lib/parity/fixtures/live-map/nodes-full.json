@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "id": "den-repeater-1",
+      "name": "DEN-DNVR-RPTR-RC-9F2E",
+      "public_key": "9F2E00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDD",
+      "lat": 39.7392,
+      "lon": -104.9903,
+      "role": "repeater",
+      "last_seen": "2026-05-06T20:00:00.000Z"
+    }
+  ],
+  "links": [],
+  "routes": []
+}

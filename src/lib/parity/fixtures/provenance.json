@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-05-07",
+  "sources": [
+    {
+      "name": "Colorado-Mesh/meshcore-utilities-site",
+      "url": "https://github.com/Colorado-Mesh/meshcore-utilities-site",
+      "localPath": "/tmp/meshcore-utilities-site",
+      "files": [
+        "static/data/recommended_settings.json",
+        "static/data/default_serial_commands.json",
+        "static/data/regions.json",
+        "serial_commands.schema.json"
+      ],
+      "usage": "Adapted as minimal local fixtures for parity tests and generated settings work. User approved direct copying/adaptation for this Forge pass."
+    },
+    {
+      "name": "yellowcooln/meshcore-mqtt-live-map",
+      "url": "https://github.com/yellowcooln/meshcore-mqtt-live-map/",
+      "localPath": "/tmp/meshcore-mqtt-live-map",
+      "files": [
+        "tests/test_api_nodes_modes.py",
+        "backend/app.py"
+      ],
+      "usage": "Representative node API payload fixture for local normalization and proxy tests."
+    }
+  ]
+}

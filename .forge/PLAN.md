@@ -1,600 +1,585 @@
 # Forge Implementation Plan
 
 ## Overview
-Redesign the existing Denver MeshCore Next.js site into a Docker-primary Colorado MeshCore portal at `meshcore.coloradomesh.org`. The plan preserves useful guides/blog content while fully renaming visible Denver branding to Colorado MeshCore, rebuilds the public experience with the local prototype’s night-sky operations-console direction, ports live-map behavior from `yellowcooln/meshcore-mqtt-live-map` into the main site experience, ports all feasible tools from `Colorado-Mesh/meshcore-utilities-site`, replaces legacy Turso/bot-derived public metrics with map-derived stats, and adds Docker/GHCR release delivery.
+Run a fresh max-parity hardening pass on the current Colorado MeshCore Next.js site. The pass keeps the existing Next.js 16 / React 19 / Node 24 / Docker standalone architecture, but closes high-value gaps against `Colorado-Mesh/meshcore-utilities-site` and `yellowcooln/meshcore-mqtt-live-map`: typed parity fixtures, generated repeater and companion settings JSON, guarded serial application of settings JSON, full 4-character PrefixMatrix behavior, server-side live-map service integration, runtime public map configuration, advanced live-map proxy endpoints where feasible, delegated Opus UI work for full in-site map UX, and pragmatic but blocking CI checks for tests, accessibility, Lighthouse, build, and Docker runtime smoke.
 
 ## Technical Decisions
-- Keep the current Next.js 16 App Router stack instead of rewriting the site in Astro because the repository already has App Router routes, MDX/blog infrastructure, metadata, sitemap, Tailwind v4, and existing guide/tool components. Research refs: ITEM-stack-1, ITEM-architecture-1, ITEM-prior-art-2.
-- Use Node 24 for Docker and GitHub Actions, matching the user’s runtime decision, while verifying dependencies with `npm ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`. Research refs: ITEM-stack-2; user decision overrides Node 22 fallback.
-- Set `output: 'standalone'` in `next.config.js` and ship a multi-stage Docker image. Research refs: ITEM-stack-3, ITEM-architecture-3, ITEM-pitfalls-4.
-- Publish release images to GHCR on GitHub Releases/tags with semver aliases and `latest`. Research refs: ITEM-stack-4, ITEM-pitfalls-5.
-- Use the linked live map as functional prior art and GPL source lineage, but port its map/data concepts into this Next.js app rather than running it as a sidecar. Source files to inspect/port from upstream include `backend/app.py`, `backend/config.py`, `backend/decoder.py`, `backend/state.py`, `backend/history.py`, `backend/los.py`, `backend/static/app.js`, `backend/static/index.html`, `backend/static/styles.css`, `backend/static/sw.js`, and tests under `tests/`. Research refs: ITEM-stack-6, ITEM-architecture-2, ITEM-pitfalls-1, ITEM-pitfalls-13; user decision overrides sidecar default.
-- Preserve GPL compliance for branded/forked live-map-derived work by adding attribution and a source/compliance note when live-map code or behavior is ported. Research refs: ITEM-stack-7, ITEM-pitfalls-13, ITEM-prior-art-3.
-- Port feasible utilities from `Colorado-Mesh/meshcore-utilities-site` into the Next app, prioritizing behavior from `backend/api/routes/*`, `backend/api/services/*`, `serial_commands.schema.json`, `static/data/*.json`, and `static/js/*.js`. Research refs: ITEM-stack-8, ITEM-architecture-6, ITEM-pitfalls-9, ITEM-prior-art-4; user decision overrides sidecar default.
-- Use exact public map locations for all nodes per user decision, with UI copy that clearly states data is public/live. Research refs: ITEM-pitfalls-6.
-- Centralize Colorado MeshCore branding and remove visible Denver MeshCore branding throughout app metadata, navigation, footer, routes, content, manifest, headers, sitemap, and JSON-LD. Research refs: ITEM-architecture-9, ITEM-pitfalls-7.
-- Because this session is backed by Codex GPT-5.5, visual/frontend implementation work must be delegated to native Opus 4.7 xhigh via `co-ui` or `/opus-ui`; non-visual integration, backend/API, Docker, workflow, and test work can be implemented directly in this session.
+- Keep the current Next.js 16 App Router, React 19, TypeScript 5, Node 24, npm lockfile, Docker standalone output, Leaflet/React Leaflet stack, and no site-owned database. Research refs: ITEM-stack-1, ITEM-stack-4, ITEM-architecture-10.
+- Treat `meshcore-mqtt-live-map` as the production decoder/state service. The Next site should consume it server-side and may keep direct MQTT only as a decoded-JSON fallback, not as the raw MeshCore packet decoder of record. Research refs: ITEM-stack-2, ITEM-stack-3, ITEM-architecture-4, ITEM-pitfalls-3, ITEM-pitfalls-11.
+- Because the user selected full in-site live-map parity, implement practical upstream endpoint proxying and delegate the visual/interactive map UI implementation to Opus UI. This Codex-backed session must not directly perform visual/aesthetic frontend implementation. Research refs: ITEM-architecture-6, ITEM-architecture-7, ITEM-prior-art-8, ITEM-prior-art-9.
+- Direct copying/adaptation from `Colorado-Mesh/meshcore-utilities-site` is allowed by user decision, despite research noting missing license metadata. Keep provenance notes for imported fixtures and avoid unnecessary wholesale copies. Research refs: ITEM-pitfalls-10, ITEM-prior-art-1, ITEM-prior-art-12.
+- Prefer bearer-token authentication for protected live-map server-side fetches instead of query-string tokens. Research refs: ITEM-pitfalls-5, ITEM-architecture-4.
+- Add `zod`/schema-style boundaries for local data contracts and AJV for JSON-schema fixture validation if useful; add Vitest unit/contract tests, Playwright Chromium smoke tests, axe accessibility checks, Lighthouse CI, and Docker run smoke within the roughly 10-minute PR budget. Research refs: ITEM-stack-6, ITEM-stack-8, ITEM-stack-9, ITEM-stack-10, ITEM-stack-12, ITEM-architecture-8, ITEM-architecture-9.
+- Contacts export remains out of scope by user decision.
 
 ## Implementation Steps
 
-### Step 1: Brand foundation, runtime configuration, and URL baseline
-**Goal:** Establish a single Colorado MeshCore brand/config source and remove the core Denver/Netlify/Node 20 assumptions before deeper feature work.
-**Why now:** Every page, metadata object, API adapter, Docker setting, and imported tool needs a stable brand and runtime config contract.
-**Dependencies:** Current `src/lib/constants.ts`, `src/app/layout.tsx`, `src/components/JsonLd.tsx`, `public/manifest.json`, `public/_headers`, `public/_redirects`, `netlify.toml`, and workflow Node versions.
+### Step 1: Test, validation, and parity-manifest foundation
+**Goal:** Add the tooling and machine-readable parity foundation that later steps can use to prove upstream coverage instead of relying on visual inspection.
+**Why now:** Config exports, PrefixMatrix, serial safety, map normalization, accessibility, Lighthouse, and CI hardening all need test scripts and stable fixtures before feature work expands.
+**Dependencies:** Current `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, no existing test script, and upstream fixture locations under `/tmp/meshcore-utilities-site` and `/tmp/meshcore-mqtt-live-map`.
 **Files:**
-- Modify `src/lib/constants.ts`
-- Modify `src/app/layout.tsx`
-- Modify `src/components/JsonLd.tsx`
-- Modify `src/app/sitemap.ts`
-- Modify `src/app/feed.xml/route.ts`
-- Modify `public/manifest.json`
-- Modify `public/robots.txt`
-- Modify `.github/workflows/ci.yml`
-- Modify `.github/workflows/security.yml`
 - Modify `package.json`
-- Modify `package-lock.json` only if dependency/script changes require it
-- Modify or retire `netlify.toml` only after Docker config exists in later steps; this step should only update stale comments/runtime if touched
+- Modify `package-lock.json`
+- Add `vitest.config.ts`
+- Add `playwright.config.ts`
+- Add `lighthouserc.json` or `.lighthouserc.json`
+- Add `src/lib/parity/manifest.ts`
+- Add `src/lib/parity/report.ts`
+- Add `src/lib/parity/fixtures/` JSON fixtures sourced/adapted from upstream utilities and live-map
+- Add `src/lib/parity/__tests__/manifest.test.ts`
+- Add `src/test/setup.ts` if needed
+- Add `tests/e2e/` smoke test files
 **Existing code to inspect first:**
-- `src/lib/constants.ts` for `BASE_URL`, `SITE_NAME`, `SITE_TAGLINE`, `SITE_DESCRIPTION`, API route constants, thresholds, and `BOT_NODE_NAME`
-- `src/app/layout.tsx` for metadata, canonical URL, OpenGraph, Twitter, icons, and JSON-LD injection
-- `src/components/JsonLd.tsx` for organization/community schema hard-coded brand names and URLs
-- `src/app/sitemap.ts` for `/map`, `/observer`, and `BASE_URL` usage
-- `src/app/feed.xml/route.ts` for feed title/description/link strings
-- `public/manifest.json`, `public/_headers`, `public/_redirects`, `netlify.toml`
-- `.github/workflows/ci.yml` and `.github/workflows/security.yml` currently use Node 20
+- `package.json` scripts/dependencies
+- `package-lock.json`
+- `.github/workflows/ci.yml`
+- `.github/workflows/security.yml`
+- `src/lib/validation.ts`
+- `/tmp/meshcore-utilities-site/static/data/recommended_settings.json`
+- `/tmp/meshcore-utilities-site/static/data/default_serial_commands.json`
+- `/tmp/meshcore-utilities-site/serial_commands.schema.json`
+- `/tmp/meshcore-utilities-site/static/data/regions.json`
+- `/tmp/meshcore-mqtt-live-map/tests/test_api_nodes_modes.py`
 **Implementation plan:**
-1. Replace scattered brand constants with a single exported brand/runtime object in `src/lib/constants.ts`, including `BASE_URL = 'https://meshcore.coloradomesh.org'`, `SITE_NAME = 'Colorado MeshCore'`, `COMMUNITY_NAME = 'Colorado Mesh'`, GitHub org URL, Discord URL, MeshCore docs URL, logo paths, social handles if known, and runtime map/API env variable names.
-2. Update app metadata in `src/app/layout.tsx` to use the brand constants for title templates, description, keywords, authors, OpenGraph, Twitter, canonical metadata, and icon alt text.
-3. Update JSON-LD generation in `src/components/JsonLd.tsx`, sitemap, RSS feed, manifest, and robots output to use the new `BASE_URL` and Colorado MeshCore naming.
-4. Update CI/security workflow Node versions to `24` and add a package `engines.node` requirement such as `>=24 <26` if compatible with local verification.
-5. Replace hard-coded `denvermc.com`, `Denver MeshCore`, `Denver MeshCore Community`, `@denver_meshcore`, and stale Node 20 references in the touched config/metadata files.
-6. Add scripts to support later verification, such as `typecheck` for `tsc --noEmit`, if not already present.
-7. Run a grep guard for `Denver MeshCore`, `denvermc.com`, and `node-version: '20'`; leave legitimate historical content for later content-migration steps only if not user-visible metadata/navigation.
+1. Add pragmatic dev dependencies for tests and quality gates: Vitest, jsdom/Testing Library if needed, Playwright, axe integration for Playwright, Lighthouse CI, `zod`, and AJV only where the step’s schema validation needs it.
+2. Add scripts: `test`, `test:unit`, `test:e2e`, `test:a11y`, `test:lighthouse`, and any local CI helper script needed to keep commands readable.
+3. Create a parity manifest that enumerates upstream utility, repeater-config, serial, PrefixMatrix, live-map API/UI, Docker, and CI items with statuses, source refs, local implementation refs, and test coverage refs.
+4. Vendor or adapt minimal upstream fixtures needed for automated parity checks, including recommended settings, serial commands/schema, regions, and representative live-map node payloads.
+5. Add provenance metadata for imported/adapted fixtures because research flagged upstream licensing ambiguity, even though the user allowed copying.
+6. Add initial unit tests that validate the manifest shape and fixture loadability without yet asserting feature-specific behavior.
+7. Add skeleton Playwright/Lighthouse config targeting local Next dev/production server without making UI assumptions that Opus has not implemented yet.
 **Contracts and interfaces:**
-- `src/lib/constants.ts` becomes the source of truth for site name, base URL, public URLs, and API endpoint names.
-- CI uses Node 24 for install/lint/typecheck/build/audit.
-- Runtime config names introduced here must be used by later steps: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_MAP_TILE_URL`, `MESHCORE_MQTT_URL`, `MESHCORE_MQTT_USERNAME`, `MESHCORE_MQTT_PASSWORD`, `MESHCORE_MQTT_TOPIC`, `MESHCORE_MQTT_CLIENT_ID`, `MESHCORE_MAP_HISTORY_ENABLED`, and `MESHCORE_MAP_SAMPLE_DATA`.
-**State/data changes:** None to persistent app data.
+- `src/lib/parity/manifest.ts` exports a typed manifest consumable by tests and, later, generated maintainer reports.
+- Test scripts must be runnable locally via npm and usable in GitHub Actions.
+- Fixture data must not require network access during tests.
+**State/data changes:** Adds dev dependencies and test/parity fixtures only.
 **Edge cases:**
-- `metadataBase` must remain a valid absolute URL.
-- Manifest icons must still resolve even before replacing assets.
-- JSON-LD must not produce invalid URLs when env vars are absent.
-- Existing API constants used by components should not be renamed without updating callers.
+- Lighthouse CI can be noisy; configure deterministic local URLs and reasonable budgets, then tighten only where practical.
+- Playwright browsers may need explicit install handling in CI.
+- Do not commit large upstream artifacts or generated browser reports.
 **Acceptance criteria:**
-- Main metadata, manifest, sitemap, feed, CI workflows, and brand constants say Colorado MeshCore and `meshcore.coloradomesh.org`.
-- Node 24 is the CI/security runtime baseline.
-- No stale Denver brand strings remain in app shell metadata/navigation config touched by this step.
+- `npm run test:unit` runs and passes with the initial manifest/fixture tests.
+- Test/lighthouse/playwright configs are present and syntactically valid.
+- Parity manifest exists and covers utilities, repeater configs, serial, PrefixMatrix, live map, Docker, and CI.
 **Verification commands:**
+- `npm ci`
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
 - `npm run build`
-- `grep -R "Denver MeshCore\|denvermc.com\|node-version: '20'" -n src public .github package.json netlify.toml content || true`
-**Manual validation:** Start the app and inspect page source/metadata for the homepage, `/map`, `/guides`, and `/blog` after this step or in the later browser validation pass.
+**Manual validation:** None beyond checking generated test commands run locally; browser validation happens after UI changes.
 **Risks:**
-- Stale brand metadata can persist through sitemap/RSS/JSON-LD if only visible components are changed. Research refs: ITEM-pitfalls-7, ITEM-architecture-9.
-- Node 24 can expose dependency incompatibility; verification must run before commit. Research refs: ITEM-stack-2.
-**Out of scope for this step:** Full page redesign, Docker image, map data port, utility port, deleting legacy routes, and visual QA.
+- Adding too many quality dependencies can slow PR CI beyond the user’s ~10-minute budget. Research refs: ITEM-stack-12, ITEM-architecture-9.
+- Imported upstream fixtures can drift; the manifest must make provenance and update responsibility explicit. Research refs: ITEM-architecture-1, ITEM-pitfalls-10.
+**Out of scope for this step:** Implementing feature parity, UI redesign, CI workflow enforcement, and Docker runtime smoke.
 
-### Step 2: Colorado Mesh assets and visual system handoff
-**Goal:** Replace the current brand visuals with Colorado Mesh assets and implement the prototype-inspired visual system through native Opus UI delegation.
-**Why now:** The redesign’s visual language should land before page-by-page rewrites so subsequent map/tools/content pages use shared primitives instead of one-off styling.
-**Dependencies:** User confirmed logo redistribution is authorized. Current app uses `public/logo.png`, `public/logo-192.png`, `public/logo-512.png`, favicons, `src/app/globals.css`, `src/components/Navigation.tsx`, and `src/components/Footer.tsx`. The local prototype is `/Users/cjvana/Downloads/meshcore/Colorado MeshCore.html`.
+### Step 2: Canonical map snapshot, runtime config endpoint, bearer live-map auth, and sample-data guard
+**Goal:** Stabilize map data behind one snapshot contract, make public map settings runtime-configurable after Docker build, and remove token/sample-data pitfalls before advanced map features are layered on.
+**Why now:** Current client code fetches `/api/map/nodes` and `/api/map/stats` separately, live-map token handling uses query params, tile URL config is not consumed by the map, and production sample data can mislead users.
+**Dependencies:** Step 1 test foundation; current map store/config/hooks/routes.
 **Files:**
-- Modify `src/app/globals.css`
-- Modify `src/components/Navigation.tsx`
-- Modify `src/components/MobileMenu.tsx`
-- Modify `src/components/Footer.tsx`
-- Create/modify reusable visual components under `src/components/` such as `BrandMark.tsx`, `TopoBackground.tsx`, `HeroPanel.tsx`, `MetricStrip.tsx`, `ToolCard.tsx`, `NetworkPanel.tsx`, and `SectionEyebrow.tsx`
-- Replace public logo/icon files in `public/` from `Colorado-Mesh/icons` assets
-- Possibly add `public/brand/` for source SVG/PNG variants
+- Modify `src/lib/map/config.ts`
+- Modify `src/lib/map/store.ts`
+- Modify `src/lib/map/normalize.ts`
+- Modify `src/lib/map/types.ts`
+- Add `src/app/api/map/snapshot/route.ts`
+- Add `src/app/api/map/runtime/route.ts`
+- Modify `src/app/api/map/nodes/route.ts`
+- Modify `src/app/api/map/stats/route.ts`
+- Modify `src/hooks/useMapSnapshot.ts`
+- Modify `src/components/NetworkMap.tsx` only for non-visual runtime config wiring if necessary
+- Modify `.env.example`
+- Modify `compose.yaml`
+- Add `src/lib/map/__tests__/` contract tests
 **Existing code to inspect first:**
-- `/Users/cjvana/Downloads/meshcore/Colorado MeshCore.html` for visual direction: night-sky console, Space Grotesk/JetBrains Mono, mesh teal, sunset orange, mountain identity, key screens: landing, map, utilities, observer
-- `src/app/globals.css` for current Tailwind v4 tokens, Colorado color variables, background utilities, card styles, and button classes
-- `src/components/Navigation.tsx`, `src/components/MobileMenu.tsx`, `src/components/Footer.tsx`
-- `public/logo.png`, `public/logo-192.png`, `public/logo-512.png`, favicons, manifest icons
-- `Colorado-Mesh/icons`: `source/svg/icon1.svg`, `source/svg/icon2.svg`, `linux/*.png`, `mac/iconset/*.png`, `win/colorado-mesh.ico`
+- `src/lib/map/config.ts` env parsing and `sampleData` default
+- `src/lib/map/store.ts` `buildLiveMapApiUrl`, `refreshLiveMapApiSnapshot`, direct MQTT fallback, and snapshot builders
+- `src/hooks/useMapSnapshot.ts` parallel nodes/stats fetches
+- `src/app/api/map/nodes/route.ts`
+- `src/app/api/map/stats/route.ts`
+- `src/components/NetworkMap.tsx` hard-coded tile URL/attribution
+- `.env.example`
+- `compose.yaml`
+- `/tmp/meshcore-mqtt-live-map/README.md` API token behavior
 **Implementation plan:**
-1. Delegate this step to native Opus 4.7 xhigh using `co-ui` or `/opus-ui`, with a concise handoff that includes the local prototype path, the target files, the brand decisions, and the instruction to avoid broad feature logic changes.
-2. Vendor approved Colorado Mesh icon assets into `public/brand/` and replace site icons/favicons/PWA icons with appropriate sizes from `Colorado-Mesh/icons`, preserving optimized PNG/ICO/SVG references.
-3. Update global design tokens in `src/app/globals.css` to align with the prototype: dark operations-console default, mesh teal primary, sunset orange accent, mountain/topographic motifs, and readable light/dark handling.
-4. Implement shared UI primitives for hero panels, topo/mesh backgrounds, operational cards, metric strips, tool cards, and network panels so later steps reuse them.
-5. Update `Navigation`, `MobileMenu`, and `Footer` to use the Colorado MeshCore brand mark, balanced navigation for Home, Map, Tools, Guides, Blog, About, and Discord, and remove `/observer` as a primary nav item if it is being hard-removed later.
-6. Verify responsive behavior for mobile menu, focus states, contrast, and fixed header overlap.
-7. Ensure no CDN font imports from the local prototype are copied blindly; use Next font or existing font strategy unless Opus chooses and validates a safe replacement.
+1. Define a canonical `MapSnapshot` API response for `GET /api/map/snapshot` that returns nodes, links, routes, stats, connection, source, generated timestamp, runtime warnings, and advanced feature availability.
+2. Keep `/api/map/nodes` and `/api/map/stats` as compatibility wrappers over the same `getMapSnapshot()` result, not independent primary client fetch paths.
+3. Change live-map API fetches to send `Authorization: Bearer <token>` when `MESHCORE_LIVE_MAP_API_TOKEN` is set; remove token query-param construction unless a compatibility fallback is explicitly required by a test.
+4. Add a runtime public config route for map tile URL, attribution, default center/zoom if needed, sample/live source labels, and production warning state; update client-side map code to consume it without relying on `NEXT_PUBLIC_*` values that are frozen at build time.
+5. Add production sample-data warning semantics: when `NODE_ENV=production` and the source is sample data without an explicit demo-mode setting, expose a warning in snapshot/runtime responses for UI and CI smoke tests.
+6. Add Vitest tests for env parsing, bearer-token fetch behavior, snapshot wrapper consistency, sample/demo guard, and malformed live-map payload normalization.
+7. Update `.env.example` and Compose comments to clearly separate build-time public variables from runtime server variables.
 **Contracts and interfaces:**
-- Visual primitives must remain ordinary React/Next components with typed props and no app-wide data fetching.
-- `Navigation` and `Footer` must consume brand constants rather than hard-coded Denver strings.
-- Asset paths used in metadata/manifest must correspond to actual files in `public/`.
-**State/data changes:** Public static assets change; no database state.
+- `GET /api/map/snapshot` returns the canonical `ApiResponse<MapSnapshot>`.
+- `GET /api/map/runtime` returns public runtime map configuration and warning flags only; it must not expose credentials.
+- `MESHCORE_LIVE_MAP_API_TOKEN` is server-only and sent as a bearer token.
+- `/api/map/nodes` and `/api/map/stats` remain supported compatibility routes.
+**State/data changes:** No persistent state; in-memory live-map API cache remains bounded by refresh interval.
 **Edge cases:**
-- Avoid breaking Next image optimization with missing asset dimensions.
-- Keep keyboard and screen-reader semantics for navigation/mobile menu.
-- Avoid copying prototype mock data, inline React CDN scripts, or Babel setup.
-- Keep Tailwind v4 syntax valid.
+- Build must pass without live-map URL/token.
+- Bearer auth must not leak token in error messages, logs, or browser responses.
+- Snapshot and wrappers must agree on generated data for one request cycle.
+- Runtime tile config must not include invalid URLs or unsafe attribution HTML.
 **Acceptance criteria:**
-- Site shell visibly uses Colorado Mesh logos and no visible Denver branding.
-- Shared design primitives exist and are used by shell components.
-- Navigation reflects the new information architecture: balanced audience, map, tools, guides, blog, about/community.
-- The prototype’s art direction is reflected without importing its runtime code.
+- Map clients can use `/api/map/snapshot` as a single source of truth.
+- Protected live-map fetches use bearer auth.
+- Runtime map config can change after image build through server env.
+- Production sample/demo warning is machine-readable.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
 - `npm run build`
-**Manual validation:** Run the dev server and inspect home, mobile navigation, footer, and a content page in the browser at desktop and mobile widths. Monitor console errors.
+- `curl -s http://localhost:3000/api/map/snapshot` during manual server validation
+- `curl -s http://localhost:3000/api/map/runtime` during manual server validation
+**Manual validation:** Run the app, fetch `/api/map/snapshot`, `/api/map/nodes`, `/api/map/stats`, and `/api/map/runtime`; verify no credentials appear and warnings/source labels make sense for sample mode.
 **Risks:**
-- Prototype mock data or CDN-only runtime code can accidentally ship if copied instead of reimplemented. Research refs: ITEM-pitfalls-12, ITEM-prior-art-1.
-- This is visual/frontend work and must be delegated to Opus from this Codex-backed session.
-**Out of scope for this step:** Live map implementation, utility behavior porting, Docker, and content rewrites beyond shell-visible branding.
+- Runtime public config can accidentally expose server-only env values if not explicitly whitelisted. Research refs: ITEM-pitfalls-13.
+- Token query strings can leak through logs if compatibility fallback is kept. Research refs: ITEM-pitfalls-5.
+- Separate nodes/stats paths can keep inconsistency if clients are not migrated. Research refs: ITEM-pitfalls-6, ITEM-architecture-5.
+**Out of scope for this step:** Advanced live-map endpoint proxying, visual map parity, and utility config export.
 
-### Step 3: Map-derived data contracts and runtime MQTT adapter
-**Goal:** Create the app’s live-map data layer and runtime configuration contract, replacing Turso/bot public stats as the source for public map-derived metrics.
-**Why now:** The map UI, tools prefix matrix, and homepage metrics need stable TypeScript contracts before components are rewritten.
-**Dependencies:** Step 1 brand/runtime constants. Current legacy data comes from `src/lib/db/index.ts`, `src/app/api/nodes/route.ts`, `src/app/api/stats/route.ts`, `src/app/api/health/route.ts`, `src/hooks/useStats.ts`, and `src/lib/types.ts`. Upstream behavior comes from live-map `backend/config.py`, `backend/decoder.py`, `backend/state.py`, `backend/history.py`, `backend/static/app.js`, and `tests/test_websocket_snapshot.py`.
+### Step 3: Advanced live-map proxy contracts and sidecar runtime topology
+**Goal:** Add feasible server-side proxy support for upstream live-map operator data and document a Docker/Compose sidecar topology without making the Next app the raw MQTT decoder.
+**Why now:** The user wants full in-site live-map parity, but production should run the upstream live-map service separately; UI parity needs safe API contracts first.
+**Dependencies:** Step 2 canonical snapshot/runtime config and bearer-token fetch helper.
 **Files:**
-- Modify `src/lib/types.ts`
-- Add `src/lib/map/types.ts`
-- Add `src/lib/map/config.ts`
-- Add `src/lib/map/normalize.ts`
-- Add `src/lib/map/sample-data.ts`
-- Add `src/lib/map/store.ts` or `src/lib/map/client.ts`
-- Add/modify `src/app/api/map/nodes/route.ts`
-- Add/modify `src/app/api/map/stats/route.ts`
-- Add/modify `src/app/api/map/stream/route.ts` if WebSocket/SSE is feasible in the Next runtime; otherwise document polling fallback in this step and plan WebSocket separately
-- Modify `src/hooks/useStats.ts` or add `src/hooks/useMapStats.ts`
-- Modify existing callers only enough to compile; full UI replacement occurs later
+- Add `src/lib/live-map/client.ts`
+- Add `src/lib/live-map/types.ts`
+- Add `src/lib/live-map/normalize.ts`
+- Add `src/app/api/live-map/route.ts` or scoped route handlers under `src/app/api/live-map/*/route.ts`
+- Add feasible proxy routes such as `src/app/api/live-map/snapshot/route.ts`, `stats/route.ts`, `peers/route.ts`, `routes/route.ts`, `coverage/route.ts`, `los/route.ts`, `weather/route.ts`, and possibly `ws/route.ts` only if practical in the Next runtime
+- Modify `src/lib/parity/manifest.ts`
+- Modify `.env.example`
+- Modify `compose.yaml`
+- Add tests under `src/lib/live-map/__tests__/`
 **Existing code to inspect first:**
-- `src/lib/types.ts` for `Node`, `NodeWithStats`, `CommunityStats`, and `NetworkHealth`
-- `src/app/api/nodes/route.ts`, `src/app/api/stats/route.ts`, `src/app/api/health/route.ts`, `src/app/api/health/history/route.ts`
-- `src/hooks/useStats.ts`
-- `src/components/StatsSection.tsx`, `src/components/PrefixMatrix.tsx`, `src/components/NamingWizard.tsx`
-- Upstream live-map files: `backend/config.py`, `backend/decoder.py`, `backend/state.py`, `backend/static/app.js`, `tests/test_decoder_*.py`, `tests/test_websocket_snapshot.py`
+- `src/lib/map/store.ts` live-map fetch logic from Step 2
+- `/tmp/meshcore-mqtt-live-map/backend/app.py`
+- `/tmp/meshcore-mqtt-live-map/backend/los.py`
+- `/tmp/meshcore-mqtt-live-map/backend/weather.py`
+- `/tmp/meshcore-mqtt-live-map/backend/static/app.js`
+- `/tmp/meshcore-mqtt-live-map/tests/test_api_auth.py`
+- `/tmp/meshcore-mqtt-live-map/tests/test_coverage_endpoint.py`
+- `/tmp/meshcore-mqtt-live-map/tests/test_los_endpoints.py`
+- `/tmp/meshcore-mqtt-live-map/tests/test_weather_endpoints.py`
+- `/tmp/meshcore-mqtt-live-map/tests/test_websocket_snapshot.py`
+- `compose.yaml`
 **Implementation plan:**
-1. Define framework-neutral map contracts: `MapNode`, `MapLink`, `MapRoute`, `MapStats`, `MapSnapshot`, `MapConnectionStatus`, and normalized node roles/types that can support exact latitude/longitude, last heard, public key, firmware/model, battery, route, neighbors, and metadata.
-2. Implement `src/lib/map/config.ts` to read runtime env vars on the server with safe defaults for sample data and local development, while never requiring committed MQTT secrets for build.
-3. Implement normalizers in `src/lib/map/normalize.ts` that convert upstream live-map-like payloads and legacy `NodeWithStats` shapes into the new `MapNode` contract so migration can be staged.
-4. Implement a server-side map snapshot provider that initially supports sample data and optional existing `/api/nodes`/Turso fallback for development only, then can be extended to MQTT ingestion without changing UI contracts.
-5. Add `/api/map/nodes` and `/api/map/stats` routes returning the new `ApiResponse` shape with cache headers appropriate for live data.
-6. Add a `useMapStats`/`useMapSnapshot` hook for client components with refresh interval, loading, error, and last-updated state.
-7. Ensure exact coordinates are returned when present and no privacy blurring logic is introduced because the user chose all exact public data.
-8. Update TypeScript exports and leave legacy `/api/nodes` and `/api/stats` in place until the replacement components are wired in Step 4/5.
+1. Build a reusable server-side live-map client with base URL normalization, bearer-token auth, timeout handling, safe error messages, and response-size protection.
+2. Inventory upstream endpoints from the current cloned live-map service and mark each as `proxied`, `deferred`, or `not feasible` in the parity manifest before implementing routes.
+3. Add typed proxy routes for all feasible HTTP endpoints needed for full in-site parity, prioritizing snapshot/stats/peers/routes/coverage/LOS/weather.
+4. Evaluate WebSocket feasibility in Next.js self-hosted runtime. If practical, add a constrained route/proxy or client connection pattern that still keeps credentials server-side; if not practical, expose a documented polling/SSE fallback and mark the WebSocket item as deferred with rationale.
+5. Add an optional disabled-by-default Compose profile for running the upstream live-map service sidecar locally/operationally, wiring the Next app to `MESHCORE_LIVE_MAP_API_URL` without publishing anything.
+6. Add tests using upstream-like fixtures for auth headers, endpoint mapping, error redaction, timeout behavior, and unavailable-upstream degradation.
+7. Update `.env.example` with sidecar variables, token behavior, endpoint availability, and explicit raw-MQTT-vs-live-map-service language.
 **Contracts and interfaces:**
-- `GET /api/map/nodes` returns `{ success: true, data: MapNode[] }`.
-- `GET /api/map/stats` returns `{ success: true, data: MapStats }` with map-derived counts such as total nodes, online nodes, visible nodes, repeaters, stale nodes, links/routes when known, and `lastUpdated`.
-- Runtime env config is server-only unless explicitly prefixed `NEXT_PUBLIC_`.
-- Build must succeed without MQTT secrets by using sample/empty data behavior.
-**State/data changes:**
-- Introduces in-memory/snapshot map state only. No new database migration unless implementation discovers a durable history requirement and asks for plan change.
+- Server-side proxy routes never expose upstream tokens.
+- Proxy routes return `ApiResponse<T>` with redacted errors.
+- Sidecar profile is opt-in and does not run by default in `docker compose up` unless the profile is selected.
+- The Next site remains the web app; upstream live-map remains the stateful decoder/runtime.
+**State/data changes:** No site-owned persistence; upstream live-map owns its own `/data` if sidecar profile is used.
 **Edge cases:**
-- Missing MQTT env vars must not break `npm run build`.
-- Invalid coordinates, missing public keys, stale timestamps, and duplicate IDs must normalize consistently.
-- Serverless/standalone Next runtime may not be suitable for long-lived MQTT connections; if so, use polling/sample route first and add a documented stop condition before inventing a separate service.
+- Upstream live-map unavailable should degrade to clear API/UI errors, not crash the site.
+- Weather/coverage/LOS endpoints may depend on upstream optional config; proxy must report unsupported states clearly.
+- WebSocket proxying may be infeasible in the current Next route runtime; do not fake parity if runtime cannot support it safely.
 **Acceptance criteria:**
-- New map API routes compile and return stable typed data in local development.
-- Homepage/map/tools components can consume `MapStats`/`MapNode` without importing Turso types.
-- No MQTT credentials are exposed to browser bundles.
+- Feasible advanced live-map endpoints are proxied server-side with bearer auth.
+- Infeasible endpoints are explicitly recorded in the parity manifest with implementation rationale.
+- Compose supports an opt-in live-map sidecar profile for local/ops parity.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
 - `npm run build`
-- `curl -s http://localhost:3000/api/map/stats` during manual server validation
-- `curl -s http://localhost:3000/api/map/nodes` during manual server validation
-**Manual validation:** Run the dev server, fetch the new API routes, and confirm missing env vars produce empty/sample responses rather than build/runtime crashes.
+- `docker compose config`
+**Manual validation:** With no live-map service configured, proxy routes return safe unavailable responses. If a local sidecar can be started, verify selected proxy routes against it without publishing or pushing anything.
 **Risks:**
-- Treating live-map telemetry as clean data creates misleading metrics unless normalizers handle missing/stale/duplicate data. Research refs: ITEM-pitfalls-14, codex-analysis pitfalls.
-- Browser-exposed MQTT credentials would be a security issue; keep ingestion/config server-side. Research refs: ITEM-stack-11, ITEM-pitfalls-6.
-**Out of scope for this step:** Full MQTT protocol parity, map rendering, route history UI, deleting legacy APIs, and utilities.
+- Attempting to proxy every upstream endpoint can expand security and runtime scope too far. Research refs: ITEM-pitfalls-4, ITEM-prior-art-8.
+- WebSocket support may not fit the Next route runtime. Research refs: ITEM-architecture-7.
+- Sidecar topology can accidentally require secrets in the site container if env docs are unclear. Research refs: ITEM-architecture-10.
+**Out of scope for this step:** Visual map UI implementation, raw MQTT packet decoding in Next.js, public contacts export, and production deployment.
 
-### Step 4: Port and brand the live network map experience
-**Goal:** Replace the current `NetworkMap`/legacy `/map` experience with a branded in-site live map based on the upstream live-map functionality and the new map data contracts.
-**Why now:** This is the core product replacement for the old map and is required before removing observer/network-health pages.
-**Dependencies:** Steps 1-3, existing Leaflet dependencies, upstream live-map frontend behavior, and Opus UI delegation for visual implementation details.
+### Step 4: Full in-site live-map UI/UX parity through Opus UI delegation
+**Goal:** Implement the user-facing map experience for practical full in-site live-map parity using the contracts from Steps 2-3, while respecting the Codex session’s UI implementation restriction.
+**Why now:** The API and runtime contracts must exist before Opus can safely build UI against stable data without changing backend semantics.
+**Dependencies:** Steps 2-3; Opus UI delegation via `co-ui` or `/opus-ui` from the current working directory.
 **Files:**
 - Modify `src/app/map/page.tsx`
-- Replace or heavily modify `src/components/NetworkMap.tsx`
+- Modify `src/components/NetworkMap.tsx`
 - Modify `src/components/NetworkMapWrapper.tsx`
-- Add `src/components/map/LiveMap.tsx`
-- Add `src/components/map/MapLegend.tsx`
-- Add `src/components/map/NodePopup.tsx`
-- Add `src/components/map/MapToolbar.tsx`
-- Add `src/components/map/ConnectionStatus.tsx`
-- Add `src/components/map/MapStatsOverlay.tsx`
-- Modify `src/app/globals.css` for map-specific styles if not already handled in Step 2
-- Add `src/app/map/loading.tsx` and `src/app/map/error.tsx` if useful
-- Add GPL attribution/compliance text in an appropriate route/component or existing legal/about area when live-map code/behavior is ported
+- Modify/add `src/components/map/*` components for overlays, layers, node details, route/peer/coverage/LOS/weather panels, share/deep-link state, source diagnostics, and warnings
+- Modify `src/app/globals.css` only through Opus UI delegation if visual changes are required
+- Modify `src/hooks/useMapSnapshot.ts` and add hooks for proxied live-map data if needed
+- Modify Playwright tests under `tests/e2e/`
 **Existing code to inspect first:**
 - `src/app/map/page.tsx`
 - `src/components/NetworkMap.tsx`
-- `src/components/NetworkMapWrapper.tsx`
-- `src/lib/map/*` from Step 3
-- Upstream `backend/static/app.js`, `backend/static/index.html`, `backend/static/styles.css`, `backend/static/sw.js`, `backend/static/landing.html`
-- Upstream tests for node modes, weather, coverage, LOS, websocket snapshot, peer history, route resolution
+- `src/components/map/MapControls.tsx`
+- `src/components/map/MapLegend.tsx`
+- `src/components/map/MapStatsOverlay.tsx`
+- `src/components/map/NodePopup.tsx`
+- `src/components/map/markers.ts`
+- `src/hooks/useMapSnapshot.ts`
+- `/tmp/meshcore-mqtt-live-map/backend/static/app.js`
+- `/tmp/meshcore-mqtt-live-map/backend/static/index.html`
+- `/tmp/meshcore-mqtt-live-map/backend/static/styles.css`
 **Implementation plan:**
-1. Delegate visual/frontend map implementation to native Opus via `co-ui` or `/opus-ui`, instructing Opus to use the Step 3 contracts and the local prototype’s map artboard direction while preserving functional scope.
-2. Replace the old map page hero/copy/links with a Colorado MeshCore live map page that includes map-derived stats, exact-location notice, connection freshness, and clear actions for joining or using tools.
-3. Rebuild the Leaflet map component around `MapNode` data, using exact coordinates, role/type styling, online/stale visual states, clustering or filtering if feasible with existing dependencies, and responsive height/layout.
-4. Port upstream live-map UI behaviors that are feasible in Next: node popups, share/copy fields where practical, route/neighbor display if exposed by the data contract, freshness badges, and connection state.
-5. Add map controls for filter/search by node name/type/public key and source/freshness indicators.
-6. Remove old observer link CTAs from `/map` and replace with Tools/Guides/Discord links.
-7. Include GPL attribution/source note if any upstream live-map code or directly derived UI behavior is used.
-8. Ensure browser-only Leaflet code remains isolated in client components and does not break SSR/build.
+1. Create a concise Opus UI handoff prompt that lists the exact contracts from Steps 2-3, upstream UI behaviors to port, files to modify, and the rule that Opus should not alter server/API semantics.
+2. Run `co-ui` from the repo root for visual/frontend implementation of the map UI parity work.
+3. Ensure Opus implements source diagnostics, production sample warnings, runtime tile config, node popups, search/filter controls, route/peer overlays where data exists, coverage/LOS/weather affordances where proxied endpoints exist, share/deep-link state if practical, and empty/error/loading states.
+4. Review Opus changes in this session for non-visual correctness: import boundaries, SSR safety, API route usage, no credential exposure, and testability.
+5. Add or update Playwright smoke tests to cover `/map` load, source warning visibility under mocked sample mode, marker rendering with mocked snapshot, advanced panel fallback states, and keyboard/a11y basics.
+6. Run browser validation manually in the dev server and monitor console/network requests for old endpoint usage or hydration errors.
 **Contracts and interfaces:**
-- `LiveMap` accepts `initialNodes?: MapNode[]`, `refreshInterval?: number`, and optional map center/zoom props.
-- Client fetches from `/api/map/nodes` and `/api/map/stats`, not `/api/nodes` or `/api/stats`.
-- All map display uses `MapNode` fields, not Turso `NodeWithStats` fields.
-**State/data changes:** None beyond client state.
+- Map UI fetches `/api/map/snapshot`, `/api/map/runtime`, and scoped `/api/live-map/*` routes only; it must not fetch upstream service URLs directly from the browser when tokens are required.
+- Leaflet remains browser-only and must not be imported into server components.
+- Visual implementation is delegated to Opus; this session reviews and tests integration.
+**State/data changes:** Client UI state only.
 **Edge cases:**
-- Leaflet must not run during SSR.
-- Empty data should show a useful no-data state, not a broken map.
-- Invalid/missing coordinates should be omitted from marker rendering but counted appropriately in stats.
-- Exact location notice must not imply privacy blurring.
-- Mobile map controls must remain usable.
+- No live-map service configured should show a clear disabled/unavailable operator-feature state.
+- Sample data in production should be visually obvious.
+- Invalid coordinates and missing upstream optional endpoints must not break the map.
+- Mobile controls, keyboard navigation, contrast, and screen-reader labels must pass axe checks.
 **Acceptance criteria:**
-- `/map` renders a branded Colorado MeshCore live map using new map APIs.
-- Current old map copy and observer stats links are gone.
-- Map markers/popups display exact node locations and live-map-derived fields when available.
-- No public map UI fetches legacy `/api/nodes` directly.
+- `/map` provides a fuller in-site live-map experience using the new server-side contracts.
+- No map UI exposes credentials or fetches protected upstream endpoints directly.
+- Browser smoke tests and manual browser checks pass.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
+- `npm run test:e2e`
 - `npm run build`
-**Manual validation:** Run the dev server, open `/map`, verify markers or empty/sample state, filters, popups, mobile responsiveness, console output, and network requests to `/api/map/*` only.
+**Manual validation:** Start the dev server; inspect `/map` desktop/mobile, filters, popups, source diagnostics, advanced panels, empty/error/sample states, console, and network requests.
 **Risks:**
-- Leaflet hydration/runtime errors are common if browser APIs run server-side. Research refs: ITEM-pitfalls-11.
-- Porting too much upstream behavior at once can exceed the main-site architecture; keep the first pass scoped to core live nodes/stats and feasible route/neighbor display. Research refs: ITEM-pitfalls-1, ITEM-prior-art-3.
-**Out of scope for this step:** Full backend MQTT parity if Step 3 chose a staged snapshot provider, utilities porting, Docker, and removing legacy APIs.
+- Full UI parity can become a large visual implementation; Opus must keep the step scoped to existing contracts. Research refs: ITEM-architecture-6, ITEM-architecture-7.
+- Leaflet hydration/runtime errors can pass TypeScript but fail in browser. Research refs: ITEM-architecture-6.
+- Upstream features without backend data can become fake UI; hide or mark unavailable instead. Research refs: ITEM-pitfalls-4.
+**Out of scope for this step:** Contacts export, raw MQTT decoder implementation, and hardware validation.
 
-### Step 5: Port utilities into a first-class `/tools` experience
-**Goal:** Replace overlapping current tools with all feasible tools from `Colorado-Mesh/meshcore-utilities-site` as integrated Next.js pages/components.
-**Why now:** The user wants the utilities ported into the site, and tools need the same map-derived node data contracts introduced earlier.
-**Dependencies:** Steps 1-3, current `NamingWizard`, `CompanionNamer`, `PrefixMatrix`, and upstream utilities repo structure.
+### Step 5: Utility data model and generated repeater/companion settings JSON
+**Goal:** Promote utility/repeater settings into typed data modules and add downloadable MeshCore settings JSON for both repeater and companion tools.
+**Why now:** This is the highest-value upstream utility parity gap and provides the data foundation for serial apply-settings and PrefixMatrix checks.
+**Dependencies:** Step 1 validation foundation and the user decision allowing direct adaptation from the utilities repo.
 **Files:**
-- Add `src/app/tools/page.tsx`
-- Add `src/app/tools/repeater-name/page.tsx`
-- Add `src/app/tools/companion-name/page.tsx`
-- Add `src/app/tools/prefix-matrix/page.tsx`
-- Add `src/app/tools/serial-usb/page.tsx`
-- Modify or replace `src/components/NamingWizard.tsx`
-- Modify or replace `src/components/CompanionNamer.tsx`
-- Modify or replace `src/components/PrefixMatrix.tsx`
-- Add `src/components/tools/ToolShell.tsx`
-- Add `src/components/tools/SerialUsbTool.tsx`
-- Add `src/lib/tools/regions.ts` or data JSON under `src/lib/tools/data/`
-- Add `src/lib/tools/serial-commands.ts`
-- Add `src/lib/tools/key-generator.ts` only if key-generation code is feasible and license-safe
-- Modify `src/components/index.ts`
-- Modify navigation/footer to point to `/tools`
-- Add public/static data only if it must be directly fetched by browser code
+- Add `src/lib/meshcore-data/settings.ts`
+- Add `src/lib/meshcore-data/regions.ts`
+- Add `src/lib/meshcore-data/node-types.ts`
+- Add `src/lib/meshcore-data/fixtures/` or equivalent for adapted upstream JSON
+- Add `src/lib/meshcore-tools/naming.ts`
+- Add `src/lib/meshcore-tools/config-export.ts`
+- Modify `src/components/NamingWizard.tsx`
+- Modify `src/components/CompanionNamer.tsx`
+- Modify `src/app/tools/repeater-name/page.tsx`
+- Modify `src/app/tools/companion-name/page.tsx`
+- Modify `src/app/guides/radio-settings/page.tsx` if settings copy must reference canonical data
+- Modify `src/lib/parity/manifest.ts`
+- Add tests under `src/lib/meshcore-tools/__tests__/`
 **Existing code to inspect first:**
-- Existing components: `src/components/NamingWizard.tsx`, `src/components/CompanionNamer.tsx`, `src/components/PrefixMatrix.tsx`
-- Existing utility data: `src/lib/data/airports`, `src/lib/data/cities`, `src/lib/data/landmarks`, `src/lib/utils/haversine`
-- Upstream utilities: `backend/api/routes/repeater_name_tool/index.py`, `backend/api/routes/companion_name_tool/index.py`, `backend/api/routes/prefix_matrix/index.py`, `backend/api/routes/serial_usb_tool/index.py`, `backend/api/services/contacts.py`, `backend/api/services/external_key_logic.py`, `backend/api/services/meshcore_stats.py`, `backend/constants.py`, `serial_commands.schema.json`, `static/data/default_serial_commands.json`, `static/data/emojis.json`, `static/data/recommended_settings.json`, `static/data/regions.json`, `static/js/repeater_name_tool.js`, `static/js/companion_name_tool.js`, `static/js/prefix_matrix.js`, `static/js/serial_usb_tool_page.js`, `static/js/meshcore-key-generator.js`, `static/js/noble-ed25519-key-generator-offline.js`
+- `src/components/NamingWizard.tsx`
+- `src/components/CompanionNamer.tsx`
+- `src/lib/data/airports.ts`
+- `src/lib/data/cities.ts`
+- `src/lib/data/landmarks.ts`
+- `src/lib/tools/serial-commands.ts`
+- `src/app/guides/radio-settings/page.tsx`
+- `/tmp/meshcore-utilities-site/backend/api/routes/repeater_name_tool/index.py`
+- `/tmp/meshcore-utilities-site/backend/api/routes/companion_name_tool/index.py`
+- `/tmp/meshcore-utilities-site/backend/constants.py`
+- `/tmp/meshcore-utilities-site/static/data/recommended_settings.json`
+- `/tmp/meshcore-utilities-site/static/data/regions.json`
 **Implementation plan:**
-1. Audit upstream utilities and current tools into a keep/replace/defer matrix inside the Step 5 execution plan before changing components.
-2. Build a `/tools` index using the Step 2 `ToolCard` primitive with cards for repeater naming, companion naming, prefix matrix, serial USB, and any feasible key/settings utilities.
-3. Port repeater naming behavior from upstream into a typed Next component, reusing existing airport/city/landmark data where compatible and replacing old Denver labels with Colorado MeshCore.
-4. Port companion naming behavior and emoji/role guidance from upstream, preserving current useful behavior where it is more complete.
-5. Convert `PrefixMatrix` to consume `/api/map/nodes`/`MapNode` instead of legacy `/api/nodes`, with exact public key prefix occupancy and free-prefix suggestions.
-6. Port the Serial USB tool as a progressive-enhancement client component using Web Serial feature detection, secure-context checks, explicit connect button, schema-driven command list from `serial_commands.schema.json`/default commands, disconnect handling, and unsupported-browser fallback.
-7. Evaluate offline key-generation code from upstream for license/security feasibility; include only if it can be ported cleanly with attribution and no unsafe randomness patterns.
-8. Remove the old homepage inline tool sections after the `/tools` routes exist, replacing them with a concise tools teaser or navigation card.
-9. Update navigation/footer/sitemap to include `/tools` and concrete tool subroutes.
+1. Extract current naming and companion logic into pure functions so UI components become consumers rather than owners of domain rules.
+2. Import/adapt upstream recommended settings and region data into typed modules with validation and provenance metadata.
+3. Implement repeater settings JSON generation using generated name, region/home/all region behavior, node type, ownership hints, radio defaults, and file naming compatible with upstream expectations.
+4. Implement companion settings JSON generation using companion name, emoji/handle/suffix strategy, safe defaults, and file naming compatible with upstream expectations where available.
+5. Update `NamingWizard` and `CompanionNamer` to surface generated JSON preview/download buttons without broad visual redesign; if visual layout requires significant aesthetic work, delegate that portion to Opus UI.
+6. Add unit tests for valid/invalid names, 23-character limits, settings JSON shape, file names, upstream fixture parity, and guide/settings consistency.
+7. Update the parity manifest to mark repeater and companion config export items with local file/test refs.
 **Contracts and interfaces:**
-- `/tools` is the top-level tools hub.
-- Tool pages are client components only where browser APIs are needed.
-- Serial tool never attempts device access without user activation.
-- Prefix matrix uses `MapNode.publicKey` or equivalent normalized field, not `NodeWithStats.public_key`.
-**State/data changes:** Static tool data may be added under `src/lib/tools/data` or `public/tools/data`; no database state.
+- Pure config export functions accept typed input objects and return `{ fileName, settingsJson, warnings }` or equivalent.
+- UI download uses a browser Blob generated from pure function output.
+- Generated JSON must be deterministic for the same input.
+**State/data changes:** Static data modules and browser downloads only.
 **Edge cases:**
-- Web Serial is unavailable in many browsers and must show fallback instructions.
-- Nominatim/geocoding usage in current naming wizard must keep clear user disclosure and not block core naming if unavailable.
-- Key generation, if ported, must use browser crypto correctly or be deferred.
-- Existing tools have 23-character MeshCore name limits; preserve validation.
+- Do not silently generate settings when required naming fields are invalid.
+- Preserve the 23-character MeshCore name limit.
+- Ensure generated JSON does not include private keys unless the user explicitly provides/imports them in a future flow.
+- JSON download filenames must be safe and predictable.
 **Acceptance criteria:**
-- `/tools` and feasible tool subroutes render and work.
-- Current naming and prefix features still work, now branded Colorado MeshCore.
-- Prefix matrix uses map-derived data.
-- Web Serial tool is present with feature detection/fallback.
-- Old homepage inline tools are removed or demoted in favor of `/tools`.
+- Repeater and companion tools can generate downloadable settings JSON.
+- Pure functions are unit-tested and parity manifest records coverage.
+- Existing naming workflows still work.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
 - `npm run build`
-**Manual validation:** Run the dev server, exercise `/tools`, repeater naming, companion naming, prefix matrix search/suggest, and serial unsupported-browser/secure-context messaging. If a compatible browser/device is unavailable, explicitly record that Web Serial hardware validation was not performed.
+**Manual validation:** Run the app; generate valid repeater and companion names, download JSON files, inspect content, and verify invalid inputs block generation with clear messages.
 **Risks:**
-- The utilities repo is Flask/app-shaped rather than library-shaped, so direct porting may uncover behavior not cleanly expressible in one step. Research refs: ITEM-pitfalls-9, ITEM-prior-art-4.
-- Web Serial requires HTTPS/trusted localhost, user activation, and browser support. Research refs: ITEM-pitfalls-10, ITEM-prior-art-11.
-**Out of scope for this step:** Server-side Flask deployment, old API deletion, Docker release workflow, and advanced map features unrelated to tools.
+- Copying upstream behavior without a typed model can produce drift and invalid field names. Research refs: ITEM-pitfalls-1, ITEM-pitfalls-2.
+- Companion export behavior may be less explicit upstream than repeater export; tests and warnings must document assumptions. Research refs: ITEM-prior-art-2, ITEM-prior-art-3.
+**Out of scope for this step:** Serial application of settings JSON and PrefixMatrix 4-character redesign.
 
-### Step 6: Redesign homepage and preserve/rebrand core content
-**Goal:** Deliver the balanced-audience Colorado MeshCore homepage and rebrand useful guides/blog/content while removing legacy homepage map/tool/observer assumptions.
-**Why now:** After map and tools routes exist, the homepage can point to real destinations and map-derived stats without relying on old components.
-**Dependencies:** Steps 1-5 and visual primitives from Step 2.
+### Step 6: Full 4-character PrefixMatrix parity and reserved/collision logic
+**Goal:** Replace the current 2-character prefix-byte grid with upstream-style 4-character planning, reserved IDs, collision severity, and better integration with live map snapshot data.
+**Why now:** Repeater/companion config generation requires a reliable 4-character public-key prefix planning tool to avoid collisions.
+**Dependencies:** Steps 2 and 5; current map snapshot data and pure utility modules.
 **Files:**
-- Modify `src/app/page.tsx`
-- Modify `src/components/StatsSection.tsx` or replace with map-derived component
-- Modify `src/app/about/page.tsx`
-- Modify `src/app/why-meshcore/page.tsx`
-- Modify `src/app/start/page.tsx`
-- Modify guide pages under `src/app/guides/*`
-- Modify use-case pages under `src/app/use-cases/*`
-- Modify content files under `content/blog/*.mdx`
-- Modify `src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx`, and blog metadata only if hard-coded Denver strings appear
-- Modify `src/components/Breadcrumbs.tsx` only if brand assumptions appear
+- Modify `src/components/PrefixMatrix.tsx`
+- Add `src/lib/meshcore-tools/prefixes.ts`
+- Modify `src/app/tools/prefix-matrix/page.tsx`
+- Modify `src/components/NamingWizard.tsx` conflict checking to use 4-character logic
+- Modify `src/lib/parity/manifest.ts`
+- Add tests under `src/lib/meshcore-tools/__tests__/prefixes.test.ts`
+- Modify Playwright smoke tests for prefix page
 **Existing code to inspect first:**
-- `src/app/page.tsx` current hero, `StatsSection`, inline naming/prefix tools, mission, features, Discord CTA
-- `src/components/StatsSection.tsx` current `/api/stats` dependency
-- All route files listed by `find src/app -maxdepth 5 -type f`
-- `content/blog/best-meshcore-devices-colorado.mdx`, `denver-network-coverage-update.mdx`, `emergency-preparedness-guide.mdx`, `getting-started-meshcore-denver.mdx`, `solar-powered-repeater-setup.mdx`
-- Grep output for `Denver`, `denver`, `observer`, `NetworkHealth`, `NetworkMap`
+- `src/components/PrefixMatrix.tsx`
+- `src/components/NamingWizard.tsx` pubkey conflict logic
+- `src/hooks/useMapSnapshot.ts` after Step 2
+- `/tmp/meshcore-utilities-site/static/js/prefix_matrix.js`
+- `/tmp/meshcore-utilities-site/templates/prefix_matrix.html`
+- `/tmp/meshcore-utilities-site/static/css/prefix_matrix.css`
 **Implementation plan:**
-1. Delegate the homepage visual rewrite portions to native Opus via `co-ui` or `/opus-ui`, using the shared components and Step 2 visual system; keep content/route logic changes scoped and reviewable.
-2. Rewrite homepage structure for a balanced audience: concise Colorado MeshCore value proposition, primary CTAs for Map, Tools, Guides/Get Started, Discord, map-derived metric strip, operator cards, newcomer onboarding, and maintainer/open-source links.
-3. Replace `StatsSection` with map-derived stats from `/api/map/stats`, including last-updated/source text and graceful empty/error state.
-4. Remove inline homepage `NamingWizard` and `PrefixMatrix` sections now that `/tools` owns those features; replace with tool cards linking to `/tools/repeater-name`, `/tools/companion-name`, `/tools/prefix-matrix`, and `/tools/serial-usb`.
-5. Systematically update visible copy in app pages and MDX content from Denver MeshCore to Colorado MeshCore per user’s full-rename decision, preserving technical substance of guides and blog posts.
-6. Remove references to old observer/analyzer route from homepage/cards/content unless replaced with the new live map or map-derived stats language.
-7. Update page metadata, OpenGraph titles/descriptions, breadcrumb schema labels, and web application schema names for rebranded pages.
-8. Run grep checks and manually review any remaining Denver references to decide whether they are stale and should be removed.
+1. Extract prefix analysis into pure functions that accept map nodes and reserved-prefix definitions and return 4-character occupancy, 2-character rollups, collision severity, free suggestions, and search results.
+2. Adapt upstream reserved/collision rules and ensure they are represented in typed data rather than hard-coded only in UI.
+3. Update `PrefixMatrix` to present the 4-character planning model while preserving usability on desktop/mobile; delegate any significant visual layout changes to Opus UI if needed.
+4. Update `NamingWizard` to check the full 4-character prefix instead of only the first byte, while still explaining broader prefix-byte crowding if useful.
+5. Add deterministic suggestion behavior for free prefixes where possible; avoid random suggestions that can be hard to test unless seeded or isolated.
+6. Add unit tests for collisions, reserved IDs, full-prefix uniqueness, rollups, suggestions, invalid/missing public keys, and sample/live snapshot inputs.
+7. Add Playwright smoke coverage for prefix search, selecting a free prefix, and seeing collision/reserved warnings.
 **Contracts and interfaces:**
-- Homepage stats consume `MapStats` only.
-- Homepage tools links point to `/tools/*` pages.
-- Content pages remain statically renderable unless already dynamic for known reasons.
-**State/data changes:** Content only; no database state.
+- Prefix logic is pure and exports typed analysis results.
+- UI consumes `/api/map/snapshot` or a shared snapshot hook, not `/api/map/nodes` directly.
+- Reserved IDs and severity labels are stable enough for tests and parity manifest references.
+**State/data changes:** None beyond static reserved-prefix data if needed.
 **Edge cases:**
-- Avoid changing technical standards accidentally while renaming.
-- Keep apostrophes/MDX syntax valid.
-- Hard-remove old URLs later only after sitemap/nav no longer reference them.
-- `StatsSection` error state must not show fake numbers.
+- Nodes with missing/short/malformed public keys should not crash analysis.
+- Exact 4-character collision differs from 2-character crowding; UI must not conflate them.
+- Large node lists must not make the grid unusably slow.
 **Acceptance criteria:**
-- Homepage is fully Colorado MeshCore branded and no longer embeds old naming/prefix tools inline.
-- Homepage stats are map-derived and include source/freshness context.
-- Core docs/blog content is preserved but rebranded.
-- Navigation paths from homepage all resolve.
+- PrefixMatrix supports 4-character planning, reserved IDs, collision severity, and meaningful suggestions.
+- Naming conflict warnings use the same shared prefix analysis.
+- Unit and Playwright tests cover key flows.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
+- `npm run test:e2e`
 - `npm run build`
-- `grep -R "Denver MeshCore\|Denver mesh\|denvermc.com\|/observer" -n src content public || true`
-**Manual validation:** Run the dev server, click through homepage CTAs, `/guides`, representative guide pages, `/blog`, and a blog post; inspect console and layout on desktop/mobile.
+**Manual validation:** Run `/tools/prefix-matrix` and repeater naming; test occupied, free, malformed, and reserved prefix scenarios with sample/mock data.
 **Risks:**
-- Full rename can unintentionally alter meaningful geographic/historical details; user explicitly chose full visible rename, so preserve technical facts while changing brand references. Research refs: ITEM-pitfalls-7.
-- Fake or stale metrics can mislead users; stats must be live-map-derived or clearly unavailable. Research refs: ITEM-pitfalls-14.
-**Out of scope for this step:** Map/tool internals, Docker, CI/CD release, and legacy API deletion.
+- A 65,536-cell mental model can overwhelm users if the UI simply expands the old grid. Research refs: ITEM-prior-art-4.
+- Random suggestions can make tests flaky. Research refs: ITEM-architecture-8.
+**Out of scope for this step:** Vanity key generation and contacts export.
 
-### Step 7: Hard-remove legacy observer, health, Turso public map APIs, and duplicate metrics
-**Goal:** Remove the old map/observer/network-health surface and duplicate Turso/bot public metric pipeline from the user-facing app.
-**Why now:** New map/tools/homepage paths must already exist so hard removal does not leave broken navigation.
-**Dependencies:** Steps 3-6 completed and verified.
+### Step 7: Guarded serial settings JSON application and Nominatim proxy
+**Goal:** Close the config-to-device loop with a guarded settings JSON apply flow and move location lookup behind a policy-compliant server proxy.
+**Why now:** Settings JSON export exists after Step 5, and the current client-side Nominatim fetch has policy and header limitations.
+**Dependencies:** Steps 1 and 5; existing Web Serial tool.
 **Files:**
-- Delete `src/app/observer/page.tsx`
-- Delete or stop exporting `src/components/ObserverStats.tsx`
-- Delete or stop exporting `src/components/NetworkHealthCard.tsx`
-- Delete or stop exporting `src/components/TopContributors.tsx` if only used by observer
-- Delete or retire `src/app/api/health/route.ts`
-- Delete or retire `src/app/api/health/history/route.ts`
-- Delete or retire `src/app/api/stats/route.ts` if no remaining caller uses it
-- Delete or retire `src/app/api/nodes/route.ts` and `src/app/api/nodes/[id]/route.ts` after prefix/map callers are migrated
-- Delete or retire `src/app/api/cleanup/route.ts` if it only supports old Turso packet retention and no longer has a runtime owner
-- Modify `src/lib/types.ts` to remove legacy-only `CommunityStats`, `NetworkHealth`, `NodeWithStats` fields only if no remaining caller uses them
-- Modify `src/lib/db/*` only if no remaining route imports DB helpers; otherwise leave unused DB module for a separate cleanup only if build/lint allows
-- Modify `src/hooks/useStats.ts` if replaced by `useMapStats`
-- Modify `src/components/index.ts`
-- Modify `src/app/sitemap.ts`
-- Modify navigation/footer/breadcrumbs if any old `/observer` links remain
+- Modify `src/components/tools/SerialUsbTool.tsx`
+- Modify `src/lib/tools/serial-commands.ts`
+- Add `src/lib/meshcore-tools/serial-settings.ts`
+- Add `src/app/api/geocode/route.ts`
+- Modify `src/components/NamingWizard.tsx` to call the proxy route
+- Modify `src/lib/rate-limit.ts` if needed
+- Modify `src/lib/parity/manifest.ts`
+- Add unit tests under `src/lib/meshcore-tools/__tests__/serial-settings.test.ts`
+- Add route tests or mocked fetch tests for geocoding behavior if feasible
+- Update Playwright smoke tests for serial unsupported state and JSON import UI
 **Existing code to inspect first:**
-- `src/components/index.ts` exports
-- `grep -R "ObserverStats\|NetworkHealthCard\|TopContributors\|useStats\|/api/stats\|/api/health\|/api/nodes\|/observer" -n src content public`
-- `src/lib/db/index.ts`, `src/lib/db/migrations/*`, `src/lib/db/README.md`
-- `src/app/api/discord-webhook/route.ts` to ensure Discord alerts are not unexpectedly tied to old health state before deleting shared types
+- `src/components/tools/SerialUsbTool.tsx`
+- `src/lib/tools/serial-commands.ts`
+- `src/components/NamingWizard.tsx` current Nominatim fetch
+- `src/lib/rate-limit.ts`
+- `/tmp/meshcore-utilities-site/static/data/default_serial_commands.json`
+- `/tmp/meshcore-utilities-site/serial_commands.schema.json`
+- `/tmp/meshcore-utilities-site/static/js/serial_usb_tool_page.js`
 **Implementation plan:**
-1. Run a full reference grep and create a deletion list of legacy observer/map/health files that are no longer referenced after Steps 3-6.
-2. Remove `/observer` route entirely per user’s hard-remove decision and update sitemap/navigation/footer/content links so nothing points to it.
-3. Remove legacy public stats/health/node API routes once all UI consumers use `/api/map/*`.
-4. Remove old components/hooks from exports and delete files that are truly unused.
-5. Keep database modules only if some remaining backend routes still need them, such as Discord webhook/state; otherwise remove old DB migration scripts and `db:migrate` script in a separate sub-action with build verification.
-6. Update `package.json` dependencies only after import analysis: remove `@libsql/client`, `@netlify/functions`, or other legacy dependencies only if no remaining source imports them.
-7. Run lint/typecheck/build after deletion and fix missing imports or stale references.
-8. Run a grep guard for hard-removed routes and legacy API fetches.
+1. Implement a pure conversion module that validates generated/imported settings JSON and turns supported fields into a safe ordered serial command plan with warnings.
+2. Add an upload/paste settings JSON flow to `SerialUsbTool` with preview, explicit confirmation for state-changing commands, and a dry-run command list before anything is sent.
+3. Preserve existing destructive command confirmations and add tests to ensure `erase`, `reboot`, GPS/power/region/config writes, and settings-apply actions remain guarded.
+4. Add an API route for Nominatim geocoding with app identification headers, app-wide rate limiting/caching, country/limit constraints, and no autocomplete behavior.
+5. Update `NamingWizard` to call `/api/geocode` instead of Nominatim directly, and update copy/attribution accordingly.
+6. Add unit tests for settings-to-command conversion, malformed JSON, unsupported fields, confirmation metadata, and geocode input validation.
+7. Add Playwright smoke tests for serial unsupported-browser messaging and JSON apply preview without requiring hardware.
 **Contracts and interfaces:**
-- Removed routes return Next 404; no redirects are added.
-- Supported public live data endpoints are `/api/map/nodes` and `/api/map/stats`.
-- Tool prefix matrix and homepage do not use old `/api/nodes` or `/api/stats`.
-**State/data changes:** Potential removal of old DB dependency and migration scripts if truly unused; no data migration.
+- Serial settings converter returns a typed command plan and never writes to hardware directly.
+- UI sends serial commands only after user activation, device connection, preview, and confirmation.
+- `GET /api/geocode?q=...` or equivalent returns normalized geocode results and nearest airport info without storing user input.
+**State/data changes:** In-memory rate-limit/cache only unless existing utilities support a simple cache; no database.
 **Edge cases:**
-- `src/app/api/discord-webhook/route.ts` may still rely on `NetworkHealth`/DB state; do not delete shared types until references are gone or migrated.
-- Build can pass while stale content links remain; grep and manual click-through are required.
-- Hard removal means old URLs intentionally 404.
+- Web Serial unavailable/insecure contexts must still show a useful non-error state.
+- Uploaded JSON may be malformed, from another firmware version, or include unsupported/private fields.
+- Nominatim route must reject empty, too-long, or high-rate input and must not implement autocomplete/typeahead.
 **Acceptance criteria:**
-- `/observer` and replaced legacy APIs are removed or intentionally 404.
-- No source/content references point to `/observer`, old public health cards, or legacy stats APIs.
-- No duplicate public metric source remains in active UI.
+- Serial USB tool can preview and guarded-apply generated/imported settings JSON commands.
+- Nominatim calls go through the server route, not directly from the browser.
+- Safety/unit/browser smoke tests pass.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
+- `npm run test:e2e`
 - `npm run build`
-- `grep -R "ObserverStats\|NetworkHealthCard\|TopContributors\|/observer\|/api/stats\|/api/health\|/api/nodes" -n src content public || true`
-**Manual validation:** Run the dev server, verify `/observer` 404s, `/map` works, `/tools` works, homepage stats still render, and no navigation sends users to removed pages.
+**Manual validation:** Run `/tools/serial-usb` in a browser without hardware to validate unsupported/secure-context states and JSON preview. Run the naming wizard geocode lookup and verify proxy response/attribution. If no serial hardware is available, explicitly record hardware validation as not performed.
 **Risks:**
-- Removing DB/types too aggressively can break Discord webhook or hidden API code. Verify imports before deletion. Research refs: ITEM-architecture-5, ITEM-pitfalls-14.
-- User chose hard removal, so SEO/redirect loss is accepted; do not add redirects. User decision overrides Q&A default.
-**Out of scope for this step:** New map/tool features and Docker release workflow.
+- Serial command application can misconfigure devices if warnings or confirmations are weakened. Research refs: ITEM-pitfalls-9.
+- Nominatim public API policy can be violated by autocomplete or missing identification/rate limiting. Research refs: ITEM-pitfalls-8.
+**Out of scope for this step:** Hardware-required end-to-end serial validation unless a compatible device is available.
 
-### Step 8: Docker-primary runtime, Compose examples, and migrated headers
-**Goal:** Make the site runnable as the primary Docker artifact and provide Compose-based runtime configuration examples for local/production use.
-**Why now:** App functionality should be stable before containerization, but Docker must land before release CD.
-**Dependencies:** Steps 1-7 and successful `npm run build`.
+### Step 8: Pragmatic blocking CI hardening and Docker runtime smoke
+**Goal:** Enforce the new test, accessibility, Lighthouse, build, and Docker runtime checks in CI while keeping normal PRs near the user’s target budget.
+**Why now:** Feature parity and tests are in place, so CI can now guard them and catch regressions.
+**Dependencies:** Steps 1-7.
 **Files:**
-- Modify `next.config.js`
-- Add `Dockerfile`
-- Add `.dockerignore`
-- Add `compose.yaml` or `docker-compose.yml`
-- Add `.env.example`
-- Add `docker/` files if needed, such as `docker/Caddyfile` or `docker/nginx.conf`
-- Modify `public/_headers` or document it as legacy if Docker proxy owns headers
-- Modify `netlify.toml` to mark Netlify as legacy or remove only if user approves removal beyond Docker-primary scope
-- Modify `package.json` scripts if needed for container smoke tests
-**Existing code to inspect first:**
-- `next.config.js` currently has no standalone output
-- `netlify.toml` and `public/_headers` for security headers/CSP/cache behavior
-- `package.json` scripts: `dev`, `build`, `start`, `lint`, `db:migrate`
-- `package-lock.json` and `.next/package.json` should not be used as source config
-**Implementation plan:**
-1. Set `output: 'standalone'` in `next.config.js` and verify `npm run build` emits `.next/standalone`.
-2. Add a multi-stage Node 24 Dockerfile using `npm ci`, `npm run build`, a non-root runtime user, copied `.next/standalone`, `.next/static`, and `public`, with `HOSTNAME=0.0.0.0` and `PORT=3000`.
-3. Add `.dockerignore` excluding `node_modules`, `.next`, `.forge`, `.git`, local env files, logs, and other non-runtime artifacts.
-4. Add `.env.example` documenting public site URL, map/MQTT runtime env vars, sample-data flag, and any optional tile/provider settings.
-5. Add `compose.yaml` with a `web` service, env-file support, explicit env vars, port mapping, restart policy, health check, and optional commented proxy profile.
-6. Add a proxy config if needed to migrate security headers/CSP/cache rules from `netlify.toml`/`public/_headers`, ensuring CSP allows map tile and MQTT/WebSocket origins configured by runtime.
-7. Test local Docker build and container startup.
-8. Update docs only in existing README/CONTRIBUTING if already present and necessary; otherwise keep Docker usage in Compose comments and `.env.example` to avoid creating extra docs.
-**Contracts and interfaces:**
-- Docker image runs `node server.js` from Next standalone output.
-- Container listens on `3000` by default.
-- Runtime configuration is passed through env vars; secrets are not baked into the image.
-- Compose supports setting env vars via `.env`/`env_file`.
-**State/data changes:** Docker files only.
-**Edge cases:**
-- Next standalone output must include required public assets and static files.
-- CSP must not block map tiles, MQTT/WebSocket endpoints, or Web Serial page assets.
-- Build must not depend on production MQTT secrets.
-- The container must run as non-root.
-**Acceptance criteria:**
-- `docker build` succeeds.
-- `docker run` or `docker compose up` serves the app at localhost.
-- Security/cache headers are preserved or intentionally moved to proxy config.
-- Runtime env vars can be set through Compose.
-**Verification commands:**
-- `npm run build`
-- `docker build -t colorado-meshcore-site:forge .`
-- `docker compose config`
-- `docker compose up --build` for manual validation
-- `curl -I http://localhost:3000/`
-- `curl -s http://localhost:3000/api/map/stats`
-**Manual validation:** Open the Docker-served site in a browser, check homepage, `/map`, `/tools`, a guide, and console/network errors.
-**Risks:**
-- Netlify headers/redirects/cache behavior can be lost during Docker migration. Research refs: ITEM-pitfalls-3.
-- Docker images can accidentally run dev servers or include unnecessary artifacts. Research refs: ITEM-pitfalls-4.
-**Out of scope for this step:** GHCR publishing workflow and production infrastructure deployment.
-
-### Step 9: GitHub Release CD for GHCR images
-**Goal:** Publish Docker images to GHCR from GitHub Releases/tags using semver aliases and `latest`.
-**Why now:** Docker image must build locally before adding release automation.
-**Dependencies:** Step 8 Dockerfile/Compose verified.
-**Files:**
-- Add `.github/workflows/docker-release.yml`
-- Modify `.github/workflows/ci.yml` only if adding Docker build smoke to CI
-- Possibly modify `package.json` scripts if a release smoke script is useful
+- Modify `.github/workflows/ci.yml`
+- Modify `.github/workflows/security.yml` if dependency review/CodeQL scheduling changes are needed
+- Modify `.github/workflows/docker-release.yml` only if release workflow needs to reuse smoke/build logic safely
+- Add scripts under `scripts/` if a Docker smoke helper is clearer than inline YAML
+- Modify `package.json`
+- Modify `package-lock.json` only if needed for CI tools
+- Modify `compose.yaml` if healthcheck/source assertions need env support
+- Modify `src/lib/parity/manifest.ts` with CI coverage refs
 **Existing code to inspect first:**
 - `.github/workflows/ci.yml`
 - `.github/workflows/security.yml`
-- GitHub repository owner/name assumptions from `git remote -v` during step execution
-- Dockerfile and Compose files from Step 8
+- `.github/workflows/docker-release.yml`
+- `Dockerfile`
+- `compose.yaml`
+- `package.json` scripts after Step 1
+- Lighthouse/Playwright config from Step 1
 **Implementation plan:**
-1. Add a workflow triggered by `release: published` and version tags such as `v*.*.*`, with `workflow_dispatch` for manual validation if desired.
-2. Use `actions/checkout@v4`, `docker/setup-buildx-action`, `docker/login-action` to `ghcr.io`, and `docker/metadata-action` to generate semver, major/minor, SHA, and `latest` tags for stable releases.
-3. Use `docker/build-push-action` to build and push the Dockerfile, with OCI labels for source, revision, version, description, and license/compliance notes where appropriate.
-4. Set workflow permissions: `contents: read`, `packages: write`, and `attestations`/`id-token` only if adding provenance.
-5. Add a CI-only Docker build smoke check if acceptable, without pushing images on PRs.
-6. Ensure image name resolves to `ghcr.io/<owner>/<repo>` or an explicitly configured Colorado Mesh package name.
-7. Verify workflow syntax locally as much as possible and run `npm run build`/Docker build before commit.
+1. Update PR CI to run install, lint, typecheck, unit tests, Chromium Playwright smoke tests, blocking axe checks, blocking Lighthouse CI, production build, and Docker build/run smoke in a clear job structure.
+2. Add Docker runtime smoke that builds the image, runs it with explicit demo/sample or live-map mock env, curls `/`, `/api/map/snapshot`, `/api/map/runtime`, and asserts source/warning behavior under controlled env.
+3. Use GitHub Actions caching for npm, Playwright browsers where safe, Docker Buildx cache, and parallel jobs to stay near the ~10-minute budget.
+4. Add dependency review on PRs and keep security scans/audit meaningful without causing unnecessary noise; CodeQL can remain separate/scheduled if runtime budget demands.
+5. Ensure Docker release workflow still only pushes on release/tag/manual events and no new CI job publishes images.
+6. Add CI comments/env docs for Lighthouse budgets and axe blocking behavior.
+7. Run local equivalents where possible and inspect workflow YAML for syntax/errors.
 **Contracts and interfaces:**
-- Release publish creates GHCR tags: exact release version, semver aliases, SHA, and `latest`.
-- PR/main CI does not push stable images unless user separately requests edge publishing.
-**State/data changes:** GitHub package publication occurs only when workflow runs on GitHub releases.
+- Normal PR CI must not push images, create releases, or contact shared services.
+- Blocking checks include axe and Lighthouse per user decision.
+- Docker smoke asserts operability, not just buildability.
+**State/data changes:** CI workflow and scripts only.
 **Edge cases:**
-- GitHub package permissions must allow GHCR writes.
-- `latest` should only be attached to stable release events, not arbitrary PR builds.
-- Workflow should not require local secrets.
+- Lighthouse can be flaky in shared CI; use local server, stable route set, and realistic budgets.
+- Playwright install/cache can dominate runtime; keep PR scope Chromium-only unless performance allows more.
+- Docker smoke must clean up containers even on failure.
 **Acceptance criteria:**
-- A release workflow exists and is syntactically valid.
-- The Docker image builds in CI context and is configured to push to GHCR on releases.
-- CI still lints/typechecks/builds with Node 24.
+- CI includes the agreed checks and remains structured for maintainability.
+- Docker smoke runs a container and validates key routes/source behavior.
+- No workflow pushes or publishes external artifacts during PR checks.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
+- `npm run test:e2e`
+- `npm run test:lighthouse`
 - `npm run build`
-- `docker build -t colorado-meshcore-site:release-test .`
-**Manual validation:** Inspect generated workflow YAML for triggers, permissions, tags, and image name; optionally run `gh workflow view` after commit if available.
+- `docker build -t colorado-meshcore-site:ci-smoke .`
+- Docker run/curl smoke helper if added
+**Manual validation:** Inspect workflow YAML triggers, permissions, cache usage, push behavior, and expected runtime budget.
 **Risks:**
-- Ambiguous image tags or missing package permissions can make releases unusable. Research refs: ITEM-pitfalls-5, ITEM-stack-4.
-- Release workflow changes are visible shared CI/CD behavior, so verify carefully before commit.
-**Out of scope for this step:** Creating an actual GitHub release or pushing an image manually unless the user requests it.
+- Blocking Lighthouse immediately can create noisy failures. User explicitly chose both Lighthouse and axe as blocking, so set sane but real budgets and stabilize the environment. Research refs: ITEM-stack-10, ITEM-architecture-9.
+- Docker build-only checks provide false confidence; run-smoke must be included. Research refs: ITEM-pitfalls-12.
+**Out of scope for this step:** Publishing GHCR images or creating releases.
 
-### Step 10: Final integration, browser validation, and cleanup
-**Goal:** Validate the complete redesigned site across app routes, Docker runtime, map/tools behavior, and hard-removal decisions before final review.
-**Why now:** Cross-step issues can appear only after brand, UI, map, tools, route deletion, Docker, and CD are assembled.
-**Dependencies:** Steps 1-9.
+### Step 9: Final parity audit, browser/UI validation, and maintainer report
+**Goal:** Validate the complete pass against upstream parity, UI/UX behavior, CI gates, Docker runtime, and final Forge review requirements.
+**Why now:** Cross-step regressions can appear only after map, tools, serial, runtime config, Opus UI, and CI are assembled.
+**Dependencies:** Steps 1-8.
 **Files:**
-- Modify any files required to fix integration issues found during validation
-- Update `.forge/steps/step-10-plan.md` during execution with exact fixes before editing
-- Save final review artifact under `.forge/reviews/final-claude-review.json` in Phase 8
+- Modify `src/lib/parity/manifest.ts` if final audit discovers inaccurate statuses
+- Add or update generated maintainer parity report file only if the implementation chose to check one into the repo; otherwise keep report generation as a test/script artifact
+- Modify any source files needed to fix validation defects, after updating `.forge/steps/step-9-plan.md`
+- Save review artifacts under `.forge/reviews/`
 **Existing code to inspect first:**
-- `git diff 6dd693f91eb10f37919189838085b632baefbb13...HEAD`
-- `src/app/sitemap.ts`
-- `src/components/Navigation.tsx`, `src/components/Footer.tsx`, `src/components/index.ts`
-- `package.json`, workflows, Dockerfile, Compose files
-- Remaining grep output for old brand/routes/APIs
+- `git diff $(cat .forge/.base-ref)...HEAD`
+- `src/lib/parity/manifest.ts`
+- `src/app/map/page.tsx`
+- `src/app/tools/*`
+- `src/components/NetworkMap.tsx`
+- `src/components/NamingWizard.tsx`
+- `src/components/CompanionNamer.tsx`
+- `src/components/PrefixMatrix.tsx`
+- `src/components/tools/SerialUsbTool.tsx`
+- `.github/workflows/ci.yml`
+- `Dockerfile` and `compose.yaml`
 **Implementation plan:**
-1. Run the complete automated verification suite: lint, typecheck, Next build, Docker build, Compose config, and any targeted route/API curl checks.
-2. Start the dev server and use the browser to validate homepage, `/map`, `/tools`, each feasible tool route, `/guides`, a guide page, `/blog`, a blog post, `/about`, and removed `/observer` behavior.
-3. Start the Docker container/Compose stack and repeat the golden-path browser checks against the container-served app.
-4. Inspect browser console and network requests for hydration, missing assets, blocked CSP, map tile/API, and Web Serial unsupported-browser states.
-5. Run grep guards for old branding, removed routes, old APIs, and mock/prototype artifacts.
-6. Fix only integration defects discovered by validation; if fixes require scope expansion, update `.forge/PLAN.md` and ask the user before proceeding.
-7. Ensure no `.forge/research` or tool-result artifacts are accidentally included in Docker image or app runtime.
-8. Prepare final verification notes for Phase 8 final Claude review.
+1. Run the full automated suite: lint, typecheck, unit tests, Playwright/axe smoke, Lighthouse, Next build, Docker build, Docker run smoke, and Compose config.
+2. Run parity manifest/report generation and confirm all implemented/deferred statuses match user decisions, especially no public contacts export and all feasible live-map feature proxying.
+3. Start the dev server and browser-validate homepage, `/map`, `/tools`, repeater naming, companion naming, PrefixMatrix, serial USB, guides, blog, about, responsive nav, console, and network requests.
+4. Start the Docker runtime and repeat critical golden paths, including `/api/map/snapshot`, `/api/map/runtime`, source warning behavior, settings JSON downloads, and map page loading.
+5. If Opus UI changed visual/frontend files, verify with browser screenshots/console/network and ensure no SSR/hydration or accessibility regressions.
+6. Run grep guards for stale Denver branding, old APIs, public contacts route, exposed live-map tokens, direct Nominatim browser fetches, and unintended `.forge.bak` inclusion.
+7. Fix only validation defects discovered in this step; if fixes require new product scope, update `.forge/PLAN.md` and ask the user before proceeding.
+8. Prepare final verification notes for Forge final review.
 **Contracts and interfaces:**
-- All public supported routes should render under dev server and Docker.
-- Removed routes intentionally 404.
-- Docker build must not depend on local `.env` secrets.
-- Browser validation is required before reporting UI/frontend completion.
-**State/data changes:** None beyond fixes.
+- Maintainer parity status remains internal/repo-only, not public UI.
+- Contacts export remains absent.
+- Browser map/tool flows use local server APIs, not protected upstream URLs directly.
+- Docker image does not include `.forge.bak.*` artifacts.
+**State/data changes:** Validation fixes only.
 **Edge cases:**
-- Browser-only serial/map code may pass build but fail at runtime.
-- Docker-served app may differ from dev server due to standalone output/static files.
-- CSP/proxy/header changes may block required connections.
+- Web Serial hardware validation may not be possible; report that explicitly if no device/browser access is available.
+- Live-map sidecar validation may require local service credentials; if unavailable, validate mocked/unavailable behavior and route contracts.
+- Lighthouse/axe failures may require Opus UI follow-up if visual accessibility issues are found.
 **Acceptance criteria:**
 - Automated checks pass.
 - Browser golden paths pass in dev and Docker runtime.
-- No unexpected console/network errors on key pages.
-- Old observer and duplicate metric APIs are not linked from the app.
-- Final Claude review can evaluate complete changes since `.forge/.base-ref`.
+- Parity manifest accurately reflects implemented and deferred items.
+- No protected secrets appear in browser/network responses.
+- Final Forge reviewer approves the complete diff.
 **Verification commands:**
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm run test:unit`
+- `npm run test:e2e`
+- `npm run test:a11y`
+- `npm run test:lighthouse`
 - `npm run build`
 - `docker build -t colorado-meshcore-site:final .`
 - `docker compose config`
-- `grep -R "Denver MeshCore\|denvermc.com\|/observer\|/api/stats\|/api/health\|/api/nodes" -n src content public .github Dockerfile compose.yaml package.json || true`
-**Manual validation:** Dev-server and Docker browser checks for homepage, map, tools, representative content, removed observer route, responsive navigation, console, and network.
+- Docker run/curl smoke helper if added
+- `grep -R "nominatim.openstreetmap.org\|MESHCORE_LIVE_MAP_API_TOKEN\|/contacts\|/api/nodes\|/api/stats\|/api/health" -n src content public .github Dockerfile compose.yaml package.json || true`
+**Manual validation:** Dev-server and Docker browser validation for map, tools, settings JSON downloads, PrefixMatrix, serial unsupported/preview state, guides/blog/about, mobile nav, console, and network.
 **Risks:**
-- Per-step reviews may miss cross-step runtime bugs; final integration is required. Research refs: Forge review caveat, ITEM-pitfalls-2, ITEM-pitfalls-3, ITEM-pitfalls-11.
-**Out of scope for this step:** New product features beyond fixing integration defects and validation blockers.
+- Per-step reviews may miss cross-step integration and runtime issues. Research refs: Forge review caveat, ITEM-pitfalls-12.
+- Browser-only map/serial UI can pass build but fail at runtime. Research refs: ITEM-architecture-6, ITEM-pitfalls-9.
+**Out of scope for this step:** New features beyond validation fixes, publishing releases/images, public contacts export, and hidden redirects for old removed routes.
 
 ## Cross-Step Integration Checks
-- Brand consistency: `grep -R "Denver MeshCore\|denvermc.com\|@denver_meshcore" -n src content public .github netlify.toml package.json || true`, then manually classify any remaining references.
-- Removed routes: verify `/observer` intentionally 404s and no app links point to it.
-- Data source consistency: homepage, map, and tools prefix matrix must use `/api/map/*`, not `/api/stats`, `/api/health`, or `/api/nodes`.
-- Runtime config: app must build without production MQTT secrets and run with Compose env vars.
-- License/compliance: live-map-derived work must preserve GPL attribution/source notice; icon assets are authorized by user decision.
-- UI runtime: browser checks must cover map hydration, mobile navigation, tool interactions, and Web Serial unsupported-browser fallback.
-- Docker parity: Docker-served pages must match dev-server behavior for key routes.
-- Header/security parity: Docker/proxy path must preserve security headers from Netlify where applicable and allow map/tool connectivity.
-- Release readiness: GHCR workflow must not publish on PRs and must tag release images as requested.
+- Upstream parity: parity manifest must identify implemented, deferred, and out-of-scope items for utilities, repeater configs, serial, PrefixMatrix, live-map API/UI, Docker, and CI.
+- Live-map topology: production path should be Next site -> server-side APIs -> `meshcore-mqtt-live-map`; direct MQTT in Next remains a decoded-JSON fallback only.
+- Credentials: `MESHCORE_LIVE_MAP_API_TOKEN`, MQTT credentials, and any upstream tokens must never appear in browser bundles, client runtime config, logs, or API responses.
+- Map source truthfulness: sample/demo map data must be clearly marked and guarded in production/CI.
+- Runtime config: tile URL/attribution and public map settings that operators expect to change post-build should come from a server endpoint, not frozen `NEXT_PUBLIC_*` values.
+- Tool parity: repeater and companion settings JSON downloads must match tested typed contracts; PrefixMatrix must use 4-character logic; serial apply flow must preserve confirmations.
+- Nominatim: browser code must not fetch public Nominatim directly; lookup must be user-triggered through the server proxy with attribution/rate limiting.
+- Contacts: no public `/contacts` export should be added.
+- UI delegation: any visual/aesthetic frontend work must be performed by Opus UI delegation, then reviewed and tested here.
+- CI: PR workflow must remain non-publishing and include lint, typecheck, unit tests, browser/accessibility/performance smoke, build, and Docker runtime smoke.
+- Docker: image must exclude `.forge.bak.*`, `.forge/`, local env files, reports, and test artifacts unless intentionally needed.
 
 ## Testing Strategy
-- Per-step automated checks: `npm run lint`, `npx tsc --noEmit`, and `npm run build` unless the step explicitly does not touch source.
-- Map/API checks: `curl` new `/api/map/stats` and `/api/map/nodes` routes during dev server and Docker validation.
-- Docker checks: `docker build`, `docker compose config`, `docker compose up --build`, and `curl -I` for served headers.
-- Browser checks: homepage, `/map`, `/tools`, tool subroutes, guides, blog, about, mobile nav, console/network logs, and intentional `/observer` 404.
-- Workflow checks: YAML inspection plus local Docker build; do not trigger real release publishing unless requested.
-- Review gates: each implementation step stages specific files, gets a Claude `forge-reviewer` review saved under `.forge/reviews/claude-step-N.json`, fixes required changes, then commits. Final full-project Claude review runs after all steps.
+- Unit/contract tests with Vitest for map env parsing, live-map normalization/auth, parity manifest, settings JSON generation, PrefixMatrix analysis, serial settings conversion, and safety metadata.
+- Playwright Chromium smoke tests for critical pages and browser-only flows: map, tools hub, repeater/companion JSON download, PrefixMatrix, serial unsupported/preview states, and navigation.
+- Blocking axe checks for critical pages and flows.
+- Blocking Lighthouse CI with stable local-server budgets.
+- Next build and TypeScript checks for production correctness.
+- Docker build plus Docker run/curl smoke for runtime operability, source warning behavior, and key API routes.
+- Manual browser validation for dev and Docker runtime, including console/network checks and mobile navigation.
+- Forge review gates: stage each step’s specific files, run `forge-reviewer`, save JSON review artifacts, fix required changes, and commit per approved step.
 
 ## Out of Scope
-- Creating or pushing an actual GitHub release/image manually unless the user asks.
-- Running the live map as an external sidecar/subdomain in the first implementation path.
-- Keeping old `/observer` or adding redirects for removed routes.
-- Hiding or blurring public map node locations.
-- Building a custom full IoT platform beyond MeshCore map/tools/community portal needs.
-- Adding paid/commercial telemetry platforms.
-- Introducing feature flags or backward-compatibility shims for old Denver branding/routes.
+- Public contacts export.
+- Publishing GitHub releases, pushing GHCR images, or touching shared production services without explicit user approval.
+- Making the Next app the authoritative raw MeshCore MQTT packet decoder.
+- Adding a site-owned persistent database.
+- Public parity/status UI; parity report is for maintainers/CI first.
+- Hardware-required serial validation if no compatible device/browser is available.
+- Unbounded live-map rewrites beyond feasible server-side proxy contracts and Opus-delegated UI work.
