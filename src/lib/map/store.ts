@@ -12,6 +12,15 @@ import type {
   MapStats,
 } from './types';
 
+interface LiveMapApiSnapshotState {
+  configKey: string | null;
+  lastFetchedAt: string | null;
+  lastError: string | null;
+  nodes: MapNode[];
+  links: MapLink[];
+  routes: MapRoute[];
+}
+
 interface MqttSnapshotState {
   client: MqttClient | null;
   configKey: string | null;
@@ -24,6 +33,15 @@ interface MqttSnapshotState {
   links: MapLink[];
   routes: MapRoute[];
 }
+
+const liveMapApiState: LiveMapApiSnapshotState = {
+  configKey: null,
+  lastFetchedAt: null,
+  lastError: null,
+  nodes: [],
+  links: [],
+  routes: [],
+};
 
 const mqttState: MqttSnapshotState = {
   client: null,
@@ -69,8 +87,20 @@ function buildEmptyMapSnapshot(now = new Date()): MapSnapshot {
   };
 }
 
+function liveMapApiConfigKey(config: MapRuntimeConfig): string {
+  return [config.liveMapApiUrl, config.liveMapApiToken].join('|');
+}
+
 function mqttConfigKey(config: MapRuntimeConfig): string {
   return [config.mqttUrl, config.mqttUsername, config.mqttPassword, config.mqttTopic, config.mqttClientId].join('|');
+}
+
+function resetLiveMapApiState() {
+  liveMapApiState.lastFetchedAt = null;
+  liveMapApiState.lastError = null;
+  liveMapApiState.nodes = [];
+  liveMapApiState.links = [];
+  liveMapApiState.routes = [];
 }
 
 function resetMqttState() {
@@ -103,7 +133,12 @@ function readPayloadNodes(payload: unknown): unknown[] {
   if (Array.isArray(record.data)) return record.data;
   if (Array.isArray(record.nodeList)) return record.nodeList;
   if (record.nodes && typeof record.nodes === 'object') return readRecordArray(record.nodes);
-  if (record.data && typeof record.data === 'object') return readRecordArray(record.data);
+  if (record.data && typeof record.data === 'object') {
+    const data = record.data as Record<string, unknown>;
+    if (Array.isArray(data.nodes)) return data.nodes;
+    if (data.nodes && typeof data.nodes === 'object') return readRecordArray(data.nodes);
+    return readRecordArray(data);
+  }
 
   return [payload];
 }
@@ -140,13 +175,17 @@ function mergeMqttNodes(nodes: MapNode[]) {
   mqttState.nodes = uniqueMapNodes(Array.from(merged.values()));
 }
 
-function applyMqttPayload(payload: unknown) {
-  const now = new Date();
-  const nodes = uniqueMapNodes(
+function normalizePayloadNodes(payload: unknown, now = new Date()): MapNode[] {
+  return uniqueMapNodes(
     readPayloadNodes(payload)
       .map((entry) => normalizeLiveMapNode(entry, now))
       .filter((node): node is MapNode => node !== null)
   );
+}
+
+function applyMqttPayload(payload: unknown) {
+  const now = new Date();
+  const nodes = normalizePayloadNodes(payload, now);
 
   if (isFullSnapshotPayload(payload)) {
     mqttState.nodes = nodes;
@@ -157,6 +196,96 @@ function applyMqttPayload(payload: unknown) {
   if (hasPayloadKey(payload, 'links')) mqttState.links = readLinks(payload, 'links') as MapLink[];
   if (hasPayloadKey(payload, 'routes')) mqttState.routes = readLinks(payload, 'routes') as MapRoute[];
   mqttState.lastMessageAt = now.toISOString();
+}
+
+function buildLiveMapApiUrl(config: MapRuntimeConfig): string | null {
+  if (!config.liveMapApiUrl) return null;
+
+  const endpoint = new URL(config.liveMapApiUrl);
+  endpoint.searchParams.set('mode', 'full');
+  if (config.liveMapApiToken) endpoint.searchParams.set('token', config.liveMapApiToken);
+  return endpoint.toString();
+}
+
+async function refreshLiveMapApiSnapshot(config: MapRuntimeConfig, now = new Date()) {
+  if (!config.liveMapApiUrl) return;
+
+  const configKey = liveMapApiConfigKey(config);
+  if (liveMapApiState.configKey !== configKey) {
+    resetLiveMapApiState();
+    liveMapApiState.configKey = configKey;
+  }
+
+  if (liveMapApiState.lastFetchedAt) {
+    const lastFetched = Date.parse(liveMapApiState.lastFetchedAt);
+    const refreshMs = config.liveMapApiRefreshSeconds * 1000;
+    if (!Number.isNaN(lastFetched) && now.getTime() - lastFetched < refreshMs) return;
+  }
+
+  const url = buildLiveMapApiUrl(config);
+  if (!url) return;
+
+  try {
+    const response = await fetch(url, {
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`live map API returned ${response.status}`);
+    }
+
+    const payload = await response.json() as unknown;
+    liveMapApiState.nodes = normalizePayloadNodes(payload, now);
+    liveMapApiState.links = hasPayloadKey(payload, 'links') ? readLinks(payload, 'links') as MapLink[] : [];
+    liveMapApiState.routes = hasPayloadKey(payload, 'routes') ? readLinks(payload, 'routes') as MapRoute[] : [];
+    liveMapApiState.lastFetchedAt = now.toISOString();
+    liveMapApiState.lastError = null;
+  } catch (error) {
+    liveMapApiState.lastFetchedAt = now.toISOString();
+    liveMapApiState.lastError = error instanceof Error ? error.message : 'Unable to fetch live map API data';
+  }
+}
+
+async function buildLiveMapApiSnapshot(config: MapRuntimeConfig, now = new Date()): Promise<MapSnapshot> {
+  await refreshLiveMapApiSnapshot(config, now);
+
+  const source: MapSnapshotSource = {
+    type: 'live_map_api',
+    label: liveMapApiState.nodes.length ? 'meshcore-mqtt-live-map API data' : 'Awaiting meshcore-mqtt-live-map API data',
+    lastUpdated: liveMapApiState.lastFetchedAt,
+  };
+
+  const state = liveMapApiState.lastError ? 'error' : 'connected';
+  const message = liveMapApiState.lastError
+    ? `Live map API error: ${liveMapApiState.lastError}`
+    : liveMapApiState.nodes.length
+      ? 'Live map API data is active.'
+      : 'Connected to the live map API and waiting for nodes.';
+
+  const connection: MapConnectionStatus = {
+    state,
+    configured: true,
+    sampleData: false,
+    historyEnabled: config.historyEnabled,
+    topic: config.liveMapApiUrl,
+    lastConnectedAt: liveMapApiState.lastFetchedAt,
+    lastMessageAt: liveMapApiState.lastFetchedAt,
+    message,
+  };
+
+  const nodes = uniqueMapNodes(liveMapApiState.nodes);
+  const stats = buildMapStats(nodes, liveMapApiState.links, liveMapApiState.routes, source, connection.state);
+
+  return {
+    generatedAt: now.toISOString(),
+    nodes,
+    links: liveMapApiState.links,
+    routes: liveMapApiState.routes,
+    stats,
+    connection,
+    source,
+  };
 }
 
 function ensureMqttClient(config: MapRuntimeConfig) {
@@ -274,6 +403,10 @@ export async function getMapSnapshot(): Promise<MapSnapshot> {
 
   if (config.sampleData) {
     return buildSampleMapSnapshot();
+  }
+
+  if (config.liveMapApiConfigured) {
+    return buildLiveMapApiSnapshot(config);
   }
 
   if (config.mqttConfigured) {

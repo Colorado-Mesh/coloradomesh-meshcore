@@ -131,6 +131,89 @@ const settingsReference = [
   },
 ];
 
+const serialSettings = [
+  { setting: "Baud rate", value: "115200" },
+  { setting: "Data bits", value: "8" },
+  { setting: "Stop bits", value: "1" },
+  { setting: "Parity", value: "none" },
+  { setting: "Flow control", value: "none" },
+  { setting: "Line ending", value: "CRLF" },
+];
+
+const serialCommandGroups = [
+  {
+    title: "Identify and time-sync",
+    purpose: "Confirm firmware, board, and clock, then sync time after every reboot or power cycle.",
+    commands: `ver
+board
+clock
+clock sync`,
+  },
+  {
+    title: "Confirm radio and identity",
+    purpose: "Verify the node name, repeater role, radio preset, frequency, transmit power, airtime factor, and public key.",
+    commands: `get name
+get role
+get radio
+get freq
+get tx
+get af
+get repeat
+get public.key`,
+  },
+  {
+    title: "Check location and adverts",
+    purpose: "Make sure map coordinates, local adverts, flood adverts, flood limits, and read-only access are set correctly.",
+    commands: `get lat
+get lon
+get advert.interval
+get flood.advert.interval
+get flood.max
+get guest.password
+get allow.read.only`,
+  },
+  {
+    title: "Audit owner and delay tuning",
+    purpose: "Confirm maintenance contact info, access control, and the TX/RX delay profile selected for the site.",
+    commands: `get owner.info
+get acl
+get rxdelay
+get txdelay
+get direct.txdelay`,
+  },
+  {
+    title: "Observe health and neighbors",
+    purpose: "Inspect runtime counters and discover nearby nodes before leaving an install online.",
+    commands: `stats-core
+stats-radio
+stats-packets
+discover.neighbors
+neighbor`,
+  },
+];
+
+const optionalSerialChecks = [
+  {
+    title: "Bridge parameters",
+    commands: `get bridge.enabled
+get bridge.delay
+get bridge.source
+get bridge.baud
+get bridge.secret`,
+  },
+  {
+    title: "GPS state",
+    commands: `gps on
+gps sync
+gps off`,
+  },
+  {
+    title: "Power saving",
+    commands: `powersaving on
+powersaving off`,
+  },
+];
+
 const breadcrumbData = generateBreadcrumbSchema([
   { name: 'Home', url: BASE_URL },
   { name: 'Guides', url: `${BASE_URL}/guides` },
@@ -158,6 +241,9 @@ export default function RepeaterSetupPage() {
               </a>
               <a href="#profiles" className="btn-outline">
                 TX/RX Delay Profiles
+              </a>
+              <a href="#serial-preflight" className="btn-outline">
+                Serial Preflight
               </a>
               <a href="#understanding" className="btn-outline">
                 Technical Reference
@@ -331,8 +417,64 @@ set guest.password`}</pre>
           </div>
         </section>
 
+        {/* Serial Preflight */}
+        <section id="serial-preflight" className="px-6 py-16">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
+              USB Serial Preflight
+            </h2>
+            <p className="text-foreground-muted text-center mb-12 max-w-3xl mx-auto">
+              The Web Serial console uses the same default command profile as the Colorado Mesh utility site. Use it before and after field installs to verify the repeater is configured and healthy.
+            </p>
+
+            <div className="card-mesh overflow-hidden mb-8">
+              <div className="p-4 border-b border-card-border">
+                <h3 className="font-semibold text-foreground">Serial connection settings</h3>
+              </div>
+              <table className="w-full">
+                <tbody className="divide-y divide-card-border">
+                  {serialSettings.map((row) => (
+                    <tr key={row.setting} className="hover:bg-night-800/30 transition-colors">
+                      <td className="px-6 py-3 text-sm text-foreground-muted">{row.setting}</td>
+                      <td className="px-6 py-3 font-mono text-sm text-mesh">{row.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              {serialCommandGroups.map((group) => (
+                <div key={group.title} className="card-mesh p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{group.title}</h3>
+                  <p className="text-sm text-foreground-muted mb-4">{group.purpose}</p>
+                  <div className="bg-night-900 rounded-lg p-4 font-mono text-sm">
+                    <div className="text-foreground-muted text-xs mb-2">Commands</div>
+                    <pre className="text-forest-400 whitespace-pre-wrap">{group.commands}</pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card-mesh p-6 md:p-8 mt-8">
+              <h3 className="text-xl font-semibold text-foreground mb-4">Optional site-specific checks</h3>
+              <p className="text-foreground-muted text-sm mb-6">
+                Only run these when the hardware or install actually uses bridge mode, GPS, or power-saving behavior.
+              </p>
+              <div className="grid gap-4 md:grid-cols-3">
+                {optionalSerialChecks.map((check) => (
+                  <div key={check.title} className="bg-night-900 rounded-lg p-4 font-mono text-sm">
+                    <div className="text-foreground-muted text-xs mb-2">{check.title}</div>
+                    <pre className="text-forest-400 whitespace-pre-wrap">{check.commands}</pre>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Understanding the Settings */}
-        <section id="understanding" className="px-6 py-16">
+        <section id="understanding" className="px-6 py-16 bg-background-secondary">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
               Understanding the Settings

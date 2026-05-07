@@ -16,6 +16,9 @@ import type {
 } from './types';
 
 const ROLE_ALIASES: Record<string, MapNodeRole> = {
+  '1': 'companion',
+  '2': 'repeater',
+  '3': 'room_server',
   node: 'node',
   client: 'node',
   companion: 'companion',
@@ -74,6 +77,9 @@ function readStringArray(payload: LiveMapPayload, keys: string[]): string[] {
 }
 
 export function normalizeMapNodeRole(value: unknown): MapNodeRole {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return ROLE_ALIASES[String(value)] ?? 'unknown';
+  }
   if (typeof value !== 'string') return 'unknown';
   return ROLE_ALIASES[value.trim().toLowerCase()] ?? 'unknown';
 }
@@ -145,16 +151,25 @@ function batteryPercentageFromMillivolts(millivolts: number | null): number | nu
 export function normalizeLiveMapNode(input: unknown, now = new Date()): MapNode | null {
   if (!isObject(input)) return null;
 
-  const publicKey = readString(input, ['publicKey', 'public_key', 'pubkey', 'id', 'node_id']);
+  const location = isObject(input.location) ? input.location : null;
+  const publicKey = readString(input, ['publicKey', 'public_key', 'pubkey', 'device_id', 'id', 'node_id']);
   if (!publicKey) return null;
 
-  const id = readString(input, ['id', 'nodeId', 'node_id']) ?? publicKey;
-  const role = normalizeMapNodeRole(readString(input, ['role', 'type', 'nodeType', 'node_type', 'mode']));
+  const id = readString(input, ['id', 'nodeId', 'node_id', 'device_id']) ?? publicKey;
+  const role = normalizeMapNodeRole(
+    input.role ?? input.device_role ?? input.type ?? input.nodeType ?? input.node_type ?? input.mode
+  );
   const lastHeardAt = normalizeTimestamp(
-    input.lastHeardAt ?? input.last_heard_at ?? input.lastSeen ?? input.last_seen ?? input.updatedAt ?? input.timestamp
+    input.lastHeardAt ?? input.last_heard_at ?? input.lastSeen ?? input.last_seen ?? input.last_seen_ts ?? input.updatedAt ?? input.timestamp
   );
   const status = deriveMapNodeStatus(lastHeardAt, role, now);
-  const batteryMv = readNumber(input, ['batteryMv', 'battery_mv', 'batteryMillivolts']);
+  const batteryMv = readNumber(input, [
+    'batteryMv',
+    'battery_mv',
+    'batteryMillivolts',
+    'battery_millivolts',
+    'battery_voltage',
+  ]);
   const batteryPercent = readNumber(input, ['batteryPercent', 'battery_percentage', 'battery']);
 
   return {
@@ -163,9 +178,9 @@ export function normalizeLiveMapNode(input: unknown, now = new Date()): MapNode 
     name: readString(input, ['name', 'shortName', 'short_name', 'callsign']) ?? id,
     role,
     coordinates: normalizeCoordinates(
-      readNumber(input, ['latitude', 'lat']),
-      readNumber(input, ['longitude', 'lon', 'lng']),
-      readNumber(input, ['altitudeMeters', 'altitude_meters', 'altitude'])
+      readNumber(input, ['latitude', 'lat']) ?? (location ? readNumber(location, ['latitude', 'lat']) : null),
+      readNumber(input, ['longitude', 'lon', 'lng']) ?? (location ? readNumber(location, ['longitude', 'lon', 'lng']) : null),
+      readNumber(input, ['altitudeMeters', 'altitude_meters', 'altitude']) ?? (location ? readNumber(location, ['altitudeMeters', 'altitude_meters', 'altitude']) : null)
     ),
     lastHeardAt,
     status,

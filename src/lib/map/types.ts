@@ -17,7 +17,7 @@ export type MapConnectionState =
   | 'disconnected'
   | 'error';
 
-export type MapSnapshotSourceType = 'sample' | 'empty' | 'mqtt';
+export type MapSnapshotSourceType = 'sample' | 'empty' | 'mqtt' | 'live_map_api';
 
 export interface MapCoordinates {
   latitude: number;

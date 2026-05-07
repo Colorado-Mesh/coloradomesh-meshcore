@@ -59,7 +59,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The container listens on port `3000` and defaults to sample map data when MQTT settings are not configured. Runtime settings are provided through environment variables; secrets should stay in `.env` or the deployment environment, not in the image.
+The container listens on port `3000` and defaults to sample map data when no live map source is configured. Set `MESHCORE_LIVE_MAP_API_URL` to a running `meshcore-mqtt-live-map` `/api/nodes` endpoint for the preferred production feed; direct MQTT remains available for JSON-compatible map payloads. Runtime settings are provided through environment variables; secrets should stay in `.env` or the deployment environment, not in the image.
 
 ## Runtime Environment
 
@@ -67,8 +67,11 @@ The container listens on port `3000` and defaults to sample map data when MQTT s
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SITE_URL` | No | Public site URL for metadata and canonical links. |
 | `NEXT_PUBLIC_MAP_TILE_URL` | No | Leaflet tile URL template. |
-| `MESHCORE_MAP_SAMPLE_DATA` | No | Use bundled sample data when MQTT is not configured. |
-| `MESHCORE_MQTT_URL` | No | Optional MQTT broker URL for live map ingestion. |
+| `MESHCORE_MAP_SAMPLE_DATA` | No | Use bundled sample data when no live source is configured; set `true` for demo mode. |
+| `MESHCORE_LIVE_MAP_API_URL` | No | Preferred live source: a `meshcore-mqtt-live-map`-compatible `/api/nodes` endpoint. |
+| `MESHCORE_LIVE_MAP_API_TOKEN` | No | Optional server-side token for protected live-map API instances. |
+| `MESHCORE_LIVE_MAP_API_REFRESH_SECONDS` | No | Minimum refresh interval for polling the live-map API; defaults to `30`. |
+| `MESHCORE_MQTT_URL` | No | Optional MQTT broker URL for JSON-compatible map payloads. |
 | `MESHCORE_MQTT_USERNAME` | No | Optional MQTT username. |
 | `MESHCORE_MQTT_PASSWORD` | No | Optional MQTT password. |
 | `MESHCORE_MQTT_TOPIC` | No | MQTT topic filter; defaults to `meshcore/#`. |

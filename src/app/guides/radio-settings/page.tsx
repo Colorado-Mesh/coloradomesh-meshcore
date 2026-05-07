@@ -23,8 +23,13 @@ const radioSettings = [
   { setting: "Frequency", value: "910.525 MHz" },
   { setting: "Bandwidth", value: "62.5 kHz" },
   { setting: "Spreading Factor", value: "7" },
-  { setting: "Coding Rate", value: "5" },
+  { setting: "Coding Rate", value: "8" },
+  { setting: "TX Power", value: "22 dBm" },
 ];
+
+const radioCommands = `set freq 910525
+set radio bw 62500 sf 7 cr 8
+set tx 22`;
 
 const channels = [
   { topic: "#denver", key: "b24355a0d22ed2bf393ec530d75810b4" },
@@ -88,8 +93,15 @@ export default function RadioSettingsPage() {
               </table>
             </div>
 
+            <div className="card-mesh overflow-hidden mb-8">
+              <div className="bg-night-900 p-6 font-mono text-sm">
+                <div className="text-foreground-muted text-xs mb-3">Repeater CLI commands</div>
+                <pre className="text-forest-400 whitespace-pre-wrap">{radioCommands}</pre>
+              </div>
+            </div>
+
             <p className="text-sm text-foreground-muted text-center">
-              More information about these settings can be found in the{" "}
+              These are the canonical Colorado Mesh recommended settings used by the utility-site configuration generator. More information about MeshCore radio configuration can be found in the{" "}
               <a href="https://meshcore.co.uk/" target="_blank" rel="noopener noreferrer" className="text-mesh hover:text-mesh-light">
                 MeshCore documentation
               </a>.
