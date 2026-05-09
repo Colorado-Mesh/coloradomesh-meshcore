@@ -203,17 +203,17 @@ export default function TroubleshootingPage() {
               When the FAQ does not unblock you, these places will. Start with serial diagnostics, watch the live map, then ask in Discord.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/tools/serial-usb" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools/serial-usb" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Field Tool</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Serial USB console</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Talk to the node, dump version and stats, and check the radio over USB.</p>
               </Link>
-              <Link href="/map" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/map" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Coverage</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Live Map</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Confirm whether your node is broadcasting and being seen by neighbors.</p>
               </Link>
-              <Link href="/tools" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Operator Tools</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Tools hub</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Naming, prefix planning, and field utilities — all the operator entry points.</p>
@@ -222,7 +222,7 @@ export default function TroubleshootingPage() {
                 href={DISCORD_INVITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all"
+                className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring"
               >
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Community</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Discord chat</h3>

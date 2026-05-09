@@ -172,7 +172,7 @@ export default function Home() {
                 tone="forest"
                 glyph="◉"
                 tag="USB SERIAL"
-                title="Web Serial console"
+                title="Serial USB console"
                 description="Connect to a MeshCore node over USB from the browser. Manual send and canned commands."
                 href="/tools/serial-usb"
               />
@@ -276,7 +276,7 @@ export default function Home() {
                 <Link
                   key={path.href}
                   href={path.href}
-                  className="panel p-6 group transition-all duration-200 hover:-translate-y-0.5 focus-ring"
+                  className="panel p-6 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring"
                 >
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-3">
                     {path.audience}

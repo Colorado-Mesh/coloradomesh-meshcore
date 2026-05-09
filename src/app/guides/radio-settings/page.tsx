@@ -182,17 +182,17 @@ export default function RadioSettingsPage() {
               You have the reference. Use the operator tools and live map to push the settings to a node and confirm it joined the mesh.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link href="/guides/repeater-setup" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/guides/repeater-setup" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Deep Dive</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater setup</h3>
                 <p className="mt-1 text-sm text-foreground-muted">TX/RX delay profiles and serial preflight for repeater operators.</p>
               </Link>
-              <Link href="/tools/serial-usb" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools/serial-usb" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Field Tool</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Serial USB console</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Push the radio commands above to a node directly from the browser.</p>
               </Link>
-              <Link href="/map" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/map" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Coverage</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Live Map</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Confirm your node is broadcasting on the Front Range preset.</p>

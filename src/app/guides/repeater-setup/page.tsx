@@ -644,22 +644,22 @@ set guest.password`}</pre>
               The reference is in your head — now apply it. These operator tools share the same live network data as the map.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/tools/repeater-name" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools/repeater-name" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater name wizard</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Compose a standards-aligned repeater name with conflict checks.</p>
               </Link>
-              <Link href="/tools/prefix-matrix" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools/prefix-matrix" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Planning Tool</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Public-key prefix matrix</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Find a free first-byte prefix before generating a new key pair.</p>
               </Link>
-              <Link href="/tools/serial-usb" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/tools/serial-usb" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Field Tool</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Serial USB console</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Run the preflight commands and apply settings over USB.</p>
               </Link>
-              <Link href="/map" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+              <Link href="/map" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                 <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Coverage</div>
                 <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Live Map</h3>
                 <p className="mt-1 text-sm text-foreground-muted">Confirm your repeater is online and visible to neighbors.</p>

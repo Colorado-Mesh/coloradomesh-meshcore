@@ -371,31 +371,31 @@ export default function GettingStartedPage() {
               </Link>
             </div>
 
-            <div className="card-mesh p-6 md:p-8">
-              <h3 className="text-xl font-semibold text-foreground mb-2">Apply it in the operator tools</h3>
+            <div className="panel-elevated p-6 sm:p-8">
+              <h3 className="text-xl font-semibold text-foreground mb-2 tracking-tight">Apply it in the operator tools</h3>
               <p className="text-foreground-muted text-sm mb-6">
                 Once your node is online, switch from learning to doing. These tools share the same live network data as the map.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Link href="/map" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link href="/map" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Map</div>
-                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">See your node</div>
-                  <p className="mt-1 text-xs text-foreground-muted">Confirm freshness and coverage on the live network map.</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">See your node</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">Confirm freshness and coverage on the live network map.</p>
                 </Link>
-                <Link href="/tools/companion-name" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                <Link href="/tools/companion-name" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
-                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Companion name</div>
-                  <p className="mt-1 text-xs text-foreground-muted">Build a personal MeshCore identity within the 23-char limit.</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Companion name</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">Build a personal MeshCore identity within the 23-char limit.</p>
                 </Link>
-                <Link href="/tools/repeater-name" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                <Link href="/tools/repeater-name" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
-                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater name</div>
-                  <p className="mt-1 text-xs text-foreground-muted">Compose a standards-aligned repeater identifier.</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater name</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">Compose a standards-aligned repeater identifier.</p>
                 </Link>
-                <Link href="/tools/prefix-matrix" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                <Link href="/tools/prefix-matrix" className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring">
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Planning Tool</div>
-                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Prefix matrix</div>
-                  <p className="mt-1 text-xs text-foreground-muted">Pick a free public-key prefix before generating keys.</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Prefix matrix</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">Pick a free public-key prefix before generating keys.</p>
                 </Link>
               </div>
             </div>

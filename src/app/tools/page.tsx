@@ -150,32 +150,14 @@ export default function ToolsPage() {
                 description={`Visualize the 256-cell first-byte prefix space across ${COMMUNITY_NAME}. Find free prefixes before generating a new key.`}
                 href="/tools/prefix-matrix"
               />
-              <Link
+              <ToolCard
+                tone="sky"
+                glyph="◎"
+                tag="LIVE COVERAGE"
+                title="Live Map"
+                description="See current node freshness, coverage, and conflicts before you generate keys or pick a site. Prefix planning consumes the same snapshot."
                 href="/map"
-                className="group panel p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring flex flex-col"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <span aria-hidden className="text-3xl leading-none text-sky-signal">
-                    ◎
-                  </span>
-                  <span className="mono text-[0.65rem] uppercase text-sky-signal">
-                    ◊ LIVE COVERAGE
-                  </span>
-                </div>
-                <h2 className="mt-4 text-lg font-semibold text-foreground tracking-tight">
-                  Live Map
-                </h2>
-                <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
-                  See current node freshness, coverage, and conflicts before you generate keys or
-                  pick a site. Prefix planning consumes the same snapshot.
-                </p>
-                <div className="mt-5 flex items-center justify-between text-xs text-foreground-dim">
-                  <span className="mono">open map</span>
-                  <span className="text-sky-signal" aria-hidden>
-                    →
-                  </span>
-                </div>
-              </Link>
+              />
             </div>
           </div>
         </section>
@@ -204,32 +186,14 @@ export default function ToolsPage() {
                 description="Talk to a connected MeshCore node over USB directly from the browser. Manual send, canned commands, and a live terminal log."
                 href="/tools/serial-usb"
               />
-              <Link
+              <ToolCard
+                tone="forest"
+                glyph="◌"
+                tag="FIELD SUPPORT"
+                title="Troubleshooting reference"
+                description="Common flashing, BLE, GPS, and range issues operators see in the field — and how to recover before reaching for Discord."
                 href="/guides/troubleshooting"
-                className="group panel p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring flex flex-col"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <span aria-hidden className="text-3xl leading-none text-forest-300">
-                    ◌
-                  </span>
-                  <span className="mono text-[0.65rem] uppercase text-forest-300">
-                    ◊ FIELD SUPPORT
-                  </span>
-                </div>
-                <h2 className="mt-4 text-lg font-semibold text-foreground tracking-tight">
-                  Troubleshooting reference
-                </h2>
-                <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
-                  Common flashing, BLE, GPS, and range issues operators see in the field — and how
-                  to recover before reaching for Discord.
-                </p>
-                <div className="mt-5 flex items-center justify-between text-xs text-foreground-dim">
-                  <span className="mono">open guide</span>
-                  <span className="text-forest-300" aria-hidden>
-                    →
-                  </span>
-                </div>
-              </Link>
+              />
             </div>
           </div>
         </section>
@@ -248,7 +212,7 @@ export default function ToolsPage() {
                 <Link
                   key={guide.href}
                   href={guide.href}
-                  className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 focus-ring"
+                  className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring"
                 >
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">
                     Guide
