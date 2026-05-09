@@ -6,7 +6,7 @@ import { generateBreadcrumbSchema } from "@/lib/schemas/breadcrumb";
 import { BASE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Repeater Setup Guide | Colorado MeshCore",
+  title: "Repeater Setup Guide",
   description: "Set up and tune a MeshCore repeater node for the Colorado MeshCore network. Includes TX/RX delay profiles optimized for Denver metro and Front Range elevations.",
   keywords: ["MeshCore", "repeater", "setup", "Colorado", "Denver", "Front Range", "mesh network", "LoRa", "txdelay", "rxdelay", "agc", "antenna", "solar"],
   alternates: {
@@ -631,6 +631,39 @@ set guest.password`}</pre>
                 <div className="text-foreground-muted text-xs mb-2">Example</div>
                 <pre className="text-forest-400 whitespace-pre">{`set owner KE0ABC / 6dBi omni @30ft / Solar+Batt / Rooftop`}</pre>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 py-16">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
+              Take it to the tools
+            </h2>
+            <p className="text-foreground-muted text-center mb-12 max-w-2xl mx-auto">
+              The reference is in your head — now apply it. These operator tools share the same live network data as the map.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/tools/repeater-name" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater name wizard</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Compose a standards-aligned repeater name with conflict checks.</p>
+              </Link>
+              <Link href="/tools/prefix-matrix" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Planning Tool</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Public-key prefix matrix</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Find a free first-byte prefix before generating a new key pair.</p>
+              </Link>
+              <Link href="/tools/serial-usb" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Field Tool</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Serial USB console</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Run the preflight commands and apply settings over USB.</p>
+              </Link>
+              <Link href="/map" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Coverage</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Live Map</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Confirm your repeater is online and visible to neighbors.</p>
+              </Link>
             </div>
           </div>
         </section>

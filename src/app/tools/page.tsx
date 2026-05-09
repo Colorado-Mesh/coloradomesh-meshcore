@@ -38,6 +38,24 @@ const breadcrumbData = generateBreadcrumbSchema([
   { name: PAGE_TITLE, url: `${BASE_URL}/tools` },
 ]);
 
+const guideHandoffs = [
+  {
+    href: '/guides/naming-standard',
+    label: 'Naming standard',
+    description: 'Reference guide behind the repeater and companion name builders.',
+  },
+  {
+    href: '/guides/repeater-setup',
+    label: 'Repeater setup',
+    description: 'Profiles, TX/RX delays, and serial preflight before deploying a repeater.',
+  },
+  {
+    href: '/guides/radio-settings',
+    label: 'Radio settings',
+    description: 'Frequencies, presets, and channels used by every Front Range node.',
+  },
+] as const;
+
 export default function ToolsPage() {
   return (
     <>
@@ -79,9 +97,13 @@ export default function ToolsPage() {
 
         <section className="px-4 sm:px-6 lg:px-8 pb-16 -mt-10">
           <div className="mx-auto max-w-7xl">
-            <SectionEyebrow tone="mesh" className="mb-4">
+            <SectionEyebrow tone="mesh" className="mb-3">
               Naming &amp; Identity
             </SectionEyebrow>
+            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+              Compose standards-aligned identifiers for repeaters and companion devices that fit
+              MeshCore&apos;s 23-character limit and the {COMMUNITY_NAME} naming convention.
+            </p>
             <div className="grid gap-5 sm:grid-cols-2">
               <ToolCard
                 tone="mesh"
@@ -105,9 +127,20 @@ export default function ToolsPage() {
 
         <section className="px-4 sm:px-6 lg:px-8 pb-16">
           <div className="mx-auto max-w-7xl">
-            <SectionEyebrow tone="sunset" className="mb-4">
-              Network &amp; Field Ops
+            <SectionEyebrow tone="sunset" className="mb-3">
+              Network Planning
             </SectionEyebrow>
+            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+              Coordinate keys and coverage before you flash a new node. Inspect occupied address
+              space and pair planning with the{' '}
+              <Link
+                href="/map"
+                className="text-mesh hover:text-mesh-light underline underline-offset-2"
+              >
+                Live Map
+              </Link>
+              .
+            </p>
             <div className="grid gap-5 sm:grid-cols-2">
               <ToolCard
                 tone="sunset"
@@ -117,14 +150,121 @@ export default function ToolsPage() {
                 description={`Visualize the 256-cell first-byte prefix space across ${COMMUNITY_NAME}. Find free prefixes before generating a new key.`}
                 href="/tools/prefix-matrix"
               />
+              <Link
+                href="/map"
+                className="group panel p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring flex flex-col"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span aria-hidden className="text-3xl leading-none text-sky-signal">
+                    ◎
+                  </span>
+                  <span className="mono text-[0.65rem] uppercase text-sky-signal">
+                    ◊ LIVE COVERAGE
+                  </span>
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-foreground tracking-tight">
+                  Live Map
+                </h2>
+                <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
+                  See current node freshness, coverage, and conflicts before you generate keys or
+                  pick a site. Prefix planning consumes the same snapshot.
+                </p>
+                <div className="mt-5 flex items-center justify-between text-xs text-foreground-dim">
+                  <span className="mono">open map</span>
+                  <span className="text-sky-signal" aria-hidden>
+                    →
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 sm:px-6 lg:px-8 pb-16">
+          <div className="mx-auto max-w-7xl">
+            <SectionEyebrow tone="sky" className="mb-3">
+              Field &amp; USB Operations
+            </SectionEyebrow>
+            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+              Browser-side serial tooling for bench installs and field service. Pairs with the{' '}
+              <Link
+                href="/guides/repeater-setup"
+                className="text-mesh hover:text-mesh-light underline underline-offset-2"
+              >
+                repeater setup guide
+              </Link>{' '}
+              for the standard preflight command set.
+            </p>
+            <div className="grid gap-5 sm:grid-cols-2">
               <ToolCard
                 tone="forest"
                 glyph="◉"
                 tag="USB SERIAL"
-                title="Web Serial console"
+                title="Serial USB console"
                 description="Talk to a connected MeshCore node over USB directly from the browser. Manual send, canned commands, and a live terminal log."
                 href="/tools/serial-usb"
               />
+              <Link
+                href="/guides/troubleshooting"
+                className="group panel p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring flex flex-col"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span aria-hidden className="text-3xl leading-none text-forest-300">
+                    ◌
+                  </span>
+                  <span className="mono text-[0.65rem] uppercase text-forest-300">
+                    ◊ FIELD SUPPORT
+                  </span>
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-foreground tracking-tight">
+                  Troubleshooting reference
+                </h2>
+                <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
+                  Common flashing, BLE, GPS, and range issues operators see in the field — and how
+                  to recover before reaching for Discord.
+                </p>
+                <div className="mt-5 flex items-center justify-between text-xs text-foreground-dim">
+                  <span className="mono">open guide</span>
+                  <span className="text-forest-300" aria-hidden>
+                    →
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 sm:px-6 lg:px-8 pb-16">
+          <div className="mx-auto max-w-7xl">
+            <SectionEyebrow tone="mesh" className="mb-3">
+              Need the reference?
+            </SectionEyebrow>
+            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+              Tools do — guides teach. Jump to the matching reference page when you want the
+              theory or the manual workflow behind any tool.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {guideHandoffs.map((guide) => (
+                <Link
+                  key={guide.href}
+                  href={guide.href}
+                  className="panel p-5 group transition-all duration-200 hover:-translate-y-0.5 focus-ring"
+                >
+                  <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">
+                    Guide
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground tracking-tight group-hover:text-mesh transition-colors">
+                    {guide.label}
+                  </h3>
+                  <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
+                    {guide.description}
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm text-mesh group-hover:text-mesh-light">
+                    Read guide
+                    <span aria-hidden>→</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

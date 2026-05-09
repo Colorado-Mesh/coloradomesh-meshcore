@@ -12,7 +12,7 @@ import {
 } from "@/lib/meshcore-data/settings";
 
 export const metadata: Metadata = {
-  title: "Radio Settings & Channels | Colorado MeshCore",
+  title: "Radio Settings & Channels",
   description: "Colorado MeshCore radio settings, frequency configuration, and channel list for the Front Range mesh network.",
   keywords: ["MeshCore", "radio settings", "LoRa", "frequency", "channels", "Colorado", "Denver", "Front Range", "mesh network", "910.525 MHz"],
   alternates: {
@@ -168,6 +168,34 @@ export default function RadioSettingsPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 py-16 bg-background-secondary">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
+              Apply the settings
+            </h2>
+            <p className="text-foreground-muted text-center mb-12 max-w-2xl mx-auto">
+              You have the reference. Use the operator tools and live map to push the settings to a node and confirm it joined the mesh.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link href="/guides/repeater-setup" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Deep Dive</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater setup</h3>
+                <p className="mt-1 text-sm text-foreground-muted">TX/RX delay profiles and serial preflight for repeater operators.</p>
+              </Link>
+              <Link href="/tools/serial-usb" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Field Tool</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Serial USB console</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Push the radio commands above to a node directly from the browser.</p>
+              </Link>
+              <Link href="/map" className="card-mesh p-5 group hover:ring-2 hover:ring-mesh transition-all">
+                <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Coverage</div>
+                <h3 className="font-semibold text-foreground group-hover:text-mesh transition-colors">Live Map</h3>
+                <p className="mt-1 text-sm text-foreground-muted">Confirm your node is broadcasting on the Front Range preset.</p>
               </Link>
             </div>
           </div>

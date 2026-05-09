@@ -91,10 +91,11 @@ export default function Home() {
           }
           description={
             <>
-              {SITE_NAME} is the operator portal for Colorado&apos;s open MeshCore mesh.
-              Track the network on the live map, run the operator tools, and join a
-              community building resilient off-grid communication across the Front Range
-              and beyond.
+              {SITE_NAME} is home base for Colorado&apos;s open MeshCore mesh — for
+              newcomers getting on the air, operators running infrastructure, and the
+              community keeping it online. Track the network on the live map, open the
+              tools, and join the volunteers building resilient off-grid communication
+              across the Front Range and beyond.
             </>
           }
           actions={

@@ -7,7 +7,7 @@ import { generateHowToSchema, meshCoreSetupHowTo } from "@/lib/schemas/howto";
 import { BASE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Getting Started with MeshCore | Colorado MeshCore",
+  title: "Getting Started with MeshCore",
   description: "Learn how to join the Colorado MeshCore network. Hardware requirements, firmware setup guide, configuration instructions, and community resources.",
   keywords: ["MeshCore", "mesh network", "getting started", "Colorado", "Denver", "Front Range", "LoRa", "ESP32", "firmware", "setup guide", "tutorial"],
   alternates: {
@@ -234,7 +234,12 @@ export default function GettingStartedPage() {
               </div>
               <p className="text-center text-foreground-muted mt-4 text-sm">
                 Need help choosing? Ask in our{" "}
-                <a href="https://discord.gg/Tuuv9hGPnX" className="text-mesh hover:text-mesh-light">
+                <a
+                  href="https://discord.gg/Tuuv9hGPnX"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-mesh hover:text-mesh-light"
+                >
                   Discord community
                 </a>
                 !
@@ -326,15 +331,15 @@ export default function GettingStartedPage() {
 
         {/* Next Steps */}
         <section className="px-6 py-16">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
               Next Steps
             </h2>
             <p className="text-foreground-muted text-center mb-12 max-w-2xl mx-auto">
-              Now that your node is running, explore these guides to get the most out of the network.
+              Now that your node is running, keep learning with the related guides — then act in the operator tools.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               <Link href="/guides/radio-settings" className="card-mesh p-6 hover:ring-2 hover:ring-mesh transition-all group text-center">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-mesh/10 flex items-center justify-center">
                   <svg className="w-6 h-6 text-mesh" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,6 +369,35 @@ export default function GettingStartedPage() {
                 <h3 className="font-semibold text-foreground mb-1 group-hover:text-mesh transition-colors">Naming Standard</h3>
                 <p className="text-sm text-foreground-muted">Name your node properly</p>
               </Link>
+            </div>
+
+            <div className="card-mesh p-6 md:p-8">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Apply it in the operator tools</h3>
+              <p className="text-foreground-muted text-sm mb-6">
+                Once your node is online, switch from learning to doing. These tools share the same live network data as the map.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Link href="/map" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                  <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Live Map</div>
+                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">See your node</div>
+                  <p className="mt-1 text-xs text-foreground-muted">Confirm freshness and coverage on the live network map.</p>
+                </Link>
+                <Link href="/tools/companion-name" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                  <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
+                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Companion name</div>
+                  <p className="mt-1 text-xs text-foreground-muted">Build a personal MeshCore identity within the 23-char limit.</p>
+                </Link>
+                <Link href="/tools/repeater-name" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                  <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Naming Tool</div>
+                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Repeater name</div>
+                  <p className="mt-1 text-xs text-foreground-muted">Compose a standards-aligned repeater identifier.</p>
+                </Link>
+                <Link href="/tools/prefix-matrix" className="panel p-4 group hover:-translate-y-0.5 transition-all focus-ring">
+                  <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-2">Planning Tool</div>
+                  <div className="font-semibold text-foreground group-hover:text-mesh transition-colors">Prefix matrix</div>
+                  <p className="mt-1 text-xs text-foreground-muted">Pick a free public-key prefix before generating keys.</p>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

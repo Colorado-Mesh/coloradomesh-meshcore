@@ -46,6 +46,55 @@ test.describe('critical page smoke', () => {
     await expect(diagnostics).toBeVisible({ timeout: 15_000 });
   });
 
+  test('tools hub exposes all four operator tools as first-class entries', async ({ page }) => {
+    await page.goto('/tools');
+    const main = page.locator('#main-content');
+
+    const toolHrefs = [
+      '/tools/repeater-name',
+      '/tools/companion-name',
+      '/tools/prefix-matrix',
+      '/tools/serial-usb',
+    ];
+
+    for (const href of toolHrefs) {
+      await expect(main.locator(`a[href="${href}"]`).first()).toBeVisible();
+    }
+
+    await expect(main.locator('a[href="/map"]').first()).toBeVisible();
+    await expect(main.locator('a[href="/guides/repeater-setup"]').first()).toBeVisible();
+  });
+
+  test('guides hub exposes all guide pages and a tools handoff', async ({ page }) => {
+    await page.goto('/guides');
+    const main = page.locator('#main-content');
+
+    const guideHrefs = [
+      '/guides/getting-started',
+      '/guides/radio-settings',
+      '/guides/repeater-setup',
+      '/guides/naming-standard',
+      '/guides/troubleshooting',
+    ];
+
+    for (const href of guideHrefs) {
+      await expect(main.locator(`a[href="${href}"]`).first()).toBeVisible();
+    }
+
+    const toolHandoffHrefs = [
+      '/tools/repeater-name',
+      '/tools/companion-name',
+      '/tools/prefix-matrix',
+      '/tools/serial-usb',
+    ];
+
+    for (const href of toolHandoffHrefs) {
+      await expect(main.locator(`a[href="${href}"]`).first()).toBeVisible();
+    }
+
+    await expect(main.locator('a[href="/tools"]').first()).toBeVisible();
+  });
+
   test('serial-usb tool previews settings JSON and disables Apply without a connection', async ({ page }) => {
     await page.goto('/tools/serial-usb');
     await expect(page.getByRole('heading', { name: /USB serial/i })).toBeVisible();

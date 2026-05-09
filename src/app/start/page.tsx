@@ -177,10 +177,10 @@ export default function StartPage() {
                 Get on the mesh
               </Link>
               <Link href="/map" className="btn-secondary">
-                Live map
+                Live Map
               </Link>
               <Link href="/tools" className="btn-outline">
-                Operator tools
+                Tools
               </Link>
             </>
           }

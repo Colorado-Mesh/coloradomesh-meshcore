@@ -1,82 +1,145 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import JsonLd from "@/components/JsonLd";
+
 import Breadcrumbs from "@/components/Breadcrumbs";
+import JsonLd from "@/components/JsonLd";
+import { HeroPanel, SectionEyebrow, ToolCard } from "@/components/brand";
+import { BASE_URL, COMMUNITY_NAME, SITE_NAME } from "@/lib/constants";
 import { generateBreadcrumbSchema } from "@/lib/schemas/breadcrumb";
-import { BASE_URL } from "@/lib/constants";
+
+const PAGE_TITLE = "Guides";
+const PAGE_DESCRIPTION = `Teaching and reference content for ${SITE_NAME}. Read the guides to learn the network, then jump to the operator tools when you are ready to act.`;
 
 export const metadata: Metadata = {
-  title: "Guides | Colorado MeshCore",
-  description: "Guides for getting started, radio settings, repeater setup, naming standards, and troubleshooting on the Colorado MeshCore mesh network.",
-  keywords: ["MeshCore", "guides", "Colorado", "Denver", "Front Range", "mesh network", "LoRa", "setup", "repeater", "troubleshooting"],
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  keywords: [
+    "MeshCore",
+    "guides",
+    "Colorado",
+    "Denver",
+    "Front Range",
+    "mesh network",
+    "LoRa",
+    "setup",
+    "repeater",
+    "troubleshooting",
+  ],
   alternates: {
     canonical: '/guides',
   },
   openGraph: {
-    title: "Guides | Colorado MeshCore",
-    description: "Guides for getting started, radio settings, repeater setup, naming standards, and troubleshooting on the Colorado MeshCore mesh network.",
+    title: `${PAGE_TITLE} | ${SITE_NAME}`,
+    description:
+      "Guides for getting started, radio settings, repeater setup, naming standards, and troubleshooting on the Colorado MeshCore mesh network.",
     url: `${BASE_URL}/guides`,
   },
 };
 
-const guides = [
+interface GuideEntry {
+  title: string;
+  tag: string;
+  description: string;
+  href: string;
+  tone: 'mesh' | 'sky' | 'sunset' | 'forest';
+  glyph: string;
+}
+
+const guides: readonly GuideEntry[] = [
   {
-    title: "Getting Started",
-    description: "Get your first node up and running on the Colorado MeshCore network. Hardware recommendations, firmware flashing, and configuration.",
+    title: "Getting started",
+    tag: "ONBOARDING",
+    description:
+      "Learn how to choose hardware, flash MeshCore firmware, and pair your first node. Read this before opening the operator tools.",
     href: "/guides/getting-started",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-    ),
-    color: "text-mountain-500 bg-mountain-500/10",
+    tone: 'mesh',
+    glyph: '◈',
   },
   {
-    title: "Radio Settings & Channels",
-    description: "Frequencies, presets, and channel list for the Denver/Front Range area.",
+    title: "Radio settings & channels",
+    tag: "REFERENCE",
+    description:
+      "Front Range radio preset, channel keys, and the canonical CLI commands every Colorado MeshCore node should match.",
     href: "/guides/radio-settings",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
-      </svg>
-    ),
-    color: "text-mesh bg-mesh/10",
+    tone: 'sky',
+    glyph: '◇',
   },
   {
-    title: "Repeater Setup",
-    description: "Set up and tune a repeater node with TX/RX delay profiles optimized for the Denver metro area.",
+    title: "Repeater setup",
+    tag: "DEEP DIVE",
+    description:
+      "TX/RX delay profiles, common settings, and a USB serial preflight for tuning a repeater before it goes online.",
     href: "/guides/repeater-setup",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-      </svg>
-    ),
-    color: "text-forest-500 bg-forest-500/10",
+    tone: 'forest',
+    glyph: '◉',
   },
   {
-    title: "Naming Standard",
-    description: "Name your node following the Colorado MeshCore v2.0 naming standard. Interactive wizard included.",
+    title: "Naming standard",
+    tag: "STANDARD",
+    description:
+      "How Colorado MeshCore names repeaters, room servers, and companion nodes — the standard the naming tools follow.",
     href: "/guides/naming-standard",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    ),
-    color: "text-sunset-500 bg-sunset-500/10",
+    tone: 'sunset',
+    glyph: '◊',
   },
   {
     title: "Troubleshooting",
-    description: "Common issues and solutions, plus helpful resources and community links.",
+    tag: "SUPPORT",
+    description:
+      "Common flashing, BLE, GPS, and range issues with concrete fixes and links to the field-support tools.",
     href: "/guides/troubleshooting",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-    color: "text-sunset-700 bg-sunset-700/10",
+    tone: 'sunset',
+    glyph: '◌',
   },
-];
+] as const;
+
+interface ToolHandoff {
+  href: string;
+  tag: string;
+  title: string;
+  description: string;
+  tone: 'mesh' | 'sky' | 'sunset' | 'forest';
+  glyph: string;
+}
+
+const toolHandoffs: readonly ToolHandoff[] = [
+  {
+    href: '/tools/repeater-name',
+    tag: 'NAMING TOOL',
+    title: 'Repeater name wizard',
+    description:
+      'Apply the naming standard with live conflict checks against the network map.',
+    tone: 'mesh',
+    glyph: '◈',
+  },
+  {
+    href: '/tools/companion-name',
+    tag: 'NAMING TOOL',
+    title: 'Companion name builder',
+    description:
+      'Compose a companion identity that fits MeshCore’s 23-character limit.',
+    tone: 'sky',
+    glyph: '◇',
+  },
+  {
+    href: '/tools/prefix-matrix',
+    tag: 'PLANNING TOOL',
+    title: 'Public-key prefix matrix',
+    description:
+      'Pick a free first-byte prefix before generating a new key pair.',
+    tone: 'sunset',
+    glyph: '◊',
+  },
+  {
+    href: '/tools/serial-usb',
+    tag: 'FIELD TOOL',
+    title: 'Serial USB console',
+    description:
+      'Run preflight commands and apply settings over USB straight from the browser.',
+    tone: 'forest',
+    glyph: '◉',
+  },
+] as const;
 
 const breadcrumbData = generateBreadcrumbSchema([
   { name: 'Home', url: BASE_URL },
@@ -87,43 +150,112 @@ export default function GuidesPage() {
   return (
     <>
       <JsonLd data={breadcrumbData} />
-      <div className="min-h-screen bg-mesh">
-        {/* Hero Section */}
-        <section className="px-6 py-16 md:py-24 text-center">
-          <div className="max-w-4xl mx-auto">
-            <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Guides' }]} />
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
-              <span className="text-mesh">Guides</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-foreground-muted mb-8">
-              Everything you need to join and contribute to the Colorado MeshCore network
+      <div className="min-h-screen">
+        <HeroPanel
+          background="topo-grid"
+          showMountains={false}
+          eyebrow="Learning & Reference"
+          title={
+            <>
+              {COMMUNITY_NAME}
+              <span className="block text-mesh">guides</span>
+            </>
+          }
+          description={PAGE_DESCRIPTION}
+          actions={
+            <>
+              <Link href="/guides/getting-started" className="btn-primary">
+                Start with onboarding
+              </Link>
+              <Link href="/guides/repeater-setup" className="btn-secondary">
+                Repeater setup
+              </Link>
+              <Link href="/tools" className="btn-outline">
+                Tools
+              </Link>
+            </>
+          }
+          meta={
+            <div className="panel px-5 sm:px-6 py-4 backdrop-blur-md bg-card/85">
+              <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Guides' }]} />
+            </div>
+          }
+        />
+
+        <section className="px-4 sm:px-6 lg:px-8 pb-16 -mt-10">
+          <div className="mx-auto max-w-7xl">
+            <SectionEyebrow tone="mesh" className="mb-3">
+              Read the guides
+            </SectionEyebrow>
+            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+              Teaching and reference pages — onboarding, radio configuration, repeater tuning,
+              naming, and troubleshooting. Use them to build the mental model the tools assume.
             </p>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {guides.map((guide) => (
+                <ToolCard
+                  key={guide.href}
+                  tone={guide.tone}
+                  glyph={guide.glyph}
+                  tag={guide.tag}
+                  title={guide.title}
+                  description={guide.description}
+                  href={guide.href}
+                />
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Card Grid */}
-        <section className="px-6 pb-16 md:pb-24">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-            {guides.map((guide) => (
-              <Link
-                key={guide.href}
-                href={guide.href}
-                className="card-mesh p-6 flex items-start gap-4 hover:ring-2 hover:ring-mesh transition-all group"
-              >
-                <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${guide.color}`}>
-                  {guide.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-foreground mb-2 group-hover:text-mesh transition-colors">
-                    {guide.title}
+        <section className="px-4 sm:px-6 lg:px-8 pb-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="panel-elevated p-6 sm:p-8">
+              <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+                <div>
+                  <SectionEyebrow tone="sunset">Ready to act?</SectionEyebrow>
+                  <h2 className="mt-3 text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+                    Hand off to the operator tools.
                   </h2>
-                  <p className="text-foreground-muted text-sm">{guide.description}</p>
+                  <p className="mt-2 text-sm text-foreground-muted max-w-2xl">
+                    Once the guide makes sense, switch to{' '}
+                    <Link
+                      href="/tools"
+                      className="text-mesh hover:text-mesh-light underline underline-offset-2"
+                    >
+                      /tools
+                    </Link>{' '}
+                    to apply it. Each tool consumes the same live network data as the{' '}
+                    <Link
+                      href="/map"
+                      className="text-mesh hover:text-mesh-light underline underline-offset-2"
+                    >
+                      Live Map
+                    </Link>
+                    .
+                  </p>
                 </div>
-                <svg className="w-5 h-5 text-foreground-muted flex-shrink-0 mt-1 group-hover:text-mesh transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            ))}
+                <Link
+                  href="/tools"
+                  className="text-sm mono uppercase tracking-[0.18em] text-mesh hover:text-mesh-light"
+                >
+                  view all tools →
+                </Link>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {toolHandoffs.map((tool) => (
+                  <ToolCard
+                    key={tool.href}
+                    tone={tool.tone}
+                    glyph={tool.glyph}
+                    tag={tool.tag}
+                    title={tool.title}
+                    description={tool.description}
+                    href={tool.href}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </div>

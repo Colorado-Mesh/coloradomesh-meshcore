@@ -1,23 +1,67 @@
 {
-  "status": "approved",
-  "summary": "Step 4 staged changes align with the master plan and step execution plan. The map UI uses the canonical snapshot/runtime contracts and same-origin live-map proxy routes, keeps Leaflet inside client-only boundaries, avoids browser credential exposure, and adds diagnostics, preferences, operator panels, fallback states, and smoke/a11y coverage.",
+  "verdict": "approved",
+  "summary": "Staged changes align with Step 4: tools are first-class and grouped by task, guides are reframed as teaching/reference pages with action handoffs, high-impact guides link onward to tools/map, and smoke coverage was expanded for the hubs.",
+  "blocking_issues": 0,
+  "reviewed_files": [
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-4-plan.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/getting-started/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/naming-standard/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/radio-settings/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/repeater-setup/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/troubleshooting/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/start/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/tools/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/tests/e2e/smoke.spec.ts",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/components/tools/ToolShell.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/components/brand/ToolCard.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/why-meshcore/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/use-cases/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/blog/page.tsx"
+  ],
+  "diff_basis": "provided_list",
+  "plan_section": "Step 4: Tools, guides, and learning IA handoff consistency",
+  "dimensions": {
+    "plan_alignment": {
+      "score": "PASS",
+      "notes": "Implements the planned guides-teach/tools-do handoffs, preserves tool and guide URLs, and avoids new workflows or disclaimers."
+    },
+    "correctness_safety": {
+      "score": "PASS",
+      "notes": "Internal and external links are appropriate; new external Discord usage includes target and rel safety attributes."
+    },
+    "code_quality": {
+      "score": "PASS",
+      "notes": "Changes are readable, data-driven where useful, and consistent with existing brand components."
+    },
+    "completeness": {
+      "score": "PASS",
+      "notes": "All four tools and all guide pages are surfaced; high-impact guide handoffs and Playwright assertions were added."
+    },
+    "patterns": {
+      "score": "FLAG",
+      "notes": "The overall pattern is consistent, with one minor remaining label inconsistency around the serial tool."
+    },
+    "integration": {
+      "score": "PASS",
+      "notes": "No route, import/export, or client-component integration issues found in the reviewed staged changes."
+    }
+  },
   "findings": [
     {
-      "severity": "low",
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/src/components/map/PeerHistoryPanel.tsx",
-      "line": 42,
-      "issue": "Peer history uses a literal same-origin /api/live-map/peers path because the route requires a device id and no API_ROUTES constant exists for that template.",
-      "recommendation": "Non-blocking: consider adding a small route builder or constant template in a future cleanup for consistency with other live-map proxy route usage."
+      "severity": "minor",
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/page.tsx",
+      "line": 174,
+      "note": "Homepage still labels the USB tool as \"Web Serial console\" while Step 4 standardizes touched hub/guide copy around \"Serial USB console\". This is not blocking, but consider aligning this label in a future cleanup."
     }
   ],
-  "verification_reviewed": [
-    "npm run lint passed",
-    "npm run typecheck passed",
-    "npm run test:unit passed: 4 files / 21 tests",
-    "Playwright smoke/axe passed for /, /map, /tools",
-    "npm run build passed with expected existing warnings",
-    "Guard greps found no browser-facing live-map token, upstream URL, process.env usage, direct upstream fetches, or secret localStorage usage",
-    "Manual /map validation covered diagnostics, preferences, filters, markers, unavailable operator panels, marker labels, filter behavior, console, and network requests"
-  ],
-  "approval_notes": "No blocking issues found. Reviewed staged files against Step 4 requirements for plan alignment, API boundary safety, SSR/Leaflet boundaries, client-only state, unavailable/deferred feature handling, test coverage, and integration with Steps 2-3 contracts."
+  "verification_notes": [
+    "Implementer reported `npm run typecheck` passed.",
+    "Implementer reported `npm run build` passed with 41 routes.",
+    "Implementer reported targeted Playwright smoke passed: 22/22.",
+    "Implementer reported `npm run test:a11y` passed: 4/4.",
+    "Implementer reported browser validation of /tools, /guides, and touched guide pages on production server with no Chrome console messages."
+  ]
 }
