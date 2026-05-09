@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const criticalPages = ['/', '/map', '/tools'];
+const criticalPages = ['/', '/start', '/map', '/tools'];
 
 test.describe('critical page smoke', () => {
   for (const pagePath of criticalPages) {
@@ -11,6 +11,32 @@ test.describe('critical page smoke', () => {
       await expect(page).toHaveTitle(/Colorado MeshCore/);
     });
   }
+
+  test('start page exposes Get Started heading and three balanced journey paths', async ({ page }) => {
+    await page.goto('/start');
+
+    await expect(page.getByRole('heading', { level: 1, name: /Get Started/i })).toBeVisible();
+
+    const main = page.locator('#main-content');
+
+    for (const audience of ['Newcomer', 'Operator', 'Community']) {
+      await expect(main.getByText(audience, { exact: true }).first()).toBeVisible();
+    }
+
+    await expect(main.getByRole('link', { name: /Getting started guide/i }).first()).toBeVisible();
+    await expect(main.getByRole('link', { name: /Open operator tools/i }).first()).toBeVisible();
+    await expect(main.getByRole('link', { name: /About the project/i }).first()).toBeVisible();
+
+    await expect(main.locator('a[href="/map"]').first()).toBeVisible();
+    await expect(main.locator('a[href="/tools"]').first()).toBeVisible();
+    await expect(main.locator('a[href="/guides/repeater-setup"]').first()).toBeVisible();
+    await expect(main.locator('a[href="/about"]').first()).toBeVisible();
+
+    const discordLink = main.locator('a[href*="discord"]').first();
+    await expect(discordLink).toBeVisible();
+    await expect(discordLink).toHaveAttribute('target', '_blank');
+    await expect(discordLink).toHaveAttribute('rel', /noopener/);
+  });
 
   test('map page renders diagnostics and operator copy', async ({ page }) => {
     await page.goto('/map');

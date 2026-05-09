@@ -51,22 +51,25 @@ const featureCards = [
 
 const operatorPaths = [
   {
-    title: 'Newcomer',
+    audience: 'Newcomer',
+    title: 'First time on the mesh',
     description: 'Pick a radio, flash MeshCore, get your first messages flowing.',
     href: '/guides/getting-started',
     cta: 'Start here',
   },
   {
-    title: 'Repeater operator',
-    description: 'Tune TX/RX delays for hilltop, foothills, suburban, or mobile installs.',
-    href: '/guides/repeater-setup',
-    cta: 'Repeater setup',
+    audience: 'Operator',
+    title: 'Run repeaters and tools',
+    description: 'Plan a hilltop install, pick a free prefix, and watch the live network from one console.',
+    href: '/tools',
+    cta: 'Operator tools',
   },
   {
-    title: 'Network maintainer',
-    description: 'Use the live map and prefix matrix to keep IDs and coverage clean.',
-    href: '/map',
-    cta: 'Open live map',
+    audience: 'Community',
+    title: 'Help build the network',
+    description: 'Meet the volunteers behind Colorado MeshCore and join the operator Discord.',
+    href: '/about',
+    cta: 'About the project',
   },
 ] as const;
 
@@ -96,14 +99,14 @@ export default function Home() {
           }
           actions={
             <>
-              <Link href="/map" className="btn-primary">
-                Open live map
+              <Link href="/start" className="btn-primary">
+                Get Started
               </Link>
-              <Link href="/tools" className="btn-secondary">
-                Operator tools
+              <Link href="/map" className="btn-secondary">
+                Live Map
               </Link>
-              <Link href="/guides/getting-started" className="btn-outline">
-                Get started
+              <Link href="/tools" className="btn-outline">
+                Tools
               </Link>
             </>
           }
@@ -259,11 +262,12 @@ export default function Home() {
                 Pick a path
               </SectionEyebrow>
               <h2 className="mt-3 text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">
-                There&apos;s a doorway for every operator.
+                There&apos;s a doorway for every visitor.
               </h2>
               <p className="mt-3 text-foreground-muted max-w-2xl mx-auto">
-                Whether you&apos;re flashing your first companion, lighting up a hilltop
-                repeater, or maintaining the network, the docs and tools are wired together.
+                Whether you&apos;re flashing your first companion, running a hilltop
+                repeater, or just here to follow the community, the docs, tools, and
+                live network all link back together.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -274,7 +278,7 @@ export default function Home() {
                   className="panel p-6 group transition-all duration-200 hover:-translate-y-0.5 focus-ring"
                 >
                   <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim mb-3">
-                    Operator
+                    {path.audience}
                   </div>
                   <h3 className="text-lg font-semibold text-foreground tracking-tight">
                     {path.title}

@@ -1,50 +1,70 @@
 {
   "verdict": "APPROVED",
-  "summary": "The two previous required fixes are resolved. The live-map proxy now enforces response-size limits while streaming chunked responses, and the Compose/.env documentation now clearly explains the sidecar URL, shared token, PROD_MODE relationship, and non-published sidecar topology.",
-  "required_fixes": [],
-  "recommended_followups": [
+  "blocking_issues": 0,
+  "reviewed_files": [
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-3-plan.md",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/start/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/map/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/tests/e2e/smoke.spec.ts",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/getting-started/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/guides/repeater-setup/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/tools/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/layout.tsx"
+  ],
+  "diff_basis": "provided_list",
+  "plan_section": "Step 3: /start chooser hub and homepage journey alignment",
+  "dimensions": {
+    "plan_alignment": {
+      "score": "FLAG",
+      "notes": "The implementation satisfies the Step 3 contracts: /start is now canonical, has metadata/breadcrumb JSON-LD, three balanced paths, safe Discord links, homepage CTAs, and updated map label drift. Minor copy drift remains where homepage hero language still frames the site primarily as an operator portal."
+    },
+    "correctness_safety": {
+      "score": "PASS",
+      "notes": "Internal routes are valid, external Discord links use target blank with noopener noreferrer, no new workflows or disclaimers were introduced, and /start no longer redirects."
+    },
+    "code_quality": {
+      "score": "PASS",
+      "notes": "The page uses existing brand components and straightforward typed journey metadata. Helper components keep internal and external link handling clear."
+    },
+    "completeness": {
+      "score": "PASS",
+      "notes": "Acceptance criteria are covered: /start is usable, balanced homepage paths are visible, and guide/tool/map/about destinations are reachable from /start and the homepage."
+    },
+    "patterns": {
+      "score": "PASS",
+      "notes": "The implementation follows existing Next.js App Router metadata, JsonLd, Breadcrumbs, HeroPanel, NetworkPanel, and ToolCard patterns."
+    },
+    "integration": {
+      "score": "PASS",
+      "notes": "Changes integrate cleanly with existing navigation, map, tools, guide routes, and smoke/a11y coverage."
+    }
+  },
+  "flags": [
     {
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/compose.yaml",
-      "note": "Consider adding a profile-specific override or explicit depends_on if the desired operator flow is one-command docker compose --profile live-map up without separately setting MESHCORE_LIVE_MAP_API_URL."
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/page.tsx",
+      "line": 93,
+      "note": "Homepage hero copy still says the site is the operator portal, which slightly undercuts the Step 3 balanced newcomer/operator/community journey framing. Non-blocking because CTAs and journey cards are balanced."
     },
     {
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/__tests__/client.test.ts",
-      "note": "A timeout-specific unit test would further cover the Step 3 verification plan, though current implementation behavior is acceptable."
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/start/page.tsx",
+      "line": 178,
+      "note": "The /start hero uses 'Live map' and 'Operator tools' while the global labels are 'Live Map' and 'Tools'. Non-blocking, but consider tightening label consistency in a polish pass."
     }
   ],
-  "verification_notes": {
-    "diff_basis": "provided_list/staged",
-    "reviewed_files": [
-      "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-3-plan.md",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/.env.example",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/compose.yaml",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/constants.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/map/config.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/parity/manifest.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/types.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/client.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/normalize.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/index.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/live-map/__tests__/client.test.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/status/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/snapshot/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/stats/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/nodes/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/peers/[deviceId]/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/los/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/los/elevations/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/coverage/route.ts",
-      "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/api/live-map/weather/radar/country-bounds/route.ts"
+  "additional_verification": {
+    "reviewer_reran": [],
+    "implementer_reported_passed": [
+      "npm run typecheck",
+      "npm run build",
+      "PLAYWRIGHT_BASE_URL=http://127.0.0.1:4574 PLAYWRIGHT_PORT=4574 npm run test:e2e -- tests/e2e/smoke.spec.ts",
+      "PLAYWRIGHT_BASE_URL=http://127.0.0.1:4574 PLAYWRIGHT_PORT=4574 npm run test:a11y"
     ],
-    "checks_reviewed": [
-      "npm run lint: passed",
-      "npm run typecheck: passed",
-      "npm run test:unit: passed",
-      "npm run build: passed with existing warnings",
-      "docker compose config and docker compose --profile live-map config: passed",
-      "Production API smoke with no upstream configured: safe unavailable and validation responses, no sensitive placeholder leakage"
-    ],
-    "notes": "No blocking correctness, security, integration, or plan-alignment issues found in the staged Step 3 changes."
+    "manual_validation_reported": [
+      "/start desktop and mobile",
+      "/ desktop",
+      "Chrome console without warnings or errors"
+    ]
   }
 }

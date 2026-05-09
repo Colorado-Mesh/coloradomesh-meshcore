@@ -92,11 +92,11 @@ export default function MapPage() {
           description={`Operator-grade view of ${SITE_NAME} repeaters, gateways, and field nodes across the Front Range and beyond. Markers reflect each node's last-heard status and exact reported coordinates.`}
           actions={
             <>
-              <Link href="/guides/getting-started" className="btn-primary">
-                Get on the mesh
+              <Link href="/start" className="btn-primary">
+                Get Started
               </Link>
-              <Link href="/start" className="btn-secondary">
-                Quick start
+              <Link href="/guides/getting-started" className="btn-secondary">
+                Getting started guide
               </Link>
               <Link href="/tools" className="btn-secondary">
                 Operator tools
@@ -230,7 +230,7 @@ export default function MapPage() {
                       href="/start"
                       className="text-mesh hover:text-mesh-light underline underline-offset-2"
                     >
-                      Quick Start
+                      Get Started
                     </Link>{' '}
                     if you already own MeshCore-capable hardware.
                   </li>
@@ -269,7 +269,7 @@ export default function MapPage() {
               <ToolCard
                 tone="sunset"
                 glyph="◇"
-                tag="QUICK START"
+                tag="GET STARTED"
                 title="Already have hardware?"
                 description="Configure your existing MeshCore device against Colorado MeshCore conventions."
                 href="/start"
