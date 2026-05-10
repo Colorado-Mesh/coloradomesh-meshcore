@@ -221,6 +221,7 @@ export default function AboutPage() {
               title="Open LoRa mesh, no internet required"
               tone="elevated"
               padding="lg"
+              headingLevel="h2"
             >
               <div className="space-y-4 text-foreground-muted leading-relaxed">
                 <p>
@@ -275,8 +276,8 @@ export default function AboutPage() {
               {meshFundamentals.map((item) => (
                 <NetworkPanel
                   key={item.title}
-                  eyebrow={item.title}
-                  eyebrowTone={item.tone}
+                  title={item.title}
+                  headingLevel="h3"
                   padding="md"
                   className="h-full"
                 >
@@ -321,6 +322,7 @@ export default function AboutPage() {
                   title={pillar.title}
                   padding="md"
                   className="h-full"
+                  headingLevel="h3"
                 >
                   <p className="text-sm text-foreground-muted leading-relaxed">
                     {pillar.body}
@@ -358,6 +360,7 @@ export default function AboutPage() {
                   description={item.description}
                   href={item.href}
                   external={item.external}
+                  headingLevel="h3"
                 />
               ))}
             </div>
@@ -403,6 +406,7 @@ export default function AboutPage() {
                   description={item.description}
                   href={item.href}
                   external={item.external}
+                  headingLevel="h3"
                 />
               ))}
             </div>

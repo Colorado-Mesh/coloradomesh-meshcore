@@ -193,12 +193,15 @@ export default function StartPage() {
 
         <section className="px-4 sm:px-6 lg:px-8 pb-16 -mt-10">
           <div className="mx-auto max-w-7xl">
-            <SectionEyebrow tone="mesh" className="mb-4">
+            <SectionEyebrow tone="mesh" className="mb-3">
               Pick your path
             </SectionEyebrow>
-            <p className="mb-8 text-foreground-muted max-w-2xl">
-              Three doorways into the same network. Newcomers learn first. Operators ship
-              infrastructure. Community-minded folks coordinate and help out.
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Three doorways into the network.
+            </h2>
+            <p className="mt-3 mb-8 text-foreground-muted max-w-2xl">
+              Newcomers learn first. Operators ship infrastructure. Community-minded folks
+              coordinate and help out.
             </p>
 
             <div className="grid gap-5 md:grid-cols-3">
@@ -210,6 +213,7 @@ export default function StartPage() {
                   title={path.title}
                   padding="md"
                   className="h-full"
+                  headingLevel="h3"
                 >
                   <p className="text-sm text-foreground-muted leading-relaxed">
                     {path.description}

@@ -265,6 +265,7 @@ export default function CommunityNetworksPage() {
               title="Decentralized comms, owned by neighbors"
               tone="elevated"
               padding="lg"
+              headingLevel="h2"
             >
               <div className="space-y-4 text-foreground-muted leading-relaxed">
                 <p>
@@ -317,8 +318,8 @@ export default function CommunityNetworksPage() {
               {communityBenefits.map((benefit) => (
                 <NetworkPanel
                   key={benefit.title}
-                  eyebrow={benefit.title}
-                  eyebrowTone={benefit.tone}
+                  title={benefit.title}
+                  headingLevel="h3"
                   padding="md"
                   className="h-full"
                 >

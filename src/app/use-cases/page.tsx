@@ -57,6 +57,7 @@ interface UseCase {
   glyph: string;
   description: string;
   tone: UseCaseTone;
+  badge: string;
   highlights: readonly string[];
 }
 
@@ -68,6 +69,7 @@ const useCases: readonly UseCase[] = [
     description:
       'Disaster-ready communication infrastructure that works when cell towers fail. Wildfires, blizzards, power outages, and search-and-rescue across Colorado.',
     tone: 'sunset',
+    badge: 'Disaster ready',
     highlights: [
       'Works when cell towers fail',
       'No internet dependency',
@@ -82,6 +84,7 @@ const useCases: readonly UseCase[] = [
     description:
       'Stay connected in Colorado backcountry where cell service fails. Hiking, camping, skiing, and outdoor adventures across the Rockies and beyond.',
     tone: 'sky',
+    badge: 'Backcountry',
     highlights: [
       'No cell service required',
       '10+ mile range',
@@ -96,6 +99,7 @@ const useCases: readonly UseCase[] = [
     description:
       'Resilient neighborhood networks owned and operated by your community. HOAs, rural areas, mountain towns, and apartments seeking independent communication.',
     tone: 'forest',
+    badge: 'Neighborhood',
     highlights: [
       'Zero monthly costs',
       'Community owned',
@@ -104,6 +108,20 @@ const useCases: readonly UseCase[] = [
     ],
   },
 ];
+
+const TONE_TEXT: Record<UseCaseTone, string> = {
+  sunset: 'text-sunset-500',
+  sky: 'text-sky-signal',
+  mesh: 'text-mesh',
+  forest: 'text-forest-300',
+};
+
+const TONE_HOVER_BORDER: Record<UseCaseTone, string> = {
+  sunset: 'group-hover:border-sunset-500/60',
+  sky: 'group-hover:border-sky-signal/60',
+  mesh: 'group-hover:border-mesh/60',
+  forest: 'group-hover:border-forest-300/60',
+};
 
 const whyChoose = [
   {
@@ -202,53 +220,62 @@ export default function UseCasesPage() {
             <SectionEyebrow tone="sunset" className="mb-3">
               Explore use cases
             </SectionEyebrow>
-            <p className="mb-8 text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Three ways the network shows up.
+            </h2>
+            <p className="mt-3 mb-8 text-foreground-muted max-w-2xl">
               From emergency preparedness to everyday neighborhood communication, MeshCore adapts
               to your scenario. Each card links to a deep dive.
             </p>
 
             <div className="grid gap-5 lg:grid-cols-3">
-              {useCases.map((useCase) => (
-                <Link
-                  key={useCase.slug}
-                  href={`/use-cases/${useCase.slug}`}
-                  className="panel p-6 sm:p-7 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring h-full flex flex-col"
-                >
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <span aria-hidden className="text-4xl text-mesh leading-none">
-                      {useCase.glyph}
-                    </span>
-                    <span className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
-                      ◊ {useCase.tone.toUpperCase()}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground tracking-tight group-hover:text-mesh transition-colors">
-                    {useCase.title}
-                  </h3>
-                  <p className="mt-3 text-sm text-foreground-muted leading-relaxed flex-grow">
-                    {useCase.description}
-                  </p>
+              {useCases.map((useCase) => {
+                const toneText = TONE_TEXT[useCase.tone];
+                const hoverBorder = TONE_HOVER_BORDER[useCase.tone];
+                return (
+                  <Link
+                    key={useCase.slug}
+                    href={`/use-cases/${useCase.slug}`}
+                    className={`panel p-6 sm:p-7 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring h-full flex flex-col ${hoverBorder}`}
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <span aria-hidden className={`text-4xl leading-none ${toneText}`}>
+                        {useCase.glyph}
+                      </span>
+                      <span className={`mono text-[0.65rem] uppercase tracking-[0.18em] ${toneText}`}>
+                        ◊ {useCase.badge}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground tracking-tight group-hover:text-mesh transition-colors">
+                      {useCase.title}
+                    </h3>
+                    <p className="mt-3 text-sm text-foreground-muted leading-relaxed flex-grow">
+                      {useCase.description}
+                    </p>
 
-                  <ul className="mt-5 space-y-2">
-                    {useCase.highlights.map((highlight) => (
-                      <li
-                        key={highlight}
-                        className="text-sm text-foreground-muted flex items-start gap-2"
-                      >
-                        <span aria-hidden className="text-mesh mt-0.5">
-                          ◊
-                        </span>
-                        <span>{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    <ul className="mt-5 space-y-2">
+                      {useCase.highlights.map((highlight) => (
+                        <li
+                          key={highlight}
+                          className="text-sm text-foreground-muted flex items-start gap-2"
+                        >
+                          <span aria-hidden className={`mt-0.5 ${toneText}`}>
+                            ◊
+                          </span>
+                          <span>{highlight}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm text-mesh group-hover:text-mesh-light">
-                    Learn more
-                    <span aria-hidden>→</span>
-                  </div>
-                </Link>
-              ))}
+                    <div className="mt-6 flex items-center justify-between text-xs text-foreground-dim">
+                      <span className="mono">explore</span>
+                      <span className={toneText} aria-hidden>
+                        →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -269,8 +296,8 @@ export default function UseCasesPage() {
               {whyChoose.map((item) => (
                 <NetworkPanel
                   key={item.title}
-                  eyebrow={item.title}
-                  eyebrowTone="mesh"
+                  title={item.title}
+                  headingLevel="h3"
                   padding="md"
                   className="h-full"
                 >

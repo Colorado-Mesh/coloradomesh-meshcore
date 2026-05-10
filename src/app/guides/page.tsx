@@ -187,7 +187,10 @@ export default function GuidesPage() {
             <SectionEyebrow tone="mesh" className="mb-3">
               Read the guides
             </SectionEyebrow>
-            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Learn the network, then operate it.
+            </h2>
+            <p className="mt-3 mb-6 text-sm text-foreground-muted max-w-2xl">
               Teaching and reference pages — onboarding, radio configuration, repeater tuning,
               naming, and troubleshooting. Use them to build the mental model the tools assume.
             </p>
@@ -201,6 +204,7 @@ export default function GuidesPage() {
                   title={guide.title}
                   description={guide.description}
                   href={guide.href}
+                  headingLevel="h3"
                 />
               ))}
             </div>
@@ -252,6 +256,7 @@ export default function GuidesPage() {
                     title={tool.title}
                     description={tool.description}
                     href={tool.href}
+                    headingLevel="h3"
                   />
                 ))}
               </div>

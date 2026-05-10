@@ -2,6 +2,7 @@ import SectionEyebrow from './SectionEyebrow';
 
 type NetworkPanelStatus = 'online' | 'stale' | 'offline' | 'idle';
 type NetworkPanelTone = 'default' | 'mesh' | 'elevated';
+type NetworkPanelHeadingLevel = 'h2' | 'h3' | 'h4';
 
 interface NetworkPanelProps {
   eyebrow?: React.ReactNode;
@@ -15,6 +16,7 @@ interface NetworkPanelProps {
   padding?: 'sm' | 'md' | 'lg';
   className?: string;
   children: React.ReactNode;
+  headingLevel?: NetworkPanelHeadingLevel;
 }
 
 const TONE_CLASS: Record<NetworkPanelTone, string> = {
@@ -48,8 +50,10 @@ export default function NetworkPanel({
   padding = 'md',
   className = '',
   children,
+  headingLevel = 'h2',
 }: NetworkPanelProps) {
   const hasHeader = eyebrow || title || subtitle || status || actions;
+  const Heading = headingLevel;
 
   return (
     <section className={`${TONE_CLASS[tone]} ${PADDING_CLASS[padding]} ${className}`}>
@@ -62,9 +66,9 @@ export default function NetworkPanel({
               </SectionEyebrow>
             )}
             {title && (
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
+              <Heading className="text-lg sm:text-xl font-semibold text-foreground tracking-tight">
                 {title}
-              </h2>
+              </Heading>
             )}
             {subtitle && (
               <p className="mt-1 text-sm text-foreground-muted">{subtitle}</p>

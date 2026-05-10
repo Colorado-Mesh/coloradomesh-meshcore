@@ -92,6 +92,7 @@ const faqData = generateFAQSchema(whyMeshCoreFAQData);
 
 const keyAdvantages = [
   {
+    eyebrow: 'Speed',
     title: 'Faster messaging',
     description:
       'Sub-second delivery for nearby nodes and sub-2-second responses across 9-hop routes. Optimized bandwidth and clean airtime keep latency low.',
@@ -99,6 +100,7 @@ const keyAdvantages = [
     tone: 'mesh' as const,
   },
   {
+    eyebrow: 'Battery',
     title: 'Better battery life',
     description:
       'Companions stay quiet — only dedicated repeaters relay traffic. Less LoRa transmit time means longer runtime on solar and battery.',
@@ -106,6 +108,7 @@ const keyAdvantages = [
     tone: 'sunset' as const,
   },
   {
+    eyebrow: 'Airtime',
     title: 'Less network congestion',
     description:
       'No flood-by-default. Repeaters carry routing while client devices listen, leaving more airtime for actual messages.',
@@ -113,6 +116,7 @@ const keyAdvantages = [
     tone: 'sky' as const,
   },
   {
+    eyebrow: 'Range',
     title: 'City-scale coverage',
     description:
       'Up to 64 hops (vs 7 in flood-routed alternatives). Communities have linked hundreds of miles of repeaters across multiple states.',
@@ -249,13 +253,19 @@ export default function WhyMeshCorePage() {
         />
 
         {/* Key advantages */}
-        <section className="px-4 sm:px-6 lg:px-8 pb-16 -mt-10">
+        <section className="px-4 sm:px-6 lg:px-8 pb-16 -mt-10" aria-labelledby="key-advantages-heading">
           <div className="mx-auto max-w-7xl">
             <SectionEyebrow tone="mesh" className="mb-3">
               Key advantages
             </SectionEyebrow>
-            <p className="mb-6 text-foreground-muted max-w-2xl">
-              MeshCore is designed from the ground up for reliable, city-scale communication. Four
+            <h2
+              id="key-advantages-heading"
+              className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight"
+            >
+              Built for reliable, city-scale communication.
+            </h2>
+            <p className="mt-3 mb-6 text-foreground-muted max-w-2xl">
+              MeshCore is designed from the ground up for serious mesh networking. Four
               choices made early in the protocol give it a different shape than flood-routed
               alternatives.
             </p>
@@ -263,8 +273,10 @@ export default function WhyMeshCorePage() {
               {keyAdvantages.map((advantage) => (
                 <NetworkPanel
                   key={advantage.title}
-                  eyebrow={advantage.title}
+                  eyebrow={advantage.eyebrow}
                   eyebrowTone={advantage.tone}
+                  title={advantage.title}
+                  headingLevel="h3"
                   padding="md"
                   className="h-full"
                 >
@@ -297,17 +309,75 @@ export default function WhyMeshCorePage() {
               </p>
             </div>
 
-            <div className="panel overflow-hidden">
-              <table className="w-full">
+            {/* Mobile: stacked cards. md+: classic table. */}
+            <div className="md:hidden space-y-3" role="list" aria-label="MeshCore vs alternatives comparison">
+              {comparisonPoints.map((point) => {
+                const winnerLabel =
+                  point.winner === 'meshcore'
+                    ? 'MeshCore advantage'
+                    : point.winner === 'alternative'
+                      ? 'Alternative advantage'
+                      : 'Even — depends on use case';
+                return (
+                  <div
+                    key={point.feature}
+                    role="listitem"
+                    className="panel p-4"
+                  >
+                    <div className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
+                      {point.feature}
+                    </div>
+                    <dl className="mt-3 grid grid-cols-1 gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs mono uppercase tracking-[0.18em] text-mesh shrink-0">
+                          MeshCore
+                        </dt>
+                        <dd
+                          className={`text-sm text-right ${
+                            point.winner === 'meshcore'
+                              ? 'text-mesh font-semibold'
+                              : 'text-foreground-muted'
+                          }`}
+                        >
+                          {point.meshcore}
+                        </dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs mono uppercase tracking-[0.18em] text-foreground-dim shrink-0">
+                          Alternatives
+                        </dt>
+                        <dd
+                          className={`text-sm text-right ${
+                            point.winner === 'alternative'
+                              ? 'text-mesh font-semibold'
+                              : 'text-foreground-muted'
+                          }`}
+                        >
+                          {point.alternative}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p className="mt-3 text-[0.7rem] mono uppercase tracking-[0.18em] text-foreground-dim">
+                      {winnerLabel}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block panel overflow-x-auto">
+              <table className="w-full min-w-[640px]">
+                <caption className="sr-only">
+                  MeshCore versus flood-routed mesh alternatives across eight comparison points.
+                </caption>
                 <thead className="bg-night-800/50">
                   <tr>
-                    <th className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
+                    <th scope="col" className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
                       Feature
                     </th>
-                    <th className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-mesh">
+                    <th scope="col" className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-mesh">
                       MeshCore
                     </th>
-                    <th className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
+                    <th scope="col" className="px-4 md:px-6 py-4 text-left text-xs mono uppercase tracking-[0.18em] text-foreground-dim">
                       Alternatives
                     </th>
                   </tr>
@@ -315,9 +385,9 @@ export default function WhyMeshCorePage() {
                 <tbody className="divide-y divide-card-border">
                   {comparisonPoints.map((point) => (
                     <tr key={point.feature} className="hover:bg-night-800/30 transition-colors">
-                      <td className="px-4 md:px-6 py-4 text-foreground font-medium text-sm">
+                      <th scope="row" className="px-4 md:px-6 py-4 text-foreground font-medium text-sm text-left">
                         {point.feature}
-                      </td>
+                      </th>
                       <td className="px-4 md:px-6 py-4">
                         <span
                           className={`text-sm ${
@@ -369,8 +439,8 @@ export default function WhyMeshCorePage() {
               {detailedBenefits.map((benefit) => (
                 <NetworkPanel
                   key={benefit.title}
-                  eyebrow={benefit.title}
-                  eyebrowTone={benefit.eyebrowTone}
+                  title={benefit.title}
+                  headingLevel="h3"
                   padding="md"
                   className="h-full"
                 >

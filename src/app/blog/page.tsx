@@ -3,7 +3,14 @@ import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
 import { BASE_URL, COMMUNITY_NAME, SITE_NAME } from '@/lib/constants';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import JsonLd from '@/components/JsonLd';
 import { HeroPanel, SectionEyebrow } from '@/components/brand';
+import { generateBreadcrumbSchema } from '@/lib/schemas/breadcrumb';
+
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: BASE_URL },
+  { name: 'Blog', url: `${BASE_URL}/blog` },
+]);
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -40,8 +47,32 @@ function formatDate(dateString: string): string {
 export default function BlogPage() {
   const posts = getAllPosts();
 
+  const blogSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: `${SITE_NAME} Blog`,
+    description:
+      'News, tutorials, and updates from the Colorado MeshCore community. Operator field notes, hardware reviews, and announcements.',
+    url: `${BASE_URL}/blog`,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: BASE_URL,
+    },
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.title,
+      url: `${BASE_URL}/blog/${post.slug}`,
+      datePublished: post.date,
+      description: post.excerpt,
+    })),
+  };
+
   return (
-    <div className="min-h-screen">
+    <>
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={blogSchema} />
+      <div className="min-h-screen">
       <HeroPanel
         background="topo-grid"
         showMountains={false}
@@ -138,6 +169,7 @@ export default function BlogPage() {
           )}
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

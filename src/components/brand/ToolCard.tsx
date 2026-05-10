@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 type ToolCardTone = 'mesh' | 'sky' | 'sunset' | 'forest';
+type ToolCardHeadingLevel = 'h2' | 'h3' | 'h4';
 
 interface ToolCardProps {
   glyph?: string;
@@ -12,6 +13,7 @@ interface ToolCardProps {
   tone?: ToolCardTone;
   active?: boolean;
   className?: string;
+  headingLevel?: ToolCardHeadingLevel;
 }
 
 const TONE: Record<
@@ -54,11 +56,13 @@ export default function ToolCard({
   tone = 'mesh',
   active = false,
   className = '',
+  headingLevel = 'h2',
 }: ToolCardProps) {
   const palette = TONE[tone];
   const baseClasses = `group relative block panel p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-ring ${palette.accent} ${
     active ? `${palette.bgSubtle} ring-1 ${palette.ring}` : ''
   } ${className}`;
+  const Heading = headingLevel;
 
   const inner = (
     <>
@@ -71,18 +75,22 @@ export default function ToolCard({
         </span>
         {tag && (
           <span className={`mono text-[0.65rem] uppercase ${palette.text}`}>
-            ◊ {tag}
+            <span aria-hidden>◊ </span>
+            {tag}
           </span>
         )}
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-foreground tracking-tight">
+      <Heading className="mt-4 text-lg font-semibold text-foreground tracking-tight">
         {title}
-      </h2>
+      </Heading>
       <p className="mt-2 text-sm text-foreground-muted leading-relaxed">
         {description}
       </p>
       <div className="mt-5 flex items-center justify-between text-xs text-foreground-dim">
-        <span className="mono">explore</span>
+        <span className="mono">
+          explore
+          {external && <span className="sr-only"> (opens in a new tab)</span>}
+        </span>
         <span className={palette.text} aria-hidden>
           →
         </span>

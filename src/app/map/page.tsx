@@ -15,10 +15,6 @@ import {
 import { generateBreadcrumbSchema } from '@/lib/schemas/breadcrumb';
 import { generateWebApplicationSchema } from '@/lib/schemas/webapp';
 
-// Force dynamic rendering so live snapshots aren't served from a stale CDN copy.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 const PAGE_TITLE = 'Network Map';
 const PAGE_DESCRIPTION = `Live operations map of ${SITE_NAME} nodes, repeaters, and gateways across Colorado. Track coverage, freshness, and node health from one ${COMMUNITY_NAME} console.`;
 
@@ -194,8 +190,8 @@ export default function MapPage() {
                   >
                     analyzer.meshcore.coloradomesh.org
                   </a>
-                  . The analyzer is a sibling deployment to this map and reads
-                  the same MQTT firehose.
+                  . Use it when you need deeper per-node link quality,
+                  neighbors, and routing detail.
                 </p>
               </div>
             </aside>
@@ -207,6 +203,7 @@ export default function MapPage() {
             <NetworkPanel
               eyebrow="Read the markers"
               title="Roles & status colors"
+              headingLevel="h2"
             >
               <div className="space-y-4 text-sm text-foreground-muted">
                 <p>
@@ -230,6 +227,7 @@ export default function MapPage() {
             <NetworkPanel
               eyebrow="Add your node"
               title="Put your radio on the map"
+              headingLevel="h2"
             >
               <div className="space-y-4 text-sm text-foreground-muted">
                 <p>
@@ -289,6 +287,7 @@ export default function MapPage() {
                 title="Getting Started"
                 description="Pick a radio, flash MeshCore, name your node, and join the Front Range mesh."
                 href="/guides/getting-started"
+                headingLevel="h2"
               />
               <ToolCard
                 tone="sky"
@@ -298,6 +297,7 @@ export default function MapPage() {
                 description="Drill into per-node telemetry, link quality, and routing on the Colorado Mesh analyzer."
                 href={ANALYZER_URL}
                 external
+                headingLevel="h2"
               />
               <ToolCard
                 tone="sunset"
@@ -306,6 +306,7 @@ export default function MapPage() {
                 title="Operator tools"
                 description="Naming wizard, prefix matrix, and other operator utilities for the Colorado mesh."
                 href="/tools"
+                headingLevel="h2"
               />
               <ToolCard
                 tone="forest"
@@ -315,6 +316,7 @@ export default function MapPage() {
                 description="Coordinate placements, troubleshoot links, and meet other Colorado MeshCore operators."
                 href={DISCORD_INVITE_URL}
                 external
+                headingLevel="h2"
               />
             </div>
           </div>

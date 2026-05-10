@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
 import { HeroPanel, SectionEyebrow, ToolCard } from '@/components/brand';
 import {
+  ANALYZER_URL,
   BASE_URL,
   COMMUNITY_NAME,
   DISCORD_INVITE_URL,
@@ -100,7 +101,10 @@ export default function ToolsPage() {
             <SectionEyebrow tone="mesh" className="mb-3">
               Naming &amp; Identity
             </SectionEyebrow>
-            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Name your nodes.
+            </h2>
+            <p className="mt-3 mb-6 text-sm text-foreground-muted max-w-2xl">
               Compose standards-aligned identifiers for repeaters and companion devices that fit
               MeshCore&apos;s 23-character limit and the {COMMUNITY_NAME} naming convention.
             </p>
@@ -112,6 +116,7 @@ export default function ToolsPage() {
                 title="Repeater name wizard"
                 description="Build a standards-aligned repeater name from region, city, landmark, and node type. Includes live conflict checks against the live network map."
                 href="/tools/repeater-name"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="sky"
@@ -120,6 +125,7 @@ export default function ToolsPage() {
                 title="Companion name builder"
                 description="Compose your personal companion identity with emoji, handle, and an identification suffix. Stays under the 23-character MeshCore limit."
                 href="/tools/companion-name"
+                headingLevel="h3"
               />
             </div>
           </div>
@@ -130,7 +136,10 @@ export default function ToolsPage() {
             <SectionEyebrow tone="sunset" className="mb-3">
               Network Planning
             </SectionEyebrow>
-            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Plan keys and coverage.
+            </h2>
+            <p className="mt-3 mb-6 text-sm text-foreground-muted max-w-2xl">
               Coordinate keys and coverage before you flash a new node. Inspect occupied address
               space and pair planning with the{' '}
               <Link
@@ -141,7 +150,7 @@ export default function ToolsPage() {
               </Link>
               .
             </p>
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <ToolCard
                 tone="sunset"
                 glyph="◊"
@@ -149,6 +158,7 @@ export default function ToolsPage() {
                 title="Public-key prefix matrix"
                 description={`Visualize the 256-cell first-byte prefix space across ${COMMUNITY_NAME}. Find free prefixes before generating a new key.`}
                 href="/tools/prefix-matrix"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="sky"
@@ -157,6 +167,17 @@ export default function ToolsPage() {
                 title="Live Map"
                 description="See current node freshness, coverage, and conflicts before you generate keys or pick a site. Prefix planning consumes the same snapshot."
                 href="/map"
+                headingLevel="h3"
+              />
+              <ToolCard
+                tone="mesh"
+                glyph="◉"
+                tag="EXTERNAL · TELEMETRY"
+                title="Network analyzer"
+                description={`External dashboard for per-node link quality, neighbors, and routing across ${COMMUNITY_NAME} — useful for deeper operator telemetry.`}
+                href={ANALYZER_URL}
+                external
+                headingLevel="h3"
               />
             </div>
           </div>
@@ -167,7 +188,10 @@ export default function ToolsPage() {
             <SectionEyebrow tone="sky" className="mb-3">
               Field &amp; USB Operations
             </SectionEyebrow>
-            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Bench and field tools.
+            </h2>
+            <p className="mt-3 mb-6 text-sm text-foreground-muted max-w-2xl">
               Browser-side serial tooling for bench installs and field service. Pairs with the{' '}
               <Link
                 href="/guides/repeater-setup"
@@ -185,6 +209,7 @@ export default function ToolsPage() {
                 title="Serial USB console"
                 description="Talk to a connected MeshCore node over USB directly from the browser. Manual send, canned commands, and a live terminal log."
                 href="/tools/serial-usb"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="forest"
@@ -193,6 +218,7 @@ export default function ToolsPage() {
                 title="Troubleshooting reference"
                 description="Common flashing, BLE, GPS, and range issues operators see in the field — and how to recover before reaching for Discord."
                 href="/guides/troubleshooting"
+                headingLevel="h3"
               />
             </div>
           </div>
@@ -203,7 +229,10 @@ export default function ToolsPage() {
             <SectionEyebrow tone="mesh" className="mb-3">
               Need the reference?
             </SectionEyebrow>
-            <p className="mb-6 text-sm text-foreground-muted max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+              Hand off to the guides.
+            </h2>
+            <p className="mt-3 mb-6 text-sm text-foreground-muted max-w-2xl">
               Tools do — guides teach. Jump to the matching reference page when you want the
               theory or the manual workflow behind any tool.
             </p>

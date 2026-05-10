@@ -151,6 +151,7 @@ export default function Home() {
                 title="Repeater name wizard"
                 description="Compose a standards-aligned repeater name using region, city, landmark, and node type."
                 href="/tools/repeater-name"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="sky"
@@ -159,6 +160,7 @@ export default function Home() {
                 title="Companion name builder"
                 description="Build a personal MeshCore identity that fits inside the 23-character limit."
                 href="/tools/companion-name"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="sunset"
@@ -167,6 +169,7 @@ export default function Home() {
                 title="Public-key prefix matrix"
                 description={`See live prefix occupancy across ${COMMUNITY_NAME} and pick a free first byte.`}
                 href="/tools/prefix-matrix"
+                headingLevel="h3"
               />
               <ToolCard
                 tone="forest"
@@ -175,6 +178,7 @@ export default function Home() {
                 title="Serial USB console"
                 description="Connect to a MeshCore node over USB from the browser. Manual send and canned commands."
                 href="/tools/serial-usb"
+                headingLevel="h3"
               />
             </div>
           </div>
@@ -211,6 +215,7 @@ export default function Home() {
                 title="Open LoRa mesh, no internet required"
                 tone="elevated"
                 padding="lg"
+                headingLevel="h3"
               >
                 <p className="text-foreground-muted leading-relaxed">
                   MeshCore is an open-source LoRa mesh networking firmware. Dedicated repeaters

@@ -50,6 +50,7 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const isScrolledRef = useRef(false);
   const pathname = usePathname() ?? '/';
   const primaryNavLinks = useMemo<NavLink[]>(
     () => getPrimaryNavLinks().map((link) => ({ href: link.href, label: link.label })),
@@ -62,10 +63,15 @@ export default function Navigation() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const next = window.scrollY > 10;
+      if (next !== isScrolledRef.current) {
+        isScrolledRef.current = next;
+        setIsScrolled(next);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -100,10 +106,10 @@ export default function Navigation() {
           role="navigation"
           aria-label="Main navigation"
         >
-          <div className="relative flex h-16 items-center justify-between gap-6">
+          <div className="flex h-16 items-center justify-between gap-3 lg:gap-4">
             <BrandMark size="md" href="/" ariaLabel={`${SITE_NAME} — Home`} />
 
-            <div className="hidden lg:flex lg:items-center lg:gap-1 absolute left-1/2 -translate-x-1/2">
+            <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center lg:gap-0.5 xl:gap-1 lg:min-w-0">
               {primaryNavLinks.map((link) => {
                 const isActive = link.href === activeHref;
                 return (
@@ -112,7 +118,7 @@ export default function Navigation() {
                     href={link.href}
                     aria-current={isActive ? 'page' : undefined}
                     data-active={isActive ? 'true' : undefined}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 focus-ring ${
+                    className={`px-2.5 xl:px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 focus-ring whitespace-nowrap ${
                       isActive
                         ? 'text-foreground bg-card/70 shadow-inner'
                         : 'text-foreground-muted hover:text-foreground hover:bg-card/60'
@@ -129,7 +135,7 @@ export default function Navigation() {
               })}
             </div>
 
-            <div className="hidden lg:flex lg:items-center lg:gap-3">
+            <div className="hidden lg:flex lg:items-center lg:gap-3 lg:flex-shrink-0">
               <a
                 href={DISCORD_INVITE_URL}
                 target="_blank"
@@ -138,7 +144,7 @@ export default function Navigation() {
                 aria-label="Join the Colorado MeshCore Discord"
               >
                 <DiscordIcon />
-                <span>Discord</span>
+                <span className="hidden xl:inline">Discord</span>
               </a>
             </div>
 
