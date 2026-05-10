@@ -14,7 +14,8 @@
     "test:a11y": "playwright test --grep @a11y",
     "test:lighthouse": "lhci autorun",
     "docker:smoke": "node scripts/docker-smoke.mjs",
-    "verify:map:real": "node scripts/verify-real-map-data.mjs"
+    "verify:map:real": "node scripts/verify-real-map-data.mjs",
+    "utilities:check-submodule": "node scripts/check-utilities-submodule.mjs"
   },
   "engines": {
     "node": ">=24 <26"

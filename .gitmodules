@@ -1,0 +1,3 @@
+[submodule "vendor/meshcore-utilities-site"]
+	path = vendor/meshcore-utilities-site
+	url = https://github.com/Colorado-Mesh/meshcore-utilities-site
