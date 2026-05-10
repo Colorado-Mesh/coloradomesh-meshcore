@@ -32,6 +32,9 @@ jobs:
       - name: Check utilities submodule
         run: npm run utilities:check-submodule
 
+      - name: Check generated utilities artifacts
+        run: npm run utilities:check
+
       - name: Run ESLint
         run: npm run lint
 

@@ -224,7 +224,7 @@ export const PARITY_MANIFEST: ParityItem[] = [
       { type: 'ci', ref: '.github/workflows/ci.yml docker-smoke' },
       { type: 'ci', ref: '.github/workflows/security.yml dependency-review' },
     ],
-    notes: 'PR CI now blocks on lint, typecheck, unit tests, production build, Chromium critical smoke, axe accessibility, Lighthouse budgets, dependency review, Docker image build, and Docker runtime smoke without publishing images. Utilities stale-artifact checks are planned after generated artifacts land in CI.',
+    notes: 'PR CI now blocks on utilities submodule health, generated utility artifact freshness, lint, typecheck, unit tests, production build, Chromium critical smoke, axe accessibility, Lighthouse budgets, dependency review, Docker image build, and Docker runtime smoke without publishing images.',
   },
   {
     id: 'utilities-route-compatibility',
