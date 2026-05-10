@@ -360,7 +360,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
               <ol className="list-decimal list-inside space-y-1">
                 <li>Connect repeater to computer via USB</li>
                 <li>Open the{" "}
-                  <a href="https://flasher.meshcore.co.uk/" target="_blank" rel="noopener noreferrer" className="text-mesh hover:text-mesh-light">
+                  <a href="https://flasher.meshcore.io/" target="_blank" rel="noopener noreferrer" className="text-mesh hover:text-mesh-light">
                     MeshCore Web Console
                   </a>{" "}or a serial terminal
                 </li>

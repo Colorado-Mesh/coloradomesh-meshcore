@@ -71,12 +71,12 @@ export const meshCoreSetupHowTo = {
     {
       name: 'Flash MeshCore Firmware',
       text: 'Use the MeshCore web flasher to install firmware on your device. Connect via USB, select your device model and 915MHz frequency for USA, and follow the on-screen instructions.',
-      url: 'https://flasher.meshcore.co.uk/',
+      url: 'https://flasher.meshcore.io/',
     },
     {
       name: 'Configure Your Node',
       text: 'Download the MeshCore Companion app, connect to your node via Bluetooth, set a unique node name, and configure USA/Canada radio preset.',
-      url: 'https://meshcore.co.uk/apps.html',
+      url: 'https://meshcore.io/apps.html',
     },
     {
       name: 'Join the Colorado MeshCore Community',

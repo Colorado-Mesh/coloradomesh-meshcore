@@ -65,7 +65,7 @@ const setupSteps = [
     ],
     link: {
       text: "MeshCore Web Flasher",
-      url: "https://flasher.meshcore.co.uk/",
+      url: "https://flasher.meshcore.io/",
     },
   },
   {
@@ -80,7 +80,7 @@ const setupSteps = [
     ],
     link: {
       text: "MeshCore Apps",
-      url: "https://meshcore.co.uk/apps.html",
+      url: "https://meshcore.io/apps.html",
     },
   },
   {

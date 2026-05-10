@@ -62,7 +62,7 @@ describe('site route metadata', () => {
   });
 
   it('includes visible guide and use-case routes in static sitemap output', () => {
-    const entries = getStaticSitemapRoutes('https://denvermesh.org/', new Date('2026-02-16'));
+    const entries = getStaticSitemapRoutes('https://coloradomesh.org/', new Date('2026-02-16'));
     const paths = entries.map((entry) => new URL(entry.url).pathname);
 
     expect(paths).toEqual(expect.arrayContaining([...VISIBLE_SITEMAP_PATHS]));
@@ -71,9 +71,9 @@ describe('site route metadata', () => {
   });
 
   it('normalizes the home sitemap URL without a trailing slash', () => {
-    const entries = getStaticSitemapRoutes('https://denvermesh.org/', new Date('2026-02-16'));
+    const entries = getStaticSitemapRoutes('https://coloradomesh.org/', new Date('2026-02-16'));
 
-    expect(entries[0]?.url).toBe('https://denvermesh.org');
+    expect(entries[0]?.url).toBe('https://coloradomesh.org');
   });
 
   it('looks up routes and returns breadcrumb chains', () => {

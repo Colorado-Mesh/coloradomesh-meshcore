@@ -15,8 +15,8 @@ Thank you for your interest in contributing to Colorado MeshCore. This document 
 1. Fork the repository.
 2. Clone your fork:
    ```bash
-   git clone https://github.com/Colorado-Mesh/denvermc-org.git
-   cd denvermc-org
+   git clone https://github.com/Colorado-Mesh/coloradomesh-meshcore.git
+   cd coloradomesh-meshcore
    ```
 3. Install dependencies:
    ```bash

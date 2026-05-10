@@ -10,13 +10,13 @@ We release patches for security vulnerabilities in the following versions:
 
 ## Reporting a Vulnerability
 
-We take the security of Denver MeshCore seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+We take the security of Colorado Mesh seriously. If you believe you have found a security vulnerability, please report it to us as described below.
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
 ### How to Report
 
-1. **GitHub Security Advisories (Preferred)**: Use [GitHub's private vulnerability reporting](https://github.com/Denver-MeshCore/denvermc/security/advisories/new) to submit your report directly and securely.
+1. **GitHub Security Advisories (Preferred)**: Use [GitHub's private vulnerability reporting](https://github.com/Colorado-Mesh/coloradomesh-meshcore/security/advisories/new) to submit your report directly and securely.
 
 2. **Discord**: For less critical issues, you can reach out privately to maintainers via our [Discord server](https://discord.gg/Tuuv9hGPnX).
 
@@ -52,4 +52,4 @@ When contributing to this project, please:
 - Follow secure coding practices
 - Report any suspicious activity
 
-Thank you for helping keep Denver MeshCore and our community safe!
+Thank you for helping keep Colorado Mesh and our community safe!

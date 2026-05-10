@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We as members, contributors, and leaders of the Denver MeshCore community pledge to make participation in our project and community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
+We as members, contributors, and leaders of the Colorado Mesh community pledge to make participation in our project and community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
 
 We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community focused on building and improving decentralized mesh networking technology.
 
@@ -42,7 +42,7 @@ This Code of Conduct applies within all community spaces, including but not limi
 * Discord server and channels
 * Mesh network operations and node interactions
 * Community events and meetups
-* Any other forums or spaces where community members represent the Denver MeshCore project
+* Any other forums or spaces where community members represent the Colorado Mesh project
 
 This Code of Conduct also applies when an individual is officially representing the community in public spaces. Examples of representing our community include using an official e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event.
 
@@ -51,7 +51,7 @@ This Code of Conduct also applies when an individual is officially representing 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at:
 
 * **Discord**: [discord.gg/Tuuv9hGPnX](https://discord.gg/Tuuv9hGPnX) (contact moderators)
-* **Email**: [Contact through GitHub Issues](https://github.com/Denver-MeshCore/denvermc/issues)
+* **Email**: [Contact through GitHub Issues](https://github.com/Colorado-Mesh/coloradomesh-meshcore/issues)
 
 All complaints will be reviewed and investigated promptly and fairly.
 

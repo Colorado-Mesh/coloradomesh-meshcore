@@ -99,7 +99,7 @@ Legacy observer, health, stats, node-list, cleanup, and Discord webhook APIs hav
 ## Project Structure
 
 ```text
-denvermc-org/
+coloradomesh-meshcore/
 ├── content/                    # MDX blog and guide content
 ├── public/                     # Static assets
 ├── src/
@@ -120,7 +120,7 @@ denvermc-org/
 ## Community
 
 - **Discord**: [discord.gg/Tuuv9hGPnX](https://discord.gg/Tuuv9hGPnX)
-- **MeshCore**: [meshcore.co.uk](https://meshcore.co.uk)
+- **MeshCore**: [meshcore.io](https://meshcore.io)
 - **LetsMesh**: [letsmesh.net](https://letsmesh.net)
 
 ## Contributing
@@ -130,3 +130,7 @@ Contributions are welcome. Please run linting, type checking, and the production
 ## License
 
 This project is part of the Colorado MeshCore community initiative.
+
+## Acknowledgments
+
+Colorado Mesh acknowledges that this site and the majority of its content was originally developed by @cj-vana as part of DenverMC before merging with Colorado Mesh. His efforts to document and promote MeshCore in the Denver area were instrumental in the origins of the statewide MeshCore network.

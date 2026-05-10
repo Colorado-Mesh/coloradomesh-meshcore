@@ -78,12 +78,12 @@ const resources = [
   },
   {
     name: "MeshCore official website",
-    url: "https://meshcore.co.uk/",
+    url: "https://meshcore.io/",
     description: "Official MeshCore project website with downloads and guides.",
   },
   {
     name: "MeshCore web flasher",
-    url: "https://flasher.meshcore.co.uk/",
+    url: "https://flasher.meshcore.io/",
     description: "Flash MeshCore firmware directly from your browser.",
   },
   {

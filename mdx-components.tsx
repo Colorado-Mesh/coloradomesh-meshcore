@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 /**
  * Custom MDX components for blog posts
- * These components style MDX content with Denver MeshCore's design system
+ * These components style MDX content with Colorado Mesh's design system
  */
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {

@@ -149,7 +149,7 @@ export default function RadioSettingsPage() {
               configuration generator. More information about MeshCore radio configuration is in
               the{" "}
               <a
-                href="https://meshcore.co.uk/"
+                href="https://meshcore.io/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-mesh hover:text-mesh-light underline underline-offset-2"

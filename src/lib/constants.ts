@@ -32,7 +32,7 @@ export const BRAND = {
     "Join Colorado MeshCore's growing mesh network community. Connect with fellow MeshCore operators, share knowledge, and help build resilient off-grid communication infrastructure across Colorado.",
   baseUrl: trimTrailingSlash(process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_BASE_URL),
   discordInviteUrl: 'https://discord.gg/Tuuv9hGPnX',
-  meshcoreDocsUrl: 'https://meshcore.co',
+  meshcoreDocsUrl: 'https://meshcore.io',
   letsMeshUrl: 'https://letsmesh.net',
   githubOrgUrl: 'https://github.com/Colorado-Mesh',
   analyzerUrl: 'https://analyzer.meshcore.coloradomesh.org',
