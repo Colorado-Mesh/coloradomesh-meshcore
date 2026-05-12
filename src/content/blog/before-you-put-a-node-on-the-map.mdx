@@ -1,0 +1,150 @@
+---
+title: "Before You Put a Node on the Map: Naming, Prefixes, and Radio Settings"
+date: "2026-05-12T12:00:00-06:00"
+excerpt: "A practical preflight checklist for Colorado MeshCore operators: pick a useful name, reserve a clean public-key prefix, match the Front Range radio settings, and verify your node before it goes live."
+author: "Colorado MeshCore"
+tags: ["Guides", "Operator Tools", "Naming Standard", "Radio Settings", "MeshCore"]
+published: true
+---
+
+A new MeshCore node is more than a radio with power. Once it starts advertising itself, other operators use that name, public-key prefix, location, and signal history to understand what is happening on the mesh.
+
+That is why the best time to plan a node is before it appears on the [live map](/map).
+
+Colorado MeshCore has grown enough that casual setup habits can create real confusion. A vague name makes troubleshooting harder. A reused prefix makes nodes harder to identify. A radio on the wrong preset can look broken even when the hardware is fine. None of this is complicated, but it is much easier to get right before the device is in a box on a roof, in a vehicle, or on a hilltop.
+
+Use this as a quick preflight before adding a repeater, room server, companion, or field node to the Front Range network.
+
+## 1. Decide what job the node has
+
+Start with the role, not the hardware.
+
+A node sitting in a window at home has a different job than a repeater on a high site. A mobile node in a truck has a different job than a room server meant to keep local messages organized. When the role is clear, the rest of the setup becomes easier: name format, delay profile, antenna expectations, and how much other people should rely on it.
+
+Most new devices fall into one of these buckets:
+
+- **Companion node:** personal carry device, usually tied to one operator.
+- **Edge node:** home, office, balcony, or low rooftop install.
+- **Distribution repeater:** a stronger local relay with useful coverage.
+- **Core repeater:** high-elevation or strategic site that other nodes depend on.
+- **Room server:** a node that helps organize channel or room activity.
+- **Mobile node:** vehicle, hiking, event, or field-use device.
+
+If you are not sure, start conservative. A node can be useful without being treated as infrastructure on day one. Bring it online, watch how it behaves, then promote it into a more important role once the signal path proves itself.
+
+## 2. Give it a name that helps other operators
+
+Names are not decoration on a mesh. They are how people read the network at a glance.
+
+The [Colorado MeshCore naming standard](/guides/naming-standard) keeps infrastructure names short, consistent, and useful inside MeshCore's 23-character limit. A repeater-style name tells operators where the node is, what role it plays, and which public key identifies it.
+
+The infrastructure format is:
+
+```text
+[REGION]-[CITY]-[LANDMARK]-[TYPE]-[PUBKEY]
+```
+
+A name like `DEN-GLDN-LKOUT-RC-4D0C` is doing a lot of work. It points to the Denver region, Golden, Lookout Mountain, a core repeater role, and a public-key suffix operators can match against the map or analyzer.
+
+For personal nodes, use the [companion name builder](/tools/companion-name) instead. Companion names should identify your mesh handle or device without broadcasting your real name or home address. Keep it memorable, but remember that MeshCore nodes may publish location data depending on how you configure them.
+
+Fast path:
+
+- Use the [repeater name wizard](/tools/repeater-name) for infrastructure nodes.
+- Use the [companion name builder](/tools/companion-name) for personal devices.
+- Avoid joke names for infrastructure. They are funny once and annoying every time someone has to debug coverage.
+
+## 3. Pick a clean public-key prefix before generating keys
+
+The public-key suffix at the end of a node name only works if it is actually useful.
+
+Colorado MeshCore's [public-key prefix matrix](/tools/prefix-matrix) reads from the same live snapshot used by the map. It shows the 256 possible first-byte prefix groups, then lets you drill into a 16 by 16 grid of full four-character prefixes. The tool flags duplicates, reserved IDs, and repeater or room-server collisions.
+
+That sounds like operator trivia until you need to distinguish two nodes with similar names, similar locations, or stale telemetry. A clean prefix gives the community one more reliable handle when reading routes, screenshots, analyzer output, and Discord reports.
+
+Before you generate a new key pair:
+
+1. Open the [prefix matrix](/tools/prefix-matrix).
+2. Check whether your preferred prefix range is already crowded.
+3. Use **Suggest Free Prefix** if you do not care which prefix you get.
+4. Generate or select a key that matches the available prefix.
+5. Put the four-character prefix into the node name.
+
+This is especially useful for repeaters and room servers. Personal companion nodes benefit too, but infrastructure nodes are where collision-free identification matters most.
+
+## 4. Match the Front Range radio settings
+
+A node can have the perfect name and still be invisible if it is listening on the wrong settings.
+
+The [radio settings reference](/guides/radio-settings) is the canonical place to check the Colorado MeshCore preset, frequency, bandwidth, spreading factor, coding rate, transmit power, and channel list. It also includes CLI commands for repeaters and channel keys for devices that need them.
+
+If you are joining the Front Range mesh, do not guess from an old screenshot or a random Discord message. Use the current guide, then verify the node can hear and be heard.
+
+For repeaters, pair the radio settings with the [repeater setup guide](/guides/repeater-setup). Delay profiles matter because the Front Range is not flat. Hilltop, foothills, suburban, local, and mobile nodes should not all retransmit with the same timing. Higher or more strategic nodes usually need to wait longer so local nodes can handle nearby traffic first.
+
+A good rule of thumb:
+
+- **Companion or indoor node:** start simple and confirm basic connectivity.
+- **Rooftop or edge repeater:** use the appropriate suburban or local profile from the guide.
+- **Foothills or hilltop repeater:** coordinate in Discord before treating it as backbone infrastructure.
+- **Mobile node:** use the mobile profile so fixed nodes get priority.
+
+## 5. Bench test before field deployment
+
+Do the boring test while the device is still on your desk.
+
+The [Serial USB console](/tools/serial-usb) lets you talk to a connected MeshCore node from the browser. That is useful before a field install because you can confirm identity, radio settings, and repeater commands without juggling a separate terminal setup.
+
+Before you mount anything permanently, check:
+
+- The node boots reliably from its intended power source.
+- The name matches the standard and fits inside the 23-character limit.
+- The public-key prefix matches the name.
+- The radio settings match the [Front Range reference](/guides/radio-settings).
+- The device appears on the [live map](/map) if it is publishing location.
+- The antenna and GPS placement make sense for the role.
+- You know how to reach the device again after it is installed.
+
+If something looks wrong, the [troubleshooting guide](/guides/troubleshooting) is faster than guessing. Check power, USB, BLE, GPS, antenna, and radio settings before assuming the mesh is the problem.
+
+## 6. Read the map like an operator
+
+Once the node is online, the [live map](/map) becomes your feedback loop.
+
+Markers show role and liveness. The details panel can show name, public-key prefix, last-heard time, firmware or model, battery, radio config, signal, routes, and neighbors when the network reports them. The map also links out to the network analyzer for deeper routing and link-quality work.
+
+Do not judge a new node from one packet. Watch it over time:
+
+- Does it stay fresh or go stale after a few minutes?
+- Does the name clearly match the place and role?
+- Does the reported location make sense?
+- Does it hear useful neighbors?
+- Does it improve coverage or only add noise?
+- Does it behave differently at night, during weather, or after a battery cycle?
+
+A node that stays online, has a clear identity, and fills a real coverage gap is more valuable than a node with perfect hardware specs but no stable role.
+
+## 7. Ask before making it infrastructure
+
+The network gets stronger with every good node. It also gets harder to operate when too many uncoordinated repeaters appear in the same area.
+
+If you are deploying something that other people may rely on, join the [Colorado Mesh Discord](https://discord.gg/Tuuv9hGPnX) before calling it infrastructure. Share the rough location, role, antenna plan, power plan, and the name you intend to use. Other operators may already know about nearby coverage, noisy RF sites, duplicate landmarks, or better delay profiles for that spot.
+
+You do not need permission to experiment with your own node. Coordination matters when the node becomes part of the shared operating picture.
+
+## Quick preflight checklist
+
+Before your node goes live:
+
+- Pick the node's role.
+- Generate a standards-aligned name with the [operator tools](/tools).
+- Check the [prefix matrix](/tools/prefix-matrix) for a clean public-key prefix.
+- Apply the [Front Range radio settings](/guides/radio-settings).
+- Use the [repeater setup guide](/guides/repeater-setup) if the node will relay traffic.
+- Bench test with the [Serial USB console](/tools/serial-usb).
+- Confirm the node on the [live map](/map).
+- Coordinate in Discord before treating it as critical infrastructure.
+
+Good mesh operations are mostly small habits repeated consistently. Name things clearly. Avoid avoidable collisions. Use the shared settings. Test before you deploy. Then watch the map and improve what the data shows you.
+
+That is how a pile of radios becomes a network people can actually use.
