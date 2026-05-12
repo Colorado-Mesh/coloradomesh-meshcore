@@ -69,7 +69,7 @@ export default function ToolShell({
           <div className="space-y-8">{children}</div>
 
           {aside && (
-            <aside className="mt-10 lg:mt-0">
+            <div className="mt-10 lg:mt-0">
               <div className="lg:sticky lg:top-24 panel p-5 sm:p-6 space-y-3">
                 {asideEyebrow && (
                   <SectionEyebrow tone="sky" className="mb-1">
@@ -80,7 +80,7 @@ export default function ToolShell({
                   {aside}
                 </div>
               </div>
-            </aside>
+            </div>
           )}
         </div>
       </section>

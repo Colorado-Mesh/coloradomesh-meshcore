@@ -254,6 +254,7 @@ export default function NamingWizard() {
         <select
           value={region}
           onChange={(e) => setRegion(e.target.value)}
+          aria-label="Region airport code"
           className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground font-mono focus:ring-2 focus:ring-mesh focus:border-mesh outline-none"
         >
           <option value="">Select region...</option>
@@ -349,6 +350,7 @@ export default function NamingWizard() {
                   value={cityCode}
                   onChange={(e) => setCityCode(e.target.value)}
                   size={6}
+                  aria-label="Known city code"
                   className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2 text-foreground font-mono focus:ring-2 focus:ring-mesh focus:border-mesh outline-none text-sm"
                 >
                   <option value="">Select city...</option>
@@ -411,6 +413,7 @@ export default function NamingWizard() {
               value={landmarkCode}
               onChange={(e) => setLandmarkCode(e.target.value)}
               size={6}
+              aria-label="Known landmark code"
               className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2 text-foreground font-mono focus:ring-2 focus:ring-mesh focus:border-mesh outline-none text-sm"
             >
               <option value="">Select landmark...</option>
@@ -526,9 +529,9 @@ export default function NamingWizard() {
 
       {/* Settings JSON */}
       <div className="card-mesh p-6 bg-mountain-500/5 border-mountain-500/20">
-        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <span>&#9881;&#65039;</span> Settings JSON
-        </h4>
+        <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <span aria-hidden="true">&#9881;&#65039;</span> Settings JSON
+        </p>
         <div className="space-y-3 text-sm text-foreground-muted">
           <p>
             Generate a MeshCore settings JSON file with the Colorado Mesh radio defaults, region list, selected node type, and generated name. Private keys are not included.
@@ -574,10 +577,10 @@ export default function NamingWizard() {
 
       {/* Companion Naming */}
       <div className="border-t border-card-border pt-8 mt-8">
-        <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-3">
-          <span className="text-2xl">📱</span>
+        <h2 className="text-xl font-bold text-foreground mb-2 flex items-center gap-3">
+          <span className="text-2xl" aria-hidden="true">📱</span>
           Companion Node Naming
-        </h3>
+        </h2>
         <p className="text-sm text-foreground-muted mb-6">
           Companions (personal carry nodes) use a different format: <span className="font-mono text-mesh">[EMOJI] [HANDLE] [SUFFIX]</span>
         </p>

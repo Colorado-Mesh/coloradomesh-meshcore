@@ -1,10 +1,11 @@
-import { getLiveMapEndpointDefinitions } from './client';
+import { getLiveMapBaseUrl, getLiveMapEndpointDefinitions } from './client';
 
 export function buildLiveMapStatus() {
-  const endpoints = getLiveMapEndpointDefinitions();
+  const configured = Boolean(getLiveMapBaseUrl());
+  const endpoints = getLiveMapEndpointDefinitions(configured);
 
   return {
-    configured: endpoints.some((endpoint) => endpoint.availability === 'available'),
+    configured,
     endpoints,
   };
 }

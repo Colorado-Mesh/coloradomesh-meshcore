@@ -207,7 +207,7 @@ export default function GettingStartedPage() {
                       ◊ Recommended
                     </span>
                   )}
-                  <h3 className="text-xl font-semibold text-foreground tracking-tight mb-2">{device.name}</h3>
+                  <p className="text-xl font-semibold text-foreground tracking-tight mb-2">{device.name}</p>
                   <p className="text-foreground-muted mb-3">{device.description}</p>
                   <p className="text-sm text-mountain-300 mb-4 font-mono">{device.specs}</p>
                   <a
@@ -225,9 +225,9 @@ export default function GettingStartedPage() {
 
             {/* Store Links */}
             <div className="mt-10 panel-elevated p-6 sm:p-7">
-              <h3 className="text-xl font-semibold text-foreground tracking-tight mb-4 text-center">
+              <p className="text-xl font-semibold text-foreground tracking-tight mb-4 text-center">
                 Where to buy
-              </h3>
+              </p>
               <div className="flex flex-wrap gap-3 justify-center">
                 <a href="https://www.seeedstudio.com/" target="_blank" rel="noopener noreferrer" className="tag-mono hover:border-mesh/50 hover:text-mesh transition-colors">
                   Seeed Studio

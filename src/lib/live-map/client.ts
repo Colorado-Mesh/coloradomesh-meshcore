@@ -334,6 +334,10 @@ function upstreamErrorMessage(status: number): string {
   return 'Live-map upstream request failed';
 }
 
+function isRedirectStatus(status: number): boolean {
+  return status >= 300 && status < 400;
+}
+
 async function readJsonWithSizeGuard(response: Response): Promise<unknown> {
   const contentLength = response.headers.get('content-length');
   const maxBytes = liveMapMaxResponseBytes();
@@ -401,6 +405,62 @@ export function getLiveMapEndpointDefinitions(configured = Boolean(getLiveMapBas
   });
 }
 
+export async function fetchLiveMapJson(url: URL, headers: HeadersInit = {}): Promise<LiveMapProxyResult> {
+  if (await resolvesToPrivateAddress(url.hostname)) {
+    return {
+      ok: false,
+      status: 503,
+      error: 'Live-map upstream is not configured',
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), liveMapTimeoutMs());
+
+  try {
+    const response = await fetch(url, {
+      headers,
+      cache: 'no-store',
+      redirect: 'manual',
+      signal: controller.signal,
+    });
+
+    if (isRedirectStatus(response.status)) {
+      return {
+        ok: false,
+        status: 502,
+        error: 'Live-map upstream redirects are not allowed',
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        error: upstreamErrorMessage(response.status),
+      };
+    }
+
+    return {
+      ok: true,
+      status: response.status,
+      data: await readJsonWithSizeGuard(response),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: isAbortError(error) ? 504 : 502,
+      error: isAbortError(error)
+        ? 'Live-map upstream request timed out'
+        : error instanceof Error && error.message === 'live_map_response_too_large'
+          ? 'Live-map upstream response is too large'
+          : 'Live-map upstream request failed',
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function proxyLiveMapEndpoint(
   endpointId: LiveMapProxiedEndpointId,
   options: LiveMapProxyOptions = {}
@@ -425,45 +485,10 @@ export async function proxyLiveMapEndpoint(
     };
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), liveMapTimeoutMs());
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        accept: 'application/json',
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
-      },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        status: response.status,
-        error: upstreamErrorMessage(response.status),
-      };
-    }
-
-    return {
-      ok: true,
-      status: response.status,
-      data: await readJsonWithSizeGuard(response),
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      status: isAbortError(error) ? 504 : error instanceof Error && error.message === 'live_map_response_too_large' ? 502 : 502,
-      error: isAbortError(error)
-        ? 'Live-map upstream request timed out'
-        : error instanceof Error && error.message === 'live_map_response_too_large'
-          ? 'Live-map upstream response is too large'
-          : 'Live-map upstream request failed',
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
+  return fetchLiveMapJson(url, {
+    accept: 'application/json',
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
+  });
 }
 
 function appendIfPresent(input: URLSearchParams, output: URLSearchParams, key: string) {

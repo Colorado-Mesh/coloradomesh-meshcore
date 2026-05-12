@@ -1,5 +1,5 @@
 import mqtt, { type MqttClient } from 'mqtt';
-import { normalizeLiveMapSourceUrl } from '@/lib/live-map/client';
+import { fetchLiveMapJson, normalizeLiveMapSourceUrl } from '@/lib/live-map/client';
 import { getMapFeatures, getMapRuntimeConfig, getMapWarnings, type MapRuntimeConfig } from './config';
 import { buildMapStats, normalizeLiveMapNode, uniqueMapNodes } from './normalize';
 import { buildSampleMapSnapshot } from './sample-data';
@@ -201,14 +201,14 @@ function applyMqttPayload(payload: unknown) {
   mqttState.lastMessageAt = now.toISOString();
 }
 
-function buildLiveMapApiUrl(config: MapRuntimeConfig): string | null {
+function buildLiveMapApiUrl(config: MapRuntimeConfig): URL | null {
   if (!config.liveMapApiUrl) return null;
 
   const endpoint = normalizeLiveMapSourceUrl(config.liveMapApiUrl);
   if (!endpoint) return null;
 
   endpoint.searchParams.set('mode', 'full');
-  return endpoint.toString();
+  return endpoint;
 }
 
 function buildLiveMapApiHeaders(config: MapRuntimeConfig): HeadersInit {
@@ -240,16 +240,10 @@ async function refreshLiveMapApiSnapshot(config: MapRuntimeConfig, now = new Dat
   }
 
   try {
-    const response = await fetch(url, {
-      headers: buildLiveMapApiHeaders(config),
-      cache: 'no-store',
-    });
+    const result = await fetchLiveMapJson(url, buildLiveMapApiHeaders(config));
+    if (!result.ok) throw new Error(result.error);
 
-    if (!response.ok) {
-      throw new Error(`live map API returned ${response.status}`);
-    }
-
-    const payload = await response.json() as unknown;
+    const payload = result.data;
     liveMapApiState.nodes = normalizePayloadNodes(payload, now);
     liveMapApiState.links = hasPayloadKey(payload, 'links') ? readLinks(payload, 'links') as MapLink[] : [];
     liveMapApiState.routes = hasPayloadKey(payload, 'routes') ? readLinks(payload, 'routes') as MapRoute[] : [];

@@ -50,7 +50,7 @@ describe('map runtime config', () => {
         defaultCenter: { latitude: 39.7, longitude: -104.9, altitudeMeters: null },
         defaultZoom: 9,
         sampleData: false,
-        sourceLabel: 'meshcore-mqtt-live-map API',
+        sourceLabel: 'Colorado Mesh analyzer node API',
       })
     );
     expect(JSON.stringify(runtimeConfig)).not.toContain('secret-token');
@@ -94,7 +94,7 @@ describe('map runtime config', () => {
 
     expect(runtimeConfig.liveMapApiConfigured).toBe(true);
     expect(publicRuntimeConfig.sampleData).toBe(false);
-    expect(publicRuntimeConfig.sourceLabel).toBe('meshcore-mqtt-live-map API');
+    expect(publicRuntimeConfig.sourceLabel).toBe('Colorado Mesh analyzer node API');
     expect(publicRuntimeConfig.warnings).toEqual([]);
     expect(publicRuntimeConfig.features).toContainEqual(
       expect.objectContaining({
@@ -102,6 +102,14 @@ describe('map runtime config', () => {
         status: 'available',
       })
     );
+  });
+
+  it('labels sidecar live-map sources separately from analyzer node feeds', async () => {
+    process.env.MESHCORE_LIVE_MAP_API_URL = 'https://live-map.example.test/snapshot';
+
+    const { getMapPublicRuntimeConfig } = await loadConfigModule();
+
+    expect(getMapPublicRuntimeConfig().sourceLabel).toBe('meshcore-mqtt-live-map API');
   });
 
   it('does not label advanced live-map operator features available without a configured source', async () => {

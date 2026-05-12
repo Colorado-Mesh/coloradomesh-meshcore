@@ -50,17 +50,17 @@ describe('MeshCore serial settings conversion', () => {
       confirm: true,
       confirmMessage: 'Inspect regions and save region home configuration?',
     });
-    expect(DEFAULT_SERIAL_COMMAND_PROFILE.actions.find((action) => action.id === 'summary')?.steps).toContainEqual({
+    expect(DEFAULT_SERIAL_COMMAND_PROFILE.actions.find((action) => action.id === 'summary')?.steps).not.toContainEqual({
       type: 'send',
       command: 'get guest.password',
     });
-    expect(DEFAULT_SERIAL_COMMAND_PROFILE.actions.find((action) => action.id === 'bridge-config')?.steps).toContainEqual({
+    expect(DEFAULT_SERIAL_COMMAND_PROFILE.actions.find((action) => action.id === 'bridge-config')?.steps).not.toContainEqual({
       type: 'send',
       command: 'get bridge.secret',
     });
   });
 
-  it('forces confirmation for generated mutating actions and blocks secret writes', () => {
+  it('forces confirmation for generated mutating actions and blocks secret reads and writes', () => {
     const mutating = adaptUpstreamSerialProfile(profileWithAction({
       id: 'future-region-save',
       label: 'Future Region Save',
@@ -73,6 +73,29 @@ describe('MeshCore serial settings conversion', () => {
       confirm: true,
       confirmMessage: 'Run Future Region Save?',
     });
+
+    const secretRead = adaptUpstreamSerialProfile(profileWithAction({
+      id: 'read-secret',
+      label: 'Read Secret',
+      description: 'Invalid default secret read action.',
+      confirm: false,
+      confirmMessage: '',
+      steps: [
+        { type: 'send', command: 'ver', order: 1 },
+        { type: 'send', command: 'get guest.password', order: 2 },
+      ],
+    }));
+    expect(secretRead.actions[0].steps).toEqual([{ type: 'send', command: 'ver' }]);
+
+    const explicitReveal = adaptUpstreamSerialProfile(profileWithAction({
+      id: 'reveal-secrets',
+      label: 'Reveal Secrets',
+      description: 'Explicit secret reveal action.',
+      confirm: true,
+      confirmMessage: 'Reveal secrets?',
+      steps: [{ type: 'send', command: 'get guest.password', order: 1 }],
+    }));
+    expect(explicitReveal.actions[0].steps).toContainEqual({ type: 'send', command: 'get guest.password' });
 
     expect(() => adaptUpstreamSerialProfile(profileWithAction({
       id: 'write-secret',

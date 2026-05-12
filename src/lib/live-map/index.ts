@@ -1,6 +1,7 @@
 export {
   canUseLocalLiveMapFallback,
   getLiveMapBaseUrl,
+  fetchLiveMapJson,
   getLiveMapEndpointDefinitions,
   normalizeLiveMapSourceUrl,
   proxyLiveMapEndpoint,

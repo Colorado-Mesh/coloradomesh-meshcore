@@ -49,7 +49,7 @@ const CONFIRMATION_OVERRIDES: Record<string, string> = {
 
 const MUTATING_ACTION_ID_PATTERN = /(?:clear|start|stop|reboot|reset|factory|region|enable|disable|sync|save|write|set|erase|gps|power)/i;
 const MUTATING_COMMAND_PATTERN = /^(?!get\b)(?:set\b|clear\b|log\s+(?:start|stop)\b|reboot\b|erase\b|region\s+home\b|region\s+save\b|clock\s+sync\b|gps\s+(?:on|off|sync)\b|powersaving\s+(?:on|off)\b|save\b|write\b)/i;
-const BLOCKED_WRITE_FIELD_PATTERN = /(?:private|secret|password|prv\.key)/i;
+const SECRET_FIELD_PATTERN = /(?:private|secret|password|prv\.key)/i;
 const READ_ONLY_COMMAND_PATTERN = /^(?:get\b|ver\b|board\b|clock\b|stats\b|stats-|region$|region\s+get\b|discover\.|neighbor\b)/i;
 
 export const DEFAULT_SERIAL_COMMAND_PROFILE: SerialCommandProfile = adaptUpstreamSerialProfile(
@@ -93,7 +93,7 @@ export function lineEndingLabel(ending: SerialLineEnding): string {
 
 function adaptUpstreamAction(action: UpstreamSerialAction): SerialAction {
   const actionLineEnding = action.lineEnding ? toSerialLineEnding(action.lineEnding) : undefined;
-  const steps = action.steps.map((step): SerialActionStep => {
+  const steps = action.steps.map((step): SerialActionStep | null => {
     if (step.type === 'wait') {
       if (step.delayMs === undefined) throw new Error(`Serial action ${action.id} has a wait step without delayMs.`);
       return { type: 'wait', durationMs: step.delayMs };
@@ -103,6 +103,8 @@ function adaptUpstreamAction(action: UpstreamSerialAction): SerialAction {
       throw new Error(`Serial action ${action.id} has a send step without a command.`);
     }
 
+    if (isBlockedSecretRead(action, step.command)) return null;
+
     if (isBlockedSecretWrite(step.command)) {
       throw new Error(`Serial action ${action.id} writes a private/secret/password field.`);
     }
@@ -111,7 +113,7 @@ function adaptUpstreamAction(action: UpstreamSerialAction): SerialAction {
     return lineEnding === undefined
       ? { type: 'send', command: step.command }
       : { type: 'send', command: step.command, lineEnding };
-  });
+  }).filter((step): step is SerialActionStep => step !== null);
 
   const confirmMessage = CONFIRMATION_OVERRIDES[action.id] ?? action.confirmMessage;
   const confirm = action.confirm || action.id in CONFIRMATION_OVERRIDES || requiresLocalConfirmation(action, steps);
@@ -130,8 +132,12 @@ function requiresLocalConfirmation(action: UpstreamSerialAction, steps: SerialAc
   return steps.some((step) => step.type === 'send' && MUTATING_COMMAND_PATTERN.test(step.command));
 }
 
+function isBlockedSecretRead(action: UpstreamSerialAction, command: string): boolean {
+  return action.id !== 'reveal-secrets' && READ_ONLY_COMMAND_PATTERN.test(command) && SECRET_FIELD_PATTERN.test(command);
+}
+
 function isBlockedSecretWrite(command: string): boolean {
-  return BLOCKED_WRITE_FIELD_PATTERN.test(command) && !READ_ONLY_COMMAND_PATTERN.test(command);
+  return SECRET_FIELD_PATTERN.test(command) && !READ_ONLY_COMMAND_PATTERN.test(command);
 }
 
 function toSerialDataBits(value: number): 7 | 8 {

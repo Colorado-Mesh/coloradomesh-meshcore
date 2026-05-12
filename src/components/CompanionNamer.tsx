@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import { CopyButton } from "./CopyButton";
 import {
   COMPANION_ROLES,
@@ -14,6 +14,28 @@ import {
   stringifySettingsJson,
 } from "@/lib/meshcore-tools/config-export";
 
+function takeFirstGrapheme(value: string): string {
+  if (!value) return "";
+  const SegmenterCtor =
+    typeof Intl !== "undefined"
+      ? (Intl as { Segmenter?: typeof Intl.Segmenter }).Segmenter
+      : undefined;
+  if (typeof SegmenterCtor === "function") {
+    try {
+      const segmenter = new SegmenterCtor();
+      const iterator = segmenter.segment(value)[Symbol.iterator]();
+      const first = iterator.next();
+      if (!first.done) return first.value.segment;
+      return "";
+    } catch {
+      // fall through to code-point fallback
+    }
+  }
+  const iterator = value[Symbol.iterator]();
+  const first = iterator.next();
+  return first.done ? "" : first.value;
+}
+
 export default function CompanionNamer() {
   const [emoji, setEmoji] = useState("");
   const [handle, setHandle] = useState("");
@@ -22,6 +44,13 @@ export default function CompanionNamer() {
   const [role, setRole] = useState("");
   const [customRole, setCustomRole] = useState("");
   const [number, setNumber] = useState("");
+
+  const emojiId = useId();
+  const handleId = useId();
+  const pubkeyId = useId();
+  const roleId = useId();
+  const customRoleId = useId();
+  const numberId = useId();
 
   const suffix = useMemo(
     () =>
@@ -99,20 +128,18 @@ export default function CompanionNamer() {
 
       {/* Emoji */}
       <div>
-        <label className="block text-sm font-semibold text-foreground mb-1">
+        <label htmlFor={emojiId} className="block text-sm font-semibold text-foreground mb-1">
           Emoji
         </label>
         <p className="text-xs text-foreground-muted mb-2">
           One emoji per person. Claim yours in Discord first.
         </p>
         <input
+          id={emojiId}
           type="text"
           value={emoji}
           onChange={(e) => {
-            // Allow a single emoji (grapheme cluster)
-            const val = e.target.value;
-            const segments = [...new Intl.Segmenter().segment(val)];
-            setEmoji(segments.length > 0 ? segments[0].segment : "");
+            setEmoji(takeFirstGrapheme(e.target.value));
           }}
           placeholder="\uD83D\uDC7B"
           className="w-20 bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground text-2xl text-center focus:ring-2 focus:ring-mesh focus:border-mesh outline-none"
@@ -121,13 +148,14 @@ export default function CompanionNamer() {
 
       {/* Handle */}
       <div>
-        <label className="block text-sm font-semibold text-foreground mb-1">
+        <label htmlFor={handleId} className="block text-sm font-semibold text-foreground mb-1">
           Handle
         </label>
         <p className="text-xs text-foreground-muted mb-2">
           Your mesh alias (not your real name). Max 10 characters.
         </p>
         <input
+          id={handleId}
           type="text"
           value={handle}
           onChange={(e) =>
@@ -143,9 +171,9 @@ export default function CompanionNamer() {
 
       {/* Suffix Strategy */}
       <div>
-        <label className="block text-sm font-semibold text-foreground mb-1">
+        <span className="block text-sm font-semibold text-foreground mb-1">
           Identification Suffix
-        </label>
+        </span>
         <p className="text-xs text-foreground-muted mb-3">
           How do you want to identify this device?
         </p>
@@ -181,6 +209,7 @@ export default function CompanionNamer() {
         <div className="mt-3">
           {strategy === "pubkey" && (
             <input
+              id={pubkeyId}
               type="text"
               value={pubkeyPrefix}
               onChange={(e) =>
@@ -190,14 +219,17 @@ export default function CompanionNamer() {
               }
               placeholder="e.g. F4A2"
               maxLength={4}
+              aria-label="Public key prefix"
               className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground font-mono uppercase focus:ring-2 focus:ring-mesh focus:border-mesh outline-none placeholder:text-foreground-muted/50"
             />
           )}
           {strategy === "role" && (
             <div className="space-y-2">
               <select
+                id={roleId}
                 value={role}
                 onChange={(e) => { setRole(e.target.value); setCustomRole(""); }}
+                aria-label="Companion role"
                 className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground font-mono focus:ring-2 focus:ring-mesh focus:border-mesh outline-none"
               >
                 <option value="">Select role...</option>
@@ -210,6 +242,7 @@ export default function CompanionNamer() {
               </select>
               {role === "__custom" && (
                 <input
+                  id={customRoleId}
                   type="text"
                   value={customRole}
                   onChange={(e) =>
@@ -217,6 +250,7 @@ export default function CompanionNamer() {
                   }
                   placeholder="e.g. CAMP"
                   maxLength={4}
+                  aria-label="Custom role code"
                   className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground font-mono uppercase focus:ring-2 focus:ring-mesh focus:border-mesh outline-none placeholder:text-foreground-muted/50"
                 />
               )}
@@ -229,6 +263,7 @@ export default function CompanionNamer() {
           )}
           {strategy === "number" && (
             <input
+              id={numberId}
               type="text"
               value={number}
               onChange={(e) =>
@@ -238,6 +273,7 @@ export default function CompanionNamer() {
               }
               placeholder="e.g. 01"
               maxLength={2}
+              aria-label="Companion number"
               className="w-full bg-night-800/50 border border-card-border rounded-lg px-4 py-2.5 text-foreground font-mono uppercase focus:ring-2 focus:ring-mesh focus:border-mesh outline-none placeholder:text-foreground-muted/50"
             />
           )}
@@ -246,9 +282,9 @@ export default function CompanionNamer() {
 
       {/* Settings JSON */}
       <div className="card-mesh p-6 bg-mountain-500/5 border-mountain-500/20">
-        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+        <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <span aria-hidden="true">&#9881;&#65039;</span> Settings JSON
-        </h4>
+        </p>
         <div className="space-y-3 text-sm text-foreground-muted">
           <p>
             Generate a MeshCore settings JSON file with the Colorado Mesh radio defaults and your companion name. Private keys are not included.

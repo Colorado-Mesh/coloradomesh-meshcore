@@ -38,10 +38,10 @@ describe('map snapshot store', () => {
 
     expect(snapshot.source.type).toBe('live_map_api');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toContain('mode=full');
-    expect(url).not.toContain('secret-token');
-    expect(url).not.toContain('token=');
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(url.toString()).toContain('mode=full');
+    expect(url.toString()).not.toContain('secret-token');
+    expect(url.toString()).not.toContain('token=');
     expect(init.headers).toEqual(expect.objectContaining({ authorization: 'Bearer secret-token' }));
   });
 
@@ -57,8 +57,8 @@ describe('map snapshot store', () => {
     await getMapSnapshot();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://live-map.example.test/api/nodes?mode=full');
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(url.toString()).toBe('https://live-map.example.test/api/nodes?mode=full');
     expect(init.headers).toEqual(expect.objectContaining({ authorization: 'Bearer secret-token' }));
   });
 
@@ -93,6 +93,24 @@ describe('map snapshot store', () => {
     expect(snapshot.source.type).toBe('live_map_api');
     expect(snapshot.connection.state).toBe('connected');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the hardened live-map fetch path for direct snapshot refreshes', async () => {
+    process.env.MESHCORE_LIVE_MAP_API_URL = 'https://live-map.example.test/api/nodes';
+    process.env.MESHCORE_MAP_SAMPLE_DATA = 'false';
+
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: 'http://169.254.169.254/latest/meta-data' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { getMapSnapshot } = await loadStoreModule();
+    const snapshot = await getMapSnapshot();
+
+    expect(snapshot.source.type).toBe('live_map_api');
+    expect(snapshot.connection.state).toBe('error');
+    expect(fetchMock).toHaveBeenCalledWith(expect.any(URL), expect.objectContaining({ redirect: 'manual' }));
   });
 
   it('does not return sample nodes when no real source is configured', async () => {

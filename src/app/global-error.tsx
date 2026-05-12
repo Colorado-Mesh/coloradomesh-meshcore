@@ -1,10 +1,7 @@
 'use client';
 
-/**
- * Global Error Boundary
- * Catches errors at the root layout level
- * Must be a client component and include its own html/body tags
- */
+import { useEffect } from 'react';
+
 export default function GlobalError({
   error,
   reset,
@@ -12,6 +9,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    if (typeof console !== 'undefined') {
+      console.error('Global error boundary caught:', error);
+    }
+  }, [error]);
+
   return (
     <html lang="en">
       <body>
@@ -32,9 +35,24 @@ export default function GlobalError({
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
             Something went wrong
           </h1>
-          <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-            {error.message || 'An unexpected error occurred'}
+          <p style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>
+            An unexpected error occurred. Please try again.
           </p>
+          {error.digest ? (
+            <p
+              style={{
+                color: '#64748b',
+                marginBottom: '2rem',
+                fontFamily:
+                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontSize: '0.75rem',
+              }}
+            >
+              Reference: {error.digest}
+            </p>
+          ) : (
+            <div style={{ marginBottom: '2rem' }} />
+          )}
           <button
             onClick={reset}
             style={{

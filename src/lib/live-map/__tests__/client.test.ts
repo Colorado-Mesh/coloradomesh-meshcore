@@ -200,6 +200,27 @@ describe('live-map proxy client', () => {
     });
   });
 
+  it('rejects upstream redirects instead of following them', async () => {
+    process.env.MESHCORE_LIVE_MAP_API_URL = 'https://live-map.example.test/api/nodes';
+    process.env.MESHCORE_MAP_SAMPLE_DATA = 'false';
+
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: 'http://169.254.169.254/latest/meta-data' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { proxyLiveMapEndpoint } = await loadClientModule();
+    const result = await proxyLiveMapEndpoint('snapshot');
+
+    expect(result).toEqual({
+      ok: false,
+      status: 502,
+      error: 'Live-map upstream redirects are not allowed',
+    });
+    expect(fetchMock).toHaveBeenCalledWith(expect.any(URL), expect.objectContaining({ redirect: 'manual' }));
+  });
+
   it('validates and whitelists supported query parameters', async () => {
     const {
       validateElevationQuery,

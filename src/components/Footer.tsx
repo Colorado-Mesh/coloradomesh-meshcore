@@ -139,7 +139,7 @@ export default function Footer() {
 
           {internalGroups.map((group) => (
             <div key={group.key} data-footer-group={group.key}>
-              <h3 className="metric-label text-snow-300">{group.label}</h3>
+              <p className="metric-label text-snow-300">{group.label}</p>
               <ul className="mt-4 space-y-3">
                 {group.links.map((link) => (
                   <li key={link.href}>
@@ -156,7 +156,7 @@ export default function Footer() {
           ))}
 
           <div className="md:col-span-2 lg:col-span-1">
-            <h3 className="metric-label text-snow-300">Community</h3>
+            <p className="metric-label text-snow-300">Community</p>
             <ul className="mt-4 space-y-3">
               {communityLinks.map((link) => (
                 <li key={link.href}>
@@ -174,7 +174,7 @@ export default function Footer() {
               ))}
             </ul>
 
-            <h3 className="metric-label text-snow-300 mt-8">Resources</h3>
+            <p className="metric-label text-snow-300 mt-8">Resources</p>
             <ul className="mt-4 space-y-3">
               {resourceLinks.map((link) => (
                 <li key={link.href}>

@@ -88,6 +88,26 @@ function FitBounds({ bounds }: FitBoundsProps) {
   return null;
 }
 
+function ScrollWheelZoomGate() {
+  const map = useMap();
+  useEffect(() => {
+    map.scrollWheelZoom.disable();
+    const enable = () => map.scrollWheelZoom.enable();
+    const disable = () => map.scrollWheelZoom.disable();
+    map.on('focus', enable);
+    map.on('click', enable);
+    map.on('blur', disable);
+    map.on('mouseout', disable);
+    return () => {
+      map.off('focus', enable);
+      map.off('click', enable);
+      map.off('blur', disable);
+      map.off('mouseout', disable);
+    };
+  }, [map]);
+  return null;
+}
+
 function MapStateLayer({ children }: { children: React.ReactNode }) {
   return <div className="cm-map__state">{children}</div>;
 }
@@ -386,6 +406,7 @@ export function NetworkMap({
     return (
       <div className="cm-map-shell">
         {diagnostics}
+        {preferencesPanel}
         <div className={containerClass} style={containerStyle}>
           <MapStateLayer>
             <div className="cm-map__state-inner">
@@ -396,6 +417,7 @@ export function NetworkMap({
             </div>
           </MapStateLayer>
         </div>
+        {operatorPanels}
       </div>
     );
   }
@@ -505,12 +527,13 @@ export function NetworkMap({
             <MapContainer
               center={center}
               zoom={markerNodes.length === 1 ? 11 : zoom}
-              scrollWheelZoom
+              scrollWheelZoom={false}
               className="cm-map__leaflet"
               style={{ background: 'var(--night-sky-950)' }}
             >
               <TileLayer attribution={tileAttribution} url={tileUrl} />
               <FitBounds bounds={bounds} />
+              <ScrollWheelZoomGate />
 
               {markerNodes.map((node) => {
                 const accessibleName = buildMarkerAccessibleName(node);

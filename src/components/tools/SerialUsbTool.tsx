@@ -490,6 +490,7 @@ export default function SerialUsbTool() {
               value={baudRate}
               onChange={(e) => setBaudRate(Number(e.target.value))}
               disabled={connection === 'connected' || connection === 'connecting'}
+              aria-label="Baud rate"
               className="w-full bg-night-800/50 border border-card-border rounded-lg px-3 py-2.5 text-foreground font-mono text-sm focus:ring-2 focus:ring-mesh focus:border-mesh outline-none disabled:opacity-60"
             >
               {SERIAL_BAUD_RATES.map((rate) => (
@@ -504,6 +505,7 @@ export default function SerialUsbTool() {
             <select
               value={lineEnding}
               onChange={(e) => setLineEnding(e.target.value as SerialLineEnding)}
+              aria-label="Line ending"
               className="w-full bg-night-800/50 border border-card-border rounded-lg px-3 py-2.5 text-foreground font-mono text-sm focus:ring-2 focus:ring-mesh focus:border-mesh outline-none"
             >
               {(['\n', '\r', '\r\n', ''] as SerialLineEnding[]).map((opt) => (
@@ -527,9 +529,9 @@ export default function SerialUsbTool() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1.5">
             <SectionEyebrow tone="mesh">Manual send</SectionEyebrow>
-            <h3 className="text-sm font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               One-off commands
-            </h3>
+            </h2>
           </div>
           <span
             className={`mono text-[0.65rem] uppercase tracking-[0.18em] px-2.5 py-1 rounded-full border ${
@@ -574,9 +576,9 @@ export default function SerialUsbTool() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1.5">
             <SectionEyebrow tone="sky">Canned commands</SectionEyebrow>
-            <h3 className="text-sm font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               Default profile
-            </h3>
+            </h2>
           </div>
           <span className="mono text-[0.65rem] uppercase tracking-[0.18em] text-foreground-dim">
             {PROFILE.actions.length} actions
@@ -635,9 +637,9 @@ export default function SerialUsbTool() {
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">
             <SectionEyebrow tone="sunset">Settings JSON</SectionEyebrow>
-            <h3 className="text-sm font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               Apply settings JSON
-            </h3>
+            </h2>
           </div>
           <span
             className={`mono text-[0.65rem] uppercase tracking-[0.18em] px-2.5 py-1 rounded-full border ${
@@ -826,9 +828,9 @@ export default function SerialUsbTool() {
               }
               aria-hidden
             />
-            <h3 className="text-sm font-semibold text-foreground truncate">
+            <h2 className="text-sm font-semibold text-foreground truncate">
               Terminal log
-            </h3>
+            </h2>
             <span className="mono text-[0.65rem] uppercase tracking-[0.18em] text-foreground-dim hidden sm:inline">
               {log.length} {log.length === 1 ? 'line' : 'lines'}
             </span>

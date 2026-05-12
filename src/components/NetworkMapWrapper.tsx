@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ComponentType, type CSSProperties } from 'react';
-import type { MapNode, MapStats } from '@/lib/types';
+import CoveragePanel from './map/CoveragePanel';
+import type { MapAdvancedFeature, MapNode, MapStats } from '@/lib/types';
 
 interface NetworkMapWrapperProps {
   nodes?: MapNode[];
@@ -15,6 +16,14 @@ interface NetworkMapWrapperProps {
 }
 
 const DEFAULT_HEIGHT = 560;
+const LOADING_ADVANCED_FEATURES: MapAdvancedFeature[] = [
+  {
+    id: 'advanced-live-map-proxy',
+    label: 'Advanced live-map operator endpoints',
+    status: 'available',
+    message: 'Loading live-map operator endpoints.',
+  },
+];
 
 function resolveHeight(height: number | string | undefined): CSSProperties['height'] {
   if (typeof height === 'number') return `${height}px`;
@@ -44,6 +53,14 @@ export function MapLoadingState({
           </div>
         </div>
       </div>
+      <section
+        id="cm-operator-panels"
+        className="cm-operator-panels"
+        aria-label="Live map operator panels"
+        data-testid="map-operator-panels"
+      >
+        <CoveragePanel features={LOADING_ADVANCED_FEATURES} />
+      </section>
     </div>
   );
 }

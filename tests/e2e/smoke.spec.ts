@@ -388,11 +388,118 @@ test.describe('critical page smoke', () => {
   });
 });
 
+const interactiveToolPages = [
+  '/tools/repeater-name',
+  '/tools/companion-name',
+  '/tools/prefix-matrix',
+  '/tools/serial-usb',
+];
+
+const representativeDetailPages = [
+  '/guides/getting-started',
+  '/guides/repeater-setup',
+  '/blog/network-expansion-2026',
+];
+
 test.describe('critical page accessibility @a11y', () => {
   for (const pagePath of criticalPages) {
     test(`has no detectable axe violations on ${pagePath}`, async ({ page }) => {
       await page.goto(pagePath);
       const results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations).toEqual([]);
+    });
+  }
+});
+
+test.describe('interactive tool smoke', () => {
+  for (const pagePath of interactiveToolPages) {
+    test(`loads ${pagePath} with a main heading and main landmark`, async ({ page }) => {
+      if (pagePath === '/tools/serial-usb') {
+        await page.addInitScript(() => {
+          Object.defineProperty(Navigator.prototype, 'serial', {
+            configurable: true,
+            get: () => undefined,
+          });
+        });
+      }
+      if (pagePath === '/tools/prefix-matrix') {
+        await mockPrefixMatrixSnapshot(page);
+      }
+      await page.goto(pagePath);
+      await expect(page.locator('#main-content')).toBeVisible();
+      await expect(page.locator('h1').first()).toBeVisible();
+    });
+  }
+
+  test('repeater-name wizard surfaces map snapshot inputs and outputs', async ({ page }) => {
+    await mockPrefixMatrixSnapshot(page);
+    await page.goto('/tools/repeater-name');
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    const main = page.locator('#main-content');
+    await expect(main.getByRole('textbox').first()).toBeVisible();
+  });
+
+  test('companion-name builder accepts a single emoji grapheme', async ({ page }) => {
+    await page.goto('/tools/companion-name');
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    const emoji = page.getByLabel('Emoji', { exact: true });
+    await expect(emoji).toBeVisible();
+    await emoji.fill('👻');
+    await expect(emoji).toHaveValue('👻');
+  });
+
+  test('prefix-matrix grid cells expose accessible names', async ({ page }) => {
+    await mockPrefixMatrixSnapshot(page);
+    await page.goto('/tools/prefix-matrix');
+    const grid = page.getByRole('grid', { name: /First-byte prefix matrix/i });
+    await expect(grid).toBeVisible({ timeout: 15_000 });
+    const primaryCell = page.getByTestId('prefix-matrix-primary-A1');
+    await expect(primaryCell).toBeVisible();
+    await expect(primaryCell).toHaveAttribute('aria-label', /A1/);
+    await expect(primaryCell).toHaveAttribute('aria-selected', /true|false/);
+  });
+});
+
+test.describe('interactive tool accessibility @a11y', () => {
+  for (const pagePath of interactiveToolPages) {
+    test(`has no detectable axe violations on ${pagePath}`, async ({ page }) => {
+      if (pagePath === '/tools/serial-usb') {
+        await page.addInitScript(() => {
+          Object.defineProperty(Navigator.prototype, 'serial', {
+            configurable: true,
+            get: () => undefined,
+          });
+        });
+      }
+      if (pagePath === '/tools/prefix-matrix') {
+        await mockPrefixMatrixSnapshot(page);
+      }
+      await page.goto(pagePath);
+      const results = await new AxeBuilder({ page })
+        .disableRules(['color-contrast'])
+        .analyze();
+      expect(results.violations).toEqual([]);
+    });
+  }
+});
+
+test.describe('representative detail page smoke', () => {
+  for (const pagePath of representativeDetailPages) {
+    test(`loads ${pagePath} with a main heading and main landmark`, async ({ page }) => {
+      await page.goto(pagePath);
+      await expect(page.locator('#main-content')).toBeVisible();
+      await expect(page.locator('h1').first()).toBeVisible();
+    });
+  }
+});
+
+test.describe('representative detail page accessibility @a11y', () => {
+  for (const pagePath of representativeDetailPages) {
+    test(`has no detectable axe violations on ${pagePath}`, async ({ page }) => {
+      await page.goto(pagePath);
+      const results = await new AxeBuilder({ page })
+        .disableRules(['color-contrast'])
+        .analyze();
       expect(results.violations).toEqual([]);
     });
   }

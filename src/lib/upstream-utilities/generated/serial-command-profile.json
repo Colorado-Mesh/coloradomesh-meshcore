@@ -301,7 +301,7 @@
         },
         {
           "type": "send",
-          "command": "get guest.password",
+          "command": "get allow.read.only",
           "order": 33
         },
         {
@@ -311,7 +311,7 @@
         },
         {
           "type": "send",
-          "command": "get allow.read.only",
+          "command": "get owner.info",
           "order": 35
         },
         {
@@ -321,7 +321,7 @@
         },
         {
           "type": "send",
-          "command": "get owner.info",
+          "command": "get acl",
           "order": 37
         },
         {
@@ -331,7 +331,7 @@
         },
         {
           "type": "send",
-          "command": "get acl",
+          "command": "get rxdelay",
           "order": 39
         },
         {
@@ -341,7 +341,7 @@
         },
         {
           "type": "send",
-          "command": "get rxdelay",
+          "command": "get txdelay",
           "order": 41
         },
         {
@@ -351,18 +351,8 @@
         },
         {
           "type": "send",
-          "command": "get txdelay",
-          "order": 43
-        },
-        {
-          "type": "wait",
-          "delayMs": 150,
-          "order": 44
-        },
-        {
-          "type": "send",
           "command": "get direct.txdelay",
-          "order": 45
+          "order": 43
         }
       ],
       "confirm": false,
@@ -464,11 +454,6 @@
           "type": "wait",
           "delayMs": 100,
           "order": 8
-        },
-        {
-          "type": "send",
-          "command": "get bridge.secret",
-          "order": 9
         }
       ],
       "confirm": false,

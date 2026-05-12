@@ -1,3 +1,5 @@
+import { RUNTIME_ENV } from '@/lib/constants';
+
 /**
  * Simple in-memory rate limiter for API routes
  * Uses a sliding window approach with automatic cleanup
@@ -39,6 +41,10 @@ export interface RateLimitResult {
   limit: number;
   remaining: number;
   resetTime: number;
+}
+
+export function trustProxyHeaders(): boolean {
+  return process.env[RUNTIME_ENV.TRUST_PROXY_HEADERS]?.trim().toLowerCase() === 'true';
 }
 
 /**
@@ -99,22 +105,21 @@ export function checkRateLimit(
 export function getClientIp(request: Request): string {
   const headers = request.headers;
 
-  // Netlify
-  const netlifyIp = headers.get('x-nf-client-connection-ip');
-  if (netlifyIp) return netlifyIp;
+  if (trustProxyHeaders()) {
+    const netlifyIp = headers.get('x-nf-client-connection-ip');
+    if (netlifyIp) return netlifyIp;
 
-  // Cloudflare
-  const cfIp = headers.get('cf-connecting-ip');
-  if (cfIp) return cfIp;
+    const cfIp = headers.get('cf-connecting-ip');
+    if (cfIp) return cfIp;
 
-  // Standard proxy headers
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
+    const forwardedFor = headers.get('x-forwarded-for');
+    if (forwardedFor) {
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    const realIp = headers.get('x-real-ip');
+    if (realIp) return realIp;
   }
-
-  const realIp = headers.get('x-real-ip');
-  if (realIp) return realIp;
 
   return 'unknown';
 }

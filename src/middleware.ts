@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { trustProxyHeaders } from '@/lib/rate-limit';
 
 /**
  * Simple in-memory rate limiter for middleware
@@ -19,20 +20,19 @@ const RATE_LIMIT = 100;
 const WINDOW_MS = 60 * 1000;
 
 function getClientIp(request: NextRequest): string {
-  // Netlify
-  const netlifyIp = request.headers.get('x-nf-client-connection-ip');
-  if (netlifyIp) return netlifyIp;
+  if (trustProxyHeaders()) {
+    const netlifyIp = request.headers.get('x-nf-client-connection-ip');
+    if (netlifyIp) return netlifyIp;
 
-  // Cloudflare
-  const cfIp = request.headers.get('cf-connecting-ip');
-  if (cfIp) return cfIp;
+    const cfIp = request.headers.get('cf-connecting-ip');
+    if (cfIp) return cfIp;
 
-  // Standard proxy headers
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) return forwardedFor.split(',')[0].trim();
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    if (forwardedFor) return forwardedFor.split(',')[0].trim();
 
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) return realIp;
+    const realIp = request.headers.get('x-real-ip');
+    if (realIp) return realIp;
+  }
 
   return 'unknown';
 }

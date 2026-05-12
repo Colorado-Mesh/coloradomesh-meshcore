@@ -82,17 +82,6 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
     [onSelectPrefix],
   );
 
-  if (loading && nodes.length === 0) {
-    return (
-      <div className="card-mesh p-8">
-        <div className="flex items-center justify-center gap-3">
-          <div className="h-5 w-5 border-2 border-mesh border-t-transparent rounded-full animate-spin" />
-          <span className="text-foreground-muted">Loading prefix data...</span>
-        </div>
-      </div>
-    );
-  }
-
   if (error && nodes.length === 0) {
     return (
       <div className="card-mesh p-8 text-center">
@@ -159,18 +148,24 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
         <LegendSwatch className="bg-foreground-muted/20 border border-foreground-muted/40" label="Reserved" />
         <span className="text-foreground-muted/50">|</span>
         <span data-testid="prefix-matrix-summary">
-          {totalNodes} nodes · {analysis.occupiedPrefixCount} occupied 4-char prefixes
-          {analysis.duplicatePrefixCount > 0 && ` · ${analysis.duplicatePrefixCount} duplicates`}
-          {analysis.repeaterCollisionCount > 0 && ` · ${analysis.repeaterCollisionCount} repeater collisions`}
+          {loading && nodes.length === 0 ? (
+            'Loading prefix data...'
+          ) : (
+            <>
+              {totalNodes} nodes · {analysis.occupiedPrefixCount} occupied 4-char prefixes
+              {analysis.duplicatePrefixCount > 0 && ` · ${analysis.duplicatePrefixCount} duplicates`}
+              {analysis.repeaterCollisionCount > 0 && ` · ${analysis.repeaterCollisionCount} repeater collisions`}
+            </>
+          )}
         </span>
       </div>
 
       {/* Primary 16x16 grid (first byte) */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <h4 className="text-xs uppercase tracking-wider text-foreground-muted">
+          <p className="text-xs uppercase tracking-wider text-foreground-muted">
             First-byte prefix (2 chars)
-          </h4>
+          </p>
           <p className="text-[11px] text-foreground-muted/70">
             Click a tile to drill into its 4-character subgrid
           </p>
@@ -188,6 +183,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
               : `${cell.id}: free${reservedTag}`;
           }}
           testIdPrefix="prefix-matrix-primary"
+          ariaLabel="First-byte prefix matrix"
         />
       </div>
 
@@ -195,9 +191,9 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
       {selectedPrimaryCell && (
         <div className="card-mesh p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-mono text-sm font-bold text-foreground">
+            <p className="font-mono text-sm font-bold text-foreground">
               0x{selectedPrimaryCell.id}__ subgrid
-            </h4>
+            </p>
             <button
               onClick={() => {
                 setSelectedPrimary(null);
@@ -220,6 +216,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
             renderCellContent={(cell) => (cell.count > 0 ? cell.count : cell.reserved ? "·" : "")}
             getCellTitle={(cell) => describeCell(cell)}
             testIdPrefix="prefix-matrix-secondary"
+            ariaLabel={`Subgrid for 0x${selectedPrimaryCell.id}`}
           />
         </div>
       )}
@@ -228,9 +225,9 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
       {selectedSecondaryCell && (
         <div className="card-mesh p-4" data-testid="prefix-matrix-detail">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-mono text-sm font-bold text-foreground">
+            <p className="font-mono text-sm font-bold text-foreground">
               Prefix: 0x{selectedSecondaryCell.id}
-            </h4>
+            </p>
             <button
               onClick={() => setSelectedSecondary(null)}
               className="text-foreground-muted hover:text-foreground text-sm"
@@ -324,7 +321,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
         {showHelp && (
           <div className="mt-3 card-mesh p-5 space-y-4 text-sm text-foreground-muted">
             <div>
-              <h5 className="font-semibold text-foreground mb-2">Generating a new key:</h5>
+              <p className="font-semibold text-foreground mb-2">Generating a new key:</p>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Check which prefixes are free using the grid above or{" "}
                   <a href="https://analyzer.letsmesh.net/nodes/prefix-utilization" target="_blank" rel="noopener noreferrer" className="text-mesh hover:text-mesh-light">
@@ -343,7 +340,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
             </div>
 
             <div>
-              <h5 className="font-semibold text-foreground mb-2">Applying to a Companion device (via mobile app):</h5>
+              <p className="font-semibold text-foreground mb-2">Applying to a Companion device (via mobile app):</p>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Connect your device via USB-C or Bluetooth</li>
                 <li>Open the MeshCore app &rarr; tap Settings (gear icon, top-right)</li>
@@ -356,7 +353,7 @@ export default function PrefixMatrix({ onSelectPrefix }: PrefixMatrixProps) {
             </div>
 
             <div>
-              <h5 className="font-semibold text-foreground mb-2">Applying to a Repeater (via serial console):</h5>
+              <p className="font-semibold text-foreground mb-2">Applying to a Repeater (via serial console):</p>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Connect repeater to computer via USB</li>
                 <li>Open the{" "}
@@ -389,6 +386,7 @@ interface PrefixGridProps<TCell extends PrefixCell> {
   renderCellContent: (cell: TCell) => React.ReactNode;
   getCellTitle: (cell: TCell) => string;
   testIdPrefix: string;
+  ariaLabel: string;
 }
 
 function PrefixGrid<TCell extends PrefixCell>({
@@ -399,46 +397,92 @@ function PrefixGrid<TCell extends PrefixCell>({
   renderCellContent,
   getCellTitle,
   testIdPrefix,
+  ariaLabel,
 }: PrefixGridProps<TCell>) {
+  const colCount = HEX_CHARS.length;
   return (
     <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-      <div className="min-w-[520px]">
-        {/* Column headers */}
-        <div className="flex gap-0.5 mb-0.5 pl-8">
+      <table
+        className="min-w-[520px] w-full table-fixed border-separate border-spacing-0.5"
+        role="grid"
+        aria-label={ariaLabel}
+        aria-rowcount={rows.length + 1}
+        aria-colcount={colCount + 1}
+      >
+        <colgroup>
+          <col className="w-7" />
           {HEX_CHARS.map((c) => (
-            <div
-              key={c}
-              className="flex-1 text-center text-[10px] font-mono text-foreground-muted/50"
-            >
-              {c}
-            </div>
+            <col key={c} />
           ))}
-        </div>
-
-        {rows.map((row, rowIdx) => (
-          <div key={rowIdx} className="flex gap-0.5 mb-0.5">
-            <div className="w-7 flex items-center justify-end pr-1 text-[10px] font-mono text-foreground-muted/50">
-              {HEX_CHARS[rowIdx]}x
-            </div>
-            {row.map((cell) => {
-              const isSelected = selectedId === cell.id;
-              const isDimmed = highlightedIds !== null && !highlightedIds.has(cell.id);
-              return (
-                <button
-                  key={cell.id}
-                  onClick={() => onCellClick(cell)}
-                  title={getCellTitle(cell)}
-                  data-testid={`${testIdPrefix}-${cell.id}`}
-                  data-severity={cell.severity}
-                  className={`flex-1 aspect-square rounded-sm text-[9px] font-mono flex items-center justify-center transition-all ${cellClassName(cell.severity, isSelected)} ${isDimmed ? "opacity-20" : ""}`}
-                >
-                  {renderCellContent(cell)}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+        </colgroup>
+        <thead>
+          <tr role="row" aria-rowindex={1}>
+            <th
+              scope="col"
+              role="columnheader"
+              aria-colindex={1}
+              className="text-[10px] font-mono text-foreground-muted/50"
+            >
+              <span className="sr-only">Row label</span>
+            </th>
+            {HEX_CHARS.map((c, colIdx) => (
+              <th
+                key={c}
+                scope="col"
+                role="columnheader"
+                aria-colindex={colIdx + 2}
+                className="text-center text-[10px] font-mono text-foreground-muted/50"
+              >
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIdx) => (
+            <tr key={rowIdx} role="row" aria-rowindex={rowIdx + 2}>
+              <th
+                scope="row"
+                role="rowheader"
+                aria-colindex={1}
+                className="pr-1 text-right align-middle text-[10px] font-mono text-foreground-muted/50"
+              >
+                {HEX_CHARS[rowIdx]}x
+              </th>
+              {row.map((cell, colIdx) => {
+                const isSelected = selectedId === cell.id;
+                const isDimmed = highlightedIds !== null && !highlightedIds.has(cell.id);
+                const label = getCellTitle(cell);
+                return (
+                  <td
+                    key={cell.id}
+                    role="gridcell"
+                    aria-colindex={colIdx + 2}
+                    aria-selected={isSelected}
+                    aria-label={label}
+                    tabIndex={0}
+                    onClick={() => onCellClick(cell)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onCellClick(cell);
+                      }
+                    }}
+                    title={label}
+                    data-testid={`${testIdPrefix}-${cell.id}`}
+                    data-severity={cell.severity}
+                    className={`aspect-square cursor-pointer rounded-sm p-0 align-middle text-[9px] font-mono transition-all focus:outline-2 focus:outline-offset-2 focus:outline-mesh ${cellClassName(cell.severity, isSelected)} ${isDimmed ? "opacity-20" : ""}`}
+                  >
+                    <span aria-hidden="true" className="flex aspect-square w-full items-center justify-center">
+                      {renderCellContent(cell)}
+                    </span>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

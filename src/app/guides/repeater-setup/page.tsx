@@ -5,6 +5,20 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { HeroPanel } from "@/components/brand";
 import { generateBreadcrumbSchema } from "@/lib/schemas/breadcrumb";
 import { BASE_URL, COMMUNITY_NAME } from "@/lib/constants";
+import {
+  COLORADO_MESH_RADIO_COMMANDS,
+  COLORADO_MESH_RADIO_SETTINGS,
+  formatRadioBandwidthHz,
+  formatRadioFrequencyKHz,
+} from "@/lib/meshcore-data/settings";
+
+const radioFreqDisplay = formatRadioFrequencyKHz(COLORADO_MESH_RADIO_SETTINGS.frequency);
+const radioBwDisplay = formatRadioBandwidthHz(COLORADO_MESH_RADIO_SETTINGS.bandwidth);
+const radioSfDisplay = `SF${COLORADO_MESH_RADIO_SETTINGS.spreadingFactor}`;
+const radioCrDisplay = `CR${COLORADO_MESH_RADIO_SETTINGS.codingRate}`;
+const radioTxDisplay = `${COLORADO_MESH_RADIO_SETTINGS.txPower} dBm`;
+const coloradoRadioApplyCommands = COLORADO_MESH_RADIO_COMMANDS.join("\n");
+const coloradoDefaultsSummary = `${radioFreqDisplay} · ${radioBwDisplay} BW · ${radioSfDisplay} · ${radioCrDisplay} · ${radioTxDisplay}`;
 
 export const metadata: Metadata = {
   title: "Repeater Setup Guide",
@@ -80,6 +94,11 @@ set rxdelay 3`,
 
 const commonSettings = [
   {
+    setting: "path.hash.mode",
+    value: "1",
+    description: "Use 2-byte path hashes (required for current Front Range flood routing)",
+  },
+  {
     setting: "advert.interval",
     value: "240",
     description: "Local advert every 4 hours (neighbors only)",
@@ -101,7 +120,75 @@ const commonSettings = [
   },
 ];
 
+const firstRunChecklist = [
+  {
+    label: "1. Confirm firmware and role",
+    detail:
+      "Repeater firmware sets the role automatically. You should see role “Repeater” — no need to change it.",
+    commands: `ver
+board
+get role`,
+    expect: 'role = Repeater',
+  },
+  {
+    label: "2. Verify the Front Range radio preset",
+    detail: `Read the radio back. It should match the Colorado defaults: ${coloradoDefaultsSummary}.`,
+    commands: `get radio
+get freq
+get tx`,
+    expect: `freq ${COLORADO_MESH_RADIO_SETTINGS.frequency} · bw ${COLORADO_MESH_RADIO_SETTINGS.bandwidth} sf ${COLORADO_MESH_RADIO_SETTINGS.spreadingFactor} cr ${COLORADO_MESH_RADIO_SETTINGS.codingRate} · tx ${COLORADO_MESH_RADIO_SETTINGS.txPower}`,
+  },
+  {
+    label: "3. Apply Front Range defaults (only if the read-back didn't match)",
+    detail: (
+      <>
+        This site and the serial preflight write the split form generated from the shared settings —{" "}
+        <code className="font-mono text-mesh">set freq 910525</code>,{" "}
+        <code className="font-mono text-mesh">set radio bw 62500 sf 7 cr 8</code>,{" "}
+        <code className="font-mono text-mesh">set tx 22</code>. The MeshCore CLI docs also describe a tuple form,{" "}
+        <code className="font-mono text-mesh">set radio 910.525,62.5,7,8</code>, if you are following the raw CLI reference. Skip the block if step 2 already showed the right values.
+      </>
+    ),
+    commands: coloradoRadioApplyCommands,
+  },
+  {
+    label: "4. Enable 2-byte path hashes",
+    detail:
+      "Current Colorado MeshCore flood routing expects path.hash.mode 1. Older firmware defaulted to mode 0 (1-byte) and will look like packet loss.",
+    commands: `set path.hash.mode 1
+get path.hash.mode`,
+    expect: 'path.hash.mode = 1',
+  },
+  {
+    label: "5. Sync the clock",
+    detail:
+      "Repeaters boot with an old date until time is set. Pick the path that matches your build:",
+    commands: `# GPS-capable firmware + hardware:
+gps on
+gps sync
+
+# Otherwise — companion app or web serial, after every reboot:
+clock sync`,
+    expect: "clock returns the current UTC time",
+  },
+  {
+    label: "6. Reboot and re-check",
+    detail:
+      "Reboot, reconnect serial, then re-run `clock` and `get role` to confirm the settings persisted and the time is correct.",
+    commands: `reboot
+clock
+get role`,
+  },
+];
+
 const settingsReference = [
+  {
+    setting: "path.hash.mode",
+    default: "0",
+    range: "0-3",
+    controls: "Path-hash byte width on flood routes",
+    rule: "Set to 1 for 2-byte hashes on Colorado MeshCore. 3 is reserved — do not use.",
+  },
   {
     setting: "txdelay",
     default: "0.5",
@@ -152,7 +239,7 @@ clock sync`,
   },
   {
     title: "Confirm radio and identity",
-    purpose: "Verify the node name, repeater role, radio preset, frequency, transmit power, airtime factor, and public key.",
+    purpose: "Verify the node name, repeater role, radio preset, frequency, transmit power, airtime factor, path-hash mode, and public key.",
     commands: `get name
 get role
 get radio
@@ -160,6 +247,7 @@ get freq
 get tx
 get af
 get repeat
+get path.hash.mode
 get public.key`,
   },
   {
@@ -170,7 +258,6 @@ get lon
 get advert.interval
 get flood.advert.interval
 get flood.max
-get guest.password
 get allow.read.only`,
   },
   {
@@ -199,8 +286,7 @@ const optionalSerialChecks = [
     commands: `get bridge.enabled
 get bridge.delay
 get bridge.source
-get bridge.baud
-get bridge.secret`,
+get bridge.baud`,
   },
   {
     title: "GPS state",
@@ -240,8 +326,8 @@ export default function RepeaterSetupPage() {
           description={`Set up and tune a repeater node for the ${COMMUNITY_NAME} network — TX/RX delay profiles, AGC tuning, and serial preflight.`}
           actions={
             <>
-              <a href="#getting-running" className="btn-primary">
-                Get running
+              <a href="#first-run" className="btn-primary">
+                First-run checklist
               </a>
               <a href="#profiles" className="btn-secondary">
                 Delay profiles
@@ -265,38 +351,141 @@ export default function RepeaterSetupPage() {
               Getting your repeater running.
             </h2>
             <p className="text-foreground-muted mb-8 max-w-2xl">
-              Five steps to get a basic repeater node online.
+              If you flashed the device with Repeater firmware from the web flasher, the
+              repeater role is already applied. For most operators, getting online is about{" "}
+              <span className="text-foreground">verifying</span> the radio preset and{" "}
+              <span className="text-foreground">syncing the clock</span> — not changing the role.
             </p>
 
             <div className="panel p-6 sm:p-8">
-              <ul className="space-y-4">
+              <ol className="space-y-4 list-none">
                 {[
-                  "Flash with Repeater firmware from the web flasher",
-                  "Place at high elevation with good line of sight",
-                  "Use a quality external antenna for better range",
-                  "Ensure stable power supply (wall adapter or solar preferred)",
-                  "Configure via USB using the web config tool",
+                  {
+                    title: "Flash Repeater firmware via the web flasher",
+                    body: "This bakes in the repeater role. You should not need to set it manually.",
+                  },
+                  {
+                    title: "Mount high with line of sight + a real external antenna",
+                    body: "Elevation and antenna quality matter more than transmit power.",
+                  },
+                  {
+                    title: "Power from a stable supply",
+                    body: "Wall adapter, POE, or solar with battery backup. Avoid bus-powered USB hubs.",
+                  },
+                  {
+                    title: "Verify and tune via USB / Web Serial",
+                    body: "Walk the first-run checklist below, then pick a delay profile and set common settings.",
+                  },
                 ].map((step, index) => (
                   <li key={index} className="flex items-start gap-3 text-foreground-muted">
                     <span className="text-forest-500 mt-0.5 font-bold">{index + 1}.</span>
-                    <span>{step}</span>
+                    <div>
+                      <div className="text-foreground font-medium">{step.title}</div>
+                      <div className="text-sm mt-0.5">{step.body}</div>
+                    </div>
                   </li>
                 ))}
-              </ul>
+              </ol>
 
-              {/* Clock sync warning */}
-              <div className="mt-6 p-4 bg-sunset-500/10 border border-sunset-500/30 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <span className="text-sunset-500 text-xl flex-shrink-0">⚠️</span>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">Clock Sync Required</h4>
-                    <p className="text-foreground-muted text-sm">
-                      Repeaters default to an old date on reboot. You must sync the clock after every power cycle by connecting with the companion app or web config tool. Without a correct clock, timestamps on relayed messages will be wrong.
-                    </p>
-                  </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {/* Clock sync warning */}
+                <div className="p-4 bg-sunset-500/10 border border-sunset-500/30 rounded-lg">
+                  <h3 className="font-semibold text-foreground mb-1">Sync the clock every power cycle</h3>
+                  <p className="text-foreground-muted text-sm">
+                    Repeaters boot with an old date. Without a correct clock, relayed
+                    message timestamps are wrong.
+                  </p>
+                  <ul className="text-foreground-muted text-sm mt-2 space-y-1">
+                    <li>
+                      <span className="text-foreground">GPS-capable firmware + hardware:</span>{" "}
+                      <code className="font-mono text-mesh">gps on</code> then{" "}
+                      <code className="font-mono text-mesh">gps sync</code> pulls time from
+                      the GPS fix.
+                    </li>
+                    <li>
+                      <span className="text-foreground">Otherwise:</span> connect with the
+                      companion app or the Web Serial console and run{" "}
+                      <code className="font-mono text-mesh">clock sync</code> after every
+                      reboot or power cycle.
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Equals-sign caution */}
+                <div className="p-4 bg-sunset-700/10 border border-sunset-700/40 rounded-lg">
+                  <h3 className="font-semibold text-foreground mb-1">Don&apos;t type an equals sign</h3>
+                  <p className="text-foreground-muted text-sm">
+                    The CLI uses a space, not <code className="font-mono text-mesh">=</code>.
+                    Typing{" "}
+                    <code className="font-mono text-foreground-dim">set path.hash.mode = 1</code>{" "}
+                    can silently fail or store a garbage value — the node looks configured
+                    but isn&apos;t. Always use{" "}
+                    <code className="font-mono text-mesh">set path.hash.mode 1</code>.
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* First-Run CLI Checklist */}
+        <section id="first-run" className="px-4 sm:px-6 lg:px-8 py-16 bg-background-secondary">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground text-center">
+              First-run CLI checklist
+            </h2>
+            <p className="text-foreground-muted text-center mb-3 max-w-3xl mx-auto">
+              The minimum sequence a brand-new operator should run after flashing
+              Repeater firmware. Use the{" "}
+              <Link href="/tools/serial-usb" className="text-mesh hover:text-mesh-light underline underline-offset-2">
+                Web Serial console
+              </Link>{" "}
+              — same default profile as the utility site.
+            </p>
+            <p className="text-foreground-muted text-center mb-10 max-w-3xl mx-auto text-sm">
+              Colorado defaults: <span className="font-mono text-mesh">{coloradoDefaultsSummary}</span>
+            </p>
+
+            <div className="space-y-4">
+              {firstRunChecklist.map((item) => (
+                <div key={item.label} className="card-mesh p-5 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-foreground mb-1">{item.label}</h3>
+                      <p className="text-sm text-foreground-muted">{item.detail}</p>
+                      {item.expect ? (
+                        <p className="text-xs text-foreground-muted mt-2">
+                          <span className="font-medium text-foreground">Expect:</span>{" "}
+                          <span className="font-mono text-mesh">{item.expect}</span>
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="md:w-80 flex-shrink-0">
+                      <div className="bg-night-900 rounded-lg p-4 font-mono text-sm">
+                        <div className="text-foreground-muted text-xs mb-2">Commands</div>
+                        <pre className="text-forest-400 whitespace-pre-wrap">{item.commands}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-sm text-foreground-muted mt-8 text-center">
+              After this, choose a{" "}
+              <a href="#profiles" className="text-mesh hover:text-mesh-light underline underline-offset-2">
+                delay profile
+              </a>{" "}
+              for your site, apply the{" "}
+              <a href="#common" className="text-mesh hover:text-mesh-light underline underline-offset-2">
+                common settings
+              </a>
+              , and run the{" "}
+              <a href="#serial-preflight" className="text-mesh hover:text-mesh-light underline underline-offset-2">
+                full serial preflight
+              </a>{" "}
+              before leaving the install online.
+            </p>
           </div>
         </section>
 
@@ -385,14 +574,16 @@ export default function RepeaterSetupPage() {
               Common Settings (Colorado MeshCore Repeaters)
             </h2>
             <p className="text-foreground-muted text-center mb-12 max-w-2xl mx-auto">
-              Apply these settings regardless of your repeater&apos;s profile.
+              Apply these after the first-run checklist, regardless of your repeater&apos;s
+              delay profile. Use spaces, never <code className="font-mono text-mesh">=</code>.
             </p>
 
             {/* CLI block */}
             <div className="card-mesh overflow-hidden mb-8">
               <div className="bg-night-900 p-6 font-mono text-sm">
                 <div className="text-foreground-muted text-xs mb-3">CLI Commands</div>
-                <pre className="text-forest-400 whitespace-pre">{`set advert.interval 240
+                <pre className="text-forest-400 whitespace-pre">{`set path.hash.mode 1
+set advert.interval 240
 set flood.advert.interval 24
 set agc.reset.interval 500
 set guest.password`}</pre>
@@ -430,7 +621,10 @@ set guest.password`}</pre>
               USB Serial Preflight
             </h2>
             <p className="text-foreground-muted text-center mb-12 max-w-3xl mx-auto">
-              The Web Serial console uses the same default command profile as the Colorado Mesh utility site. Use it before and after field installs to verify the repeater is configured and healthy.
+              The first-run checklist is the minimum to get a node online. This preflight is
+              the deeper audit — run it before and after a field install to verify everything
+              persisted and the node is healthy. Uses the same default command profile as the
+              Colorado Mesh utility site.
             </p>
 
             <div className="card-mesh overflow-hidden mb-8">

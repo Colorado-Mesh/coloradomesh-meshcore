@@ -115,6 +115,22 @@ function buildMapWarnings(config: Pick<MapRuntimeConfig, 'demoMode' | 'sampleDat
   ];
 }
 
+function isAnalyzerNodeFeed(config: Pick<MapRuntimeConfig, 'liveMapApiUrl'>): boolean {
+  if (!config.liveMapApiUrl) return false;
+
+  try {
+    const url = new URL(config.liveMapApiUrl);
+    return url.pathname.endsWith('/api/nodes');
+  } catch {
+    return false;
+  }
+}
+
+function liveMapSourceLabel(config: Pick<MapRuntimeConfig, 'liveMapApiConfigured' | 'liveMapApiUrl'>): string {
+  if (!config.liveMapApiConfigured) return 'No map source configured';
+  return isAnalyzerNodeFeed(config) ? 'Colorado Mesh analyzer node API' : 'meshcore-mqtt-live-map API';
+}
+
 function buildMapFeatures(config: Pick<MapRuntimeConfig, 'liveMapApiConfigured'>): MapAdvancedFeature[] {
   return [
     {
@@ -161,7 +177,7 @@ export function getMapPublicRuntimeConfig(config = getMapRuntimeConfig()): MapRu
         ? 'Demo map data'
         : 'Sample map data'
       : config.liveMapApiConfigured
-        ? 'meshcore-mqtt-live-map API'
+        ? liveMapSourceLabel(config)
         : config.mqttConfigured
           ? 'MQTT map data'
           : 'No map source configured',

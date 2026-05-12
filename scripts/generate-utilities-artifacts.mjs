@@ -148,6 +148,32 @@ function validateSerialStep(value, label) {
   assertNumber(step.order, `${label}.order`);
 }
 
+function readsSecretField(step) {
+  return step.type === 'send' && /(?:private|secret|password|prv\.key)/i.test(step.command ?? '');
+}
+
+function sanitizeSerialSteps(action) {
+  const steps = [];
+  let removedPreviousSend = false;
+
+  for (const step of action.steps) {
+    if (action.id !== 'reveal-secrets' && readsSecretField(step)) {
+      removedPreviousSend = true;
+      continue;
+    }
+
+    if (removedPreviousSend && step.type === 'wait') {
+      removedPreviousSend = false;
+      continue;
+    }
+
+    removedPreviousSend = false;
+    steps.push(step);
+  }
+
+  return steps.map((step, index) => ({ ...step, order: index + 1 }));
+}
+
 function validateSerialCommandProfile(value) {
   const root = assertRecord(value, 'serial command profile');
   assertString(root.name, 'serial command profile.name');
@@ -164,7 +190,7 @@ function validateSerialCommandProfile(value) {
   const actions = assertArray(root.actions, 'serial command profile.actions');
   if (actions.length === 0) fail('serial command profile.actions must contain at least one action.');
 
-  for (const [index, actionValue] of actions.entries()) {
+  const sanitizedActions = actions.map((actionValue, index) => {
     const action = assertRecord(actionValue, `serial command profile.actions[${index}]`);
     assertString(action.id, `serial command profile.actions[${index}].id`);
     assertString(action.label, `serial command profile.actions[${index}].label`);
@@ -176,9 +202,12 @@ function validateSerialCommandProfile(value) {
     const steps = assertArray(action.steps, `serial command profile.actions[${index}].steps`);
     if (steps.length === 0) fail(`serial command profile.actions[${index}].steps must contain at least one step.`);
     steps.forEach((step, stepIndex) => validateSerialStep(step, `serial command profile.actions[${index}].steps[${stepIndex}]`));
-  }
+    const sanitizedSteps = sanitizeSerialSteps(action);
+    if (sanitizedSteps.length === 0) fail(`serial command profile.actions[${index}].steps has no safe default commands after sanitization.`);
+    return { ...action, steps: sanitizedSteps };
+  });
 
-  const profile = { ...root };
+  const profile = { ...root, actions: sanitizedActions };
   delete profile.$schema;
   return profile;
 }

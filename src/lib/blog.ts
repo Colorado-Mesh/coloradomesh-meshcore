@@ -2,7 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-const postsDirectory = path.join(process.cwd(), 'src/content/blog');
+const postDirectories = [
+  path.join(process.cwd(), 'src/content/blog'),
+  path.join(process.cwd(), 'content/blog'),
+];
 
 export interface BlogPost {
   slug: string;
@@ -50,7 +53,7 @@ function validateFrontmatter(data: Record<string, unknown>, slug: string): boole
     console.warn(`Blog post "${slug}" missing date`);
     return false;
   }
-  if (!data.excerpt || typeof data.excerpt !== 'string') {
+  if (typeof data.excerpt !== 'string' && typeof data.description !== 'string') {
     console.warn(`Blog post "${slug}" missing valid excerpt`);
     return false;
   }
@@ -81,17 +84,20 @@ function validateFrontmatter(data: Record<string, unknown>, slug: string): boole
  * Get all post slugs for static generation
  */
 export function getPostSlugs(): string[] {
-  try {
-    if (!fs.existsSync(postsDirectory)) {
-      return [];
+  const slugs = new Set<string>();
+
+  for (const directory of postDirectories) {
+    try {
+      if (!fs.existsSync(directory)) continue;
+      for (const file of fs.readdirSync(directory)) {
+        if (file.endsWith('.mdx')) slugs.add(file.replace(/\.mdx$/, ''));
+      }
+    } catch {
+      continue;
     }
-    return fs
-      .readdirSync(postsDirectory)
-      .filter((file) => file.endsWith('.mdx'))
-      .map((file) => file.replace(/\.mdx$/, ''));
-  } catch {
-    return [];
   }
+
+  return Array.from(slugs).sort();
 }
 
 /**
@@ -99,9 +105,11 @@ export function getPostSlugs(): string[] {
  */
 export function getPostBySlug(slug: string): BlogPost | null {
   try {
-    const fullPath = path.join(postsDirectory, `${slug}.mdx`);
+    const fullPath = postDirectories
+      .map((directory) => path.join(directory, `${slug}.mdx`))
+      .find((candidate) => fs.existsSync(candidate));
 
-    if (!fs.existsSync(fullPath)) {
+    if (!fullPath) {
       return null;
     }
 
@@ -115,13 +123,14 @@ export function getPostBySlug(slug: string): BlogPost | null {
     const dateModified = data.dateModified
       ? (data.dateModified as string)
       : undefined;
+    const excerpt = typeof data.excerpt === 'string' ? data.excerpt : data.description as string;
 
     return {
       slug,
       title: data.title as string,
       date: data.date as string,
       ...(dateModified && { dateModified }),
-      excerpt: data.excerpt as string,
+      excerpt,
       author: (data.author as string) || 'Colorado MeshCore',
       tags: (data.tags as string[]) || [],
       published: data.published !== false,

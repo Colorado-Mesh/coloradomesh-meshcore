@@ -2159,10 +2159,8 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
   gap: 0.75rem;
-  margin-top: 0.25rem;
-  /* Offset for fixed h-16 site header (+ breathing room) so scrollIntoView()
-     does not place the panel heading underneath the navigation. */
-  scroll-margin-top: 5rem;
+  margin-top: 0.75rem;
+  scroll-margin-top: 6rem;
 }
 
 .cm-panel {
@@ -2176,6 +2174,7 @@ body {
   box-shadow: var(--shadow-panel);
   font-family: var(--font-sans);
   color: var(--foreground);
+  scroll-margin-top: 6rem;
 }
 
 .cm-panel__head {
@@ -2240,7 +2239,7 @@ body {
   border-color: var(--card-border-strong);
 }
 
-.cm-panel__refresh:focus-visible:not(:disabled) {
+.cm-panel__refresh:focus:not(:disabled) {
   color: var(--foreground);
   border-color: var(--mesh-accent);
   outline: 2px solid var(--mesh-accent-light);
