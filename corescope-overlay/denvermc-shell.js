@@ -95,6 +95,20 @@
   var focusBtnEl = null;
   var analyzerToggleBtnEl = null;
   var focusExitEl = null;
+  var soundGroupEl = null;
+  var soundSelectEl = null;
+  var soundVolumeEl = null;
+  var soundStatusEl = null;
+  var soundUnsubscribe = null;
+  var soundReadyTimer = null;
+  var syncingSoundControls = false;
+  var SOUND_MODE_OPTIONS = [
+    { value: 'off', label: 'Sound Off' },
+    { value: 'native', label: 'Native+' },
+    { value: 'generative', label: 'Generative Key' },
+    { value: 'ensemble', label: 'Orchestral Ensemble' },
+    { value: 'blaster', label: 'Space Blaster' },
+  ];
 
   function svgIcon(d, viewBox) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -130,6 +144,163 @@
     });
     mark.appendChild(img);
     return mark;
+  }
+
+  function getSoundApi() {
+    return window.__coloradoMeshSound || window.__denvermcMapSound || null;
+  }
+
+  function soundOptionsFromApi(api) {
+    if (api && typeof api.getModeOptions === 'function') {
+      try { return api.getModeOptions(); }
+      catch { /* fall through to static options */ }
+    }
+    return SOUND_MODE_OPTIONS.slice();
+  }
+
+  function buildSoundControls() {
+    if (soundGroupEl) return soundGroupEl;
+
+    var group = document.createElement('div');
+    group.className = 'denvermc-sound';
+    group.setAttribute('aria-label', 'Colorado Mesh map sound');
+    group.dataset.mode = 'off';
+    group.dataset.status = 'bootstrap';
+
+    var label = document.createElement('label');
+    label.className = 'denvermc-sound__mode-label';
+    label.setAttribute('for', 'coloradoMeshSoundMode');
+    label.textContent = 'Sound';
+
+    var select = document.createElement('select');
+    select.id = 'coloradoMeshSoundMode';
+    select.className = 'denvermc-sound__select';
+    select.setAttribute('aria-label', 'Colorado Mesh map sound mode');
+
+    soundOptionsFromApi(getSoundApi()).forEach(function (option) {
+      var el = document.createElement('option');
+      el.value = option.value;
+      el.textContent = option.label;
+      select.appendChild(el);
+    });
+
+    var volumeWrap = document.createElement('label');
+    volumeWrap.className = 'denvermc-sound__volume-label';
+    volumeWrap.setAttribute('for', 'coloradoMeshSoundVolume');
+    var volumeText = document.createElement('span');
+    volumeText.className = 'denvermc-sound__volume-text';
+    volumeText.textContent = 'Vol';
+    var volume = document.createElement('input');
+    volume.id = 'coloradoMeshSoundVolume';
+    volume.className = 'denvermc-sound__volume';
+    volume.type = 'range';
+    volume.min = '0';
+    volume.max = '100';
+    volume.step = '1';
+    volume.setAttribute('aria-label', 'Colorado Mesh map sound volume');
+    volumeWrap.appendChild(volumeText);
+    volumeWrap.appendChild(volume);
+
+    var status = document.createElement('span');
+    status.className = 'denvermc-sound__status';
+    status.setAttribute('aria-live', 'polite');
+    status.setAttribute('aria-atomic', 'true');
+
+    select.addEventListener('pointerdown', function () {
+      if (syncingSoundControls || select.value === 'off') return;
+      var api = getSoundApi();
+      var state = api && api.getState && api.getState();
+      if (api && state && !state.unlocked && typeof api.setMode === 'function') {
+        api.setMode(select.value, { userGesture: true });
+      }
+    });
+
+    select.addEventListener('keydown', function (e) {
+      if (syncingSoundControls || select.value === 'off') return;
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var api = getSoundApi();
+      var state = api && api.getState && api.getState();
+      if (api && state && !state.unlocked && typeof api.setMode === 'function') {
+        api.setMode(select.value, { userGesture: true });
+      }
+    });
+
+    select.addEventListener('change', function () {
+      if (syncingSoundControls) return;
+      var api = getSoundApi();
+      if (api && typeof api.setMode === 'function') {
+        api.setMode(select.value, { userGesture: true });
+      }
+    });
+
+    volume.addEventListener('input', function () {
+      if (syncingSoundControls) return;
+      var api = getSoundApi();
+      if (api && typeof api.setVolume === 'function') {
+        api.setVolume(Number(volume.value) / 100);
+      }
+    });
+
+    group.appendChild(label);
+    group.appendChild(select);
+    group.appendChild(volumeWrap);
+    group.appendChild(status);
+
+    soundGroupEl = group;
+    soundSelectEl = select;
+    soundVolumeEl = volume;
+    soundStatusEl = status;
+    return group;
+  }
+
+  function syncSoundControls(snapshot) {
+    if (!soundSelectEl || !soundVolumeEl) return;
+    var state = snapshot || (getSoundApi() && getSoundApi().getState && getSoundApi().getState()) || {};
+    var mode = state.mode || 'off';
+    var volume = typeof state.volume === 'number' ? state.volume : 0.3;
+    syncingSoundControls = true;
+    soundSelectEl.value = mode;
+    soundVolumeEl.value = String(Math.round(Math.max(0, Math.min(1, volume)) * 100));
+    soundVolumeEl.removeAttribute('disabled');
+    soundSelectEl.removeAttribute('disabled');
+    syncingSoundControls = false;
+
+    if (soundGroupEl) {
+      soundGroupEl.dataset.mode = mode;
+      soundGroupEl.dataset.status = state.status || 'bootstrap';
+    }
+    if (soundStatusEl) {
+      if (state.available === false) soundStatusEl.textContent = 'Unavailable';
+      else if (mode === 'off') soundStatusEl.textContent = '';
+      else if (state.unlocked) soundStatusEl.textContent = 'On';
+      else soundStatusEl.textContent = 'Tap to start';
+    }
+  }
+
+  function connectSoundControls() {
+    var api = getSoundApi();
+    if (!api) return false;
+    if (soundUnsubscribe) soundUnsubscribe();
+    if (typeof api.subscribe === 'function') {
+      soundUnsubscribe = api.subscribe(syncSoundControls);
+    } else {
+      syncSoundControls(api.getState && api.getState());
+    }
+    if (typeof api.suppressCoreScopeAudio === 'function') api.suppressCoreScopeAudio();
+    return true;
+  }
+
+  function startSoundControlsWatch() {
+    if (connectSoundControls()) return;
+    if (soundReadyTimer) return;
+    var attempts = 0;
+    soundReadyTimer = window.setInterval(function () {
+      attempts += 1;
+      if (connectSoundControls() || attempts >= 40) {
+        window.clearInterval(soundReadyTimer);
+        soundReadyTimer = null;
+      }
+    }, 250);
   }
 
   function buildTopbar() {
@@ -252,6 +423,7 @@
 
     actions.appendChild(status);
     actions.appendChild(divider);
+    actions.appendChild(buildSoundControls());
     actions.appendChild(focusBtn);
     actions.appendChild(analyzerBtn);
     actions.appendChild(siteBtn);
@@ -556,6 +728,7 @@
     buildFocusExit();
     applyMode();
     syncStatus();
+    startSoundControlsWatch();
 
     window.addEventListener('hashchange', function () {
       ensureDefaultRoute();

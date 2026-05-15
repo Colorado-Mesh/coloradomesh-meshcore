@@ -279,6 +279,197 @@ body.denvermc-minimal .denvermc-topbar { display: flex; }
   50%      { box-shadow: 0 0 0 6px rgba(0, 212, 170, 0); }
 }
 
+/* ---------- Colorado Mesh map sound controls ---------- */
+.denvermc-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 9px;
+  border: 1px solid var(--denvermc-border-soft);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--denvermc-text);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.denvermc-sound:hover { border-color: var(--denvermc-border); }
+.denvermc-sound:focus-within {
+  border-color: var(--denvermc-accent-deep);
+  background: rgba(0, 212, 170, 0.05);
+}
+
+.denvermc-sound__mode-label,
+.denvermc-sound__volume-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--denvermc-text-muted);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+.denvermc-sound__volume-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.denvermc-sound__select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  max-width: 168px;
+  padding: 0 26px 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--denvermc-border);
+  background-color: rgba(255, 255, 255, 0.04);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%239fb1c8' d='M6 8.2 1.8 4 3 2.8 6 5.8 9 2.8 10.2 4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 10px;
+  color: var(--denvermc-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+.denvermc-sound__select:hover {
+  border-color: rgba(0, 212, 170, 0.45);
+  background-color: rgba(0, 212, 170, 0.08);
+  color: #ffffff;
+}
+.denvermc-sound__select:focus-visible {
+  outline: 2px solid var(--denvermc-accent);
+  outline-offset: 2px;
+}
+.denvermc-sound__select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  color: var(--denvermc-text-muted);
+}
+.denvermc-sound__select option {
+  background: #0a1420;
+  color: var(--denvermc-text);
+}
+.denvermc-sound:not([data-mode="off"]):not([data-mode=""]) .denvermc-sound__select {
+  border-color: rgba(0, 212, 170, 0.55);
+  color: #ffffff;
+}
+
+.denvermc-sound__volume {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 90px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.denvermc-sound__volume:focus-visible {
+  outline: 2px solid var(--denvermc-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.denvermc-sound__volume:disabled { opacity: 0.5; cursor: not-allowed; }
+.denvermc-sound[data-mode="off"] .denvermc-sound__volume { opacity: 0.55; }
+
+.denvermc-sound__volume::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--denvermc-border-soft);
+}
+.denvermc-sound__volume::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--denvermc-border-soft);
+}
+.denvermc-sound__volume::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--denvermc-accent);
+}
+.denvermc-sound__volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--denvermc-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 140ms ease;
+}
+.denvermc-sound__volume::-webkit-slider-thumb:hover { transform: scale(1.1); }
+.denvermc-sound__volume:active::-webkit-slider-thumb { transform: scale(1.15); }
+.denvermc-sound__volume::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--denvermc-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.denvermc-sound__status {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--denvermc-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.denvermc-sound__status:empty { display: none; }
+.denvermc-sound[data-status="ready"] .denvermc-sound__status {
+  color: #d6fff3;
+  background: rgba(0, 212, 170, 0.10);
+  border-color: rgba(0, 212, 170, 0.40);
+}
+.denvermc-sound[data-status="locked"] .denvermc-sound__status,
+.denvermc-sound[data-status="suspended"] .denvermc-sound__status {
+  color: #ffd9a3;
+  background: var(--denvermc-warn-soft);
+  border-color: rgba(244, 140, 6, 0.45);
+}
+.denvermc-sound[data-status="unavailable"] .denvermc-sound__status {
+  color: #ffd0d0;
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.40);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .denvermc-sound,
+  .denvermc-sound__select,
+  .denvermc-sound__volume::-webkit-slider-thumb {
+    transition: none !important;
+  }
+}
+
 /* ---------- Minimal mode: collapse upstream chrome ---------- */
 /* Hide upstream top-nav and bottom-nav so our overlay can own chrome */
 body.denvermc-minimal .top-nav,
@@ -569,6 +760,10 @@ body.denvermc-focus .denvermc-focus-exit { display: inline-flex; }
   .denvermc-btn__label--sm-hide { display: none; }
   .denvermc-fab { height: 40px; padding: 0 18px; font-size: 12.5px; }
   .denvermc-focus-exit { height: 40px; padding: 0 14px; }
+  .denvermc-sound { gap: 6px; padding: 0 6px; }
+  .denvermc-sound__mode-label { display: none; }
+  .denvermc-sound__volume { width: 72px; }
+  .denvermc-sound__status { font-size: 9px; padding: 0 6px; }
 }
 
 @media (max-width: 640px) {
@@ -583,6 +778,16 @@ body.denvermc-focus .denvermc-focus-exit { display: inline-flex; }
    * frees corner space for one-handed reach. */
   .denvermc-focus-exit__label { display: none; }
   .denvermc-focus-exit { width: 40px; padding: 0; justify-content: center; }
+  .denvermc-sound { height: 40px; gap: 6px; padding: 0 6px; }
+  .denvermc-sound__volume-text { display: none; }
+  .denvermc-sound__status { display: none; }
+  .denvermc-sound__select { height: 32px; max-width: 132px; font-size: 12px; }
+  .denvermc-sound__volume { width: 68px; height: 28px; }
+}
+
+@media (max-width: 420px) {
+  .denvermc-sound__volume-label { display: none; }
+  .denvermc-sound__select { max-width: 116px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
