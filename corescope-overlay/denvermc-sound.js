@@ -11,6 +11,8 @@
   var UPSTREAM_AUDIO_ENABLED_KEY = 'live-audio-enabled';
   var DEFAULT_VOLUME = 0.3;
   var ENSEMBLE_MANIFEST_URL = '/sound/orchestral/manifest.json';
+  var DENSITY_WORKLET_URL = '/sound/denvermc-density-worklet.js';
+  var TRAFFIC_WINDOW_MS = 4000;
   var AudioCtor = window.AudioContext || window.webkitAudioContext || null;
   var modes = [
     { value: 'off', label: 'Sound Off' },
@@ -26,7 +28,13 @@
   var listeners = [];
   var audioCtx = null;
   var masterGain = null;
+  var bedGain = null;
+  var accentGain = null;
   var outputLimiter = null;
+  var densityWorklet = null;
+  var densityWorkletPromise = null;
+  var densityFallbackTimer = null;
+  var densitySchedulerTimer = null;
   var activeVoices = 0;
   var maxActiveVoices = 14;
   var cueGeneration = 0;
@@ -58,6 +66,22 @@
   var lastNormalizedEvent = null;
   var lastEvent = null;
   var lastDroppedReason = null;
+  var workletState = {
+    status: 'idle',
+    loaded: false,
+    fallback: false,
+    error: null,
+    updates: 0,
+  };
+  var trafficState = {
+    events: [],
+    total: 0,
+    density: 0,
+    priority: 0,
+    pulse: 0,
+    replay: 0,
+    lastUpdatedAt: 0,
+  };
   var counters = {
     modeChanges: 0,
     volumeChanges: 0,
@@ -69,6 +93,9 @@
     received: 0,
     normalized: 0,
     routed: 0,
+    ingested: 0,
+    accentDropped: 0,
+    densityUpdates: 0,
     dropped: 0,
     deduped: 0,
     throttled: 0,
@@ -130,11 +157,33 @@
       channelHash: event.channelHash,
       isEmergency: event.isEmergency,
       isPriority: event.isPriority,
+      isReplay: event.isReplay,
       observationCount: event.observationCount,
       hopCount: event.hopCount,
       intensity: event.intensity,
+      seed: event.seed,
       timestamp: event.timestamp,
     };
+  }
+
+  function trafficSnapshot() {
+    return {
+      total: trafficState.total,
+      density: trafficState.density,
+      priority: trafficState.priority,
+      pulse: trafficState.pulse,
+      replay: trafficState.replay,
+      activeWindowEvents: trafficState.events.length,
+      lastUpdatedAt: trafficState.lastUpdatedAt,
+    };
+  }
+
+  function workletSnapshot() {
+    return Object.assign({}, workletState, {
+      active: !!densityWorklet,
+      schedulerActive: !!densitySchedulerTimer,
+      fallbackActive: !!densityFallbackTimer,
+    });
   }
 
   function getState() {
@@ -148,6 +197,9 @@
       lastNormalizedEvent: cloneEvent(lastNormalizedEvent),
       lastEvent: cloneEvent(lastEvent),
       lastDroppedReason: lastDroppedReason,
+      traffic: trafficSnapshot(),
+      worklet: workletSnapshot(),
+      activeVoices: activeVoices,
       ensemble: Object.assign({}, ensembleState),
     };
   }
@@ -200,9 +252,165 @@
     } catch {
       masterGain.gain.value = target;
     }
+    updateDensityOutput();
   }
 
-  function stopAllScheduledCues() {
+  function modeWorkletValue() {
+    if (state.mode === 'native') return 0.18;
+    if (state.mode === 'generative') return 0.42;
+    if (state.mode === 'ensemble') return 0.66;
+    if (state.mode === 'blaster') return 0.92;
+    return 0;
+  }
+
+  function updateDensityOutput(snapshot) {
+    if (!audioCtx) return;
+    var traffic = snapshot || trafficSnapshot();
+    var level = state.unlocked && state.mode !== 'off' ? 1 : 0;
+    var density = clamp(traffic.density, 0, 1);
+    var priority = clamp(traffic.priority, 0, 1);
+    var pulse = clamp(traffic.pulse, 0, 1);
+    try {
+      if (densityWorklet && densityWorklet.parameters) {
+        var at = audioCtx.currentTime + 0.025;
+        densityWorklet.parameters.get('density').linearRampToValueAtTime(density, at);
+        densityWorklet.parameters.get('priority').linearRampToValueAtTime(priority, at);
+        densityWorklet.parameters.get('pulse').linearRampToValueAtTime(pulse, at);
+        densityWorklet.parameters.get('mode').linearRampToValueAtTime(modeWorkletValue(), at);
+        densityWorklet.parameters.get('level').linearRampToValueAtTime(level, at);
+        workletState.updates += 1;
+      } else if (bedGain) {
+        bedGain.gain.setTargetAtTime(level * (0.018 + density * 0.09 + priority * 0.03), audioCtx.currentTime, 0.08);
+      }
+    } catch {
+      workletState.status = 'degraded';
+      workletState.fallback = true;
+      if (bedGain) bedGain.gain.value = level * (0.015 + density * 0.06);
+    }
+  }
+
+  function stopDensityScheduler(removeNode) {
+    if (densitySchedulerTimer) {
+      window.clearInterval(densitySchedulerTimer);
+      densitySchedulerTimer = null;
+    }
+    if (densityFallbackTimer) {
+      window.clearInterval(densityFallbackTimer);
+      densityFallbackTimer = null;
+    }
+    if (removeNode && densityWorklet) {
+      try { if (densityWorklet.port && densityWorklet.port.close) densityWorklet.port.close(); }
+      catch { /* ignore worklet port close */ }
+      safeDisconnect(densityWorklet);
+      densityWorklet = null;
+    }
+    if (bedGain && audioCtx) {
+      try { bedGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02); }
+      catch { bedGain.gain.value = 0; }
+    }
+  }
+
+  function scheduleFallbackPulse() {
+    if (!audioCtx || !bedGain || densityFallbackTimer || !audioContextIsRunning()) return;
+    workletState.fallback = true;
+    densityFallbackTimer = window.setInterval(function () {
+      if (!audioContextIsRunning() || state.mode === 'off') return;
+      var traffic = snapshotTraffic(Date.now());
+      var density = clamp(traffic.density, 0, 1);
+      if (density < 0.03) return;
+      var start = audioCtx.currentTime + 0.035;
+      var freq = state.mode === 'blaster' ? 176 : state.mode === 'native' ? 124 : state.mode === 'generative' ? 146 : 132;
+      scheduleTone(freq * (1 + density * 0.18), start, 0.18, {
+        destination: bedGain,
+        type: state.mode === 'blaster' ? 'triangle' : 'sine',
+        gain: Math.min(0.045, 0.012 + density * 0.04) * state.volume,
+        attack: 0.05,
+        decay: 0.08,
+        sustain: 0.008,
+        release: 0.28,
+        filterFrequency: 900 + density * 1800,
+        q: 0.5,
+      });
+    }, 180);
+  }
+
+  function startDensityScheduler() {
+    if (densitySchedulerTimer || !audioContextIsRunning()) return;
+    densitySchedulerTimer = window.setInterval(function () {
+      if (!audioContextIsRunning() || state.mode === 'off') return;
+      updateDensityOutput(snapshotTraffic(Date.now()));
+    }, 80);
+    updateDensityOutput(snapshotTraffic(Date.now()));
+  }
+
+  function soundCanRenderDensity() {
+    return !!(audioCtx && bedGain && state.unlocked && state.mode !== 'off' && audioContextIsRunning());
+  }
+
+  function createDensityWorkletNode() {
+    if (!soundCanRenderDensity()) return false;
+    try {
+      densityWorklet = new AudioWorkletNode(audioCtx, 'colorado-mesh-density', { numberOfOutputs: 1, outputChannelCount: [2] });
+    } catch (error) {
+      workletState.status = 'fallback';
+      workletState.fallback = true;
+      workletState.error = error && error.message ? error.message : 'node create failed';
+      densityWorklet = null;
+      scheduleFallbackPulse();
+      notify();
+      return false;
+    }
+    densityWorklet.onprocessorerror = function () {
+      workletState.status = 'degraded';
+      workletState.error = 'processorerror';
+      workletState.fallback = true;
+      safeDisconnect(densityWorklet);
+      densityWorklet = null;
+      scheduleFallbackPulse();
+      notify();
+    };
+    densityWorklet.connect(bedGain);
+    workletState.status = 'ready';
+    workletState.loaded = true;
+    workletState.fallback = false;
+    updateDensityOutput(snapshotTraffic(Date.now()));
+    notify();
+    return true;
+  }
+
+  function ensureDensityWorklet() {
+    if (!audioCtx || !bedGain || densityWorklet) return Promise.resolve(!!densityWorklet);
+    if (!soundCanRenderDensity()) return Promise.resolve(false);
+    if (!audioCtx.audioWorklet || typeof AudioWorkletNode === 'undefined') {
+      workletState.status = 'fallback';
+      workletState.fallback = true;
+      scheduleFallbackPulse();
+      return Promise.resolve(false);
+    }
+    if (workletState.loaded) return Promise.resolve(createDensityWorkletNode());
+    if (densityWorkletPromise) return densityWorkletPromise.then(function (loaded) {
+      return loaded && !densityWorklet ? createDensityWorkletNode() : !!densityWorklet;
+    });
+    workletState.status = 'loading';
+    workletState.error = null;
+    densityWorkletPromise = audioCtx.audioWorklet.addModule(DENSITY_WORKLET_URL).then(function () {
+      workletState.loaded = true;
+      densityWorkletPromise = null;
+      return createDensityWorkletNode();
+    }).catch(function (error) {
+      densityWorkletPromise = null;
+      workletState.status = 'fallback';
+      workletState.loaded = false;
+      workletState.fallback = true;
+      workletState.error = error && error.message ? error.message : 'load failed';
+      scheduleFallbackPulse();
+      notify();
+      return false;
+    });
+    return densityWorkletPromise;
+  }
+
+  function stopAccentCues() {
     scheduledSources.forEach(function (source) {
       if (source && typeof source.stop === 'function') {
         try { source.stop(audioCtx ? audioCtx.currentTime : 0); }
@@ -217,6 +425,11 @@
     cueGeneration += 1;
     modeCooldowns = {};
     activeVoices = 0;
+  }
+
+  function stopAllScheduledCues() {
+    stopAccentCues();
+    stopDensityScheduler(true);
   }
 
   function suspendAudioContext() {
@@ -241,13 +454,19 @@
       if (!audioCtx) {
         audioCtx = new AudioCtor();
         masterGain = audioCtx.createGain();
+        bedGain = audioCtx.createGain();
+        accentGain = audioCtx.createGain();
         masterGain.gain.value = 0;
+        bedGain.gain.value = 0;
+        accentGain.gain.value = 0.82;
         outputLimiter = audioCtx.createDynamicsCompressor();
-        outputLimiter.threshold.value = -10;
-        outputLimiter.knee.value = 8;
-        outputLimiter.ratio.value = 10;
-        outputLimiter.attack.value = 0.004;
-        outputLimiter.release.value = 0.12;
+        outputLimiter.threshold.value = -12;
+        outputLimiter.knee.value = 10;
+        outputLimiter.ratio.value = 8;
+        outputLimiter.attack.value = 0.006;
+        outputLimiter.release.value = 0.16;
+        bedGain.connect(masterGain);
+        accentGain.connect(masterGain);
         masterGain.connect(outputLimiter);
         outputLimiter.connect(audioCtx.destination);
       }
@@ -257,6 +476,10 @@
         if (resumed && typeof resumed.then === 'function') {
           resumed.then(function () {
             state.unlocked = audioContextIsRunning();
+            if (state.unlocked) {
+              ensureDensityWorklet();
+              startDensityScheduler();
+            }
             if (state.mode === 'ensemble' && state.unlocked) primeEnsembleSamples();
             applyVolume();
             notify();
@@ -269,6 +492,10 @@
         }
       }
       state.unlocked = audioContextIsRunning();
+      if (state.unlocked) {
+        ensureDensityWorklet();
+        startDensityScheduler();
+      }
       if (state.mode === 'ensemble' && state.unlocked) primeEnsembleSamples();
       applyVolume();
       updateStatus();
@@ -285,8 +512,9 @@
   function setMode(mode, options) {
     if (!modeLookup[mode]) return false;
     var userGesture = !!(options && options.userGesture);
-    var changed = state.mode !== mode;
-    if (changed) stopAllScheduledCues();
+    var previousMode = state.mode;
+    var changed = previousMode !== mode;
+    if (changed) stopAccentCues();
     state.mode = mode;
     writeStorage(MODE_STORAGE_KEY, mode);
     if (changed) counters.modeChanges += 1;
@@ -371,16 +599,6 @@
     return Array.isArray(parsed) ? parsed : [];
   }
 
-  function rawHexFromPacket(pkt) {
-    return stringFrom(pkt && (pkt.raw || pkt.raw_hex || (pkt.packet && (pkt.packet.raw || pkt.packet.raw_hex))));
-  }
-
-  function byteAt(hex, index, fallback) {
-    if (!hex || hex.length < index * 2 + 2) return fallback;
-    var parsed = parseInt(hex.slice(index * 2, index * 2 + 2), 16);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-
   function firstString(values) {
     for (var i = 0; i < values.length; i++) {
       var value = stringFrom(values[i]).trim();
@@ -416,6 +634,57 @@
     if (event.isPriority) return 'priority';
     if (event.type === 'ADVERT' || event.type === 'NODEINFO') return 'low';
     return 'normal';
+  }
+
+  function modeDensityMultiplier() {
+    if (state.mode === 'native') return 0.74;
+    if (state.mode === 'generative') return 0.9;
+    if (state.mode === 'ensemble') return 1;
+    if (state.mode === 'blaster') return 0.82;
+    return 0;
+  }
+
+  function pruneTraffic(now) {
+    while (trafficState.events.length && now - trafficState.events[0].at > TRAFFIC_WINDOW_MS) {
+      trafficState.events.shift();
+    }
+  }
+
+  function snapshotTraffic(now) {
+    now = now || Date.now();
+    pruneTraffic(now);
+    var weighted = 0;
+    var priority = 0;
+    var pulse = 0;
+    var replay = 0;
+    trafficState.events.forEach(function (item) {
+      var age = Math.max(0, now - item.at);
+      var falloff = Math.max(0, 1 - age / TRAFFIC_WINDOW_MS);
+      var laneWeight = item.lane === 'priority' ? 1.7 : item.lane === 'low' ? 0.55 : 1;
+      var replayWeight = item.event.isReplay ? 0.62 : 1;
+      var contribution = item.event.intensity * laneWeight * replayWeight * (0.28 + falloff * 0.72);
+      weighted += contribution;
+      if (item.lane === 'priority') priority += contribution;
+      if (item.event.isReplay) replay += contribution;
+      pulse += falloff * (item.lane === 'low' ? 0.35 : 0.75);
+    });
+    trafficState.density = clamp((weighted / 7.5) * modeDensityMultiplier(), 0, 1);
+    trafficState.priority = clamp(priority / 3.2, 0, 1);
+    trafficState.pulse = clamp(pulse / 10, 0, 1);
+    trafficState.replay = clamp(replay / 4, 0, 1);
+    return trafficSnapshot();
+  }
+
+  function ingestTraffic(event, now) {
+    now = now || Date.now();
+    pruneTraffic(now);
+    trafficState.events.push({ at: now, lane: eventLane(event), event: cloneEvent(event) });
+    if (trafficState.events.length > 160) trafficState.events.splice(0, trafficState.events.length - 160);
+    trafficState.total += 1;
+    trafficState.lastUpdatedAt = now;
+    counters.ingested += 1;
+    counters.densityUpdates += 1;
+    return snapshotTraffic(now);
   }
 
   function clamp(value, min, max) {
@@ -489,7 +758,7 @@
     var env = audioCtx.createGain();
     var filter = null;
     var nodes = [osc, env];
-    var destination = options.destination || masterGain;
+    var destination = options.destination || accentGain || masterGain;
     var end = start + duration;
     osc.type = options.type || 'sine';
     osc.frequency.setValueAtTime(Math.max(20, frequency), start);
@@ -552,7 +821,7 @@
     envelopeGain(env, start, duration, gainValue, options.attack || 0.004, options.decay || 0.03, gainValue * 0.12, options.release || 0.08);
     source.connect(filter);
     filter.connect(env);
-    env.connect(options.destination || masterGain);
+    env.connect(options.destination || accentGain || masterGain);
     scheduledSources.add(source);
     source.start(start);
     source.stop(end + (options.release || 0.08) + 0.05);
@@ -697,7 +966,7 @@
     source.playbackRate.value = Math.pow(2, (midi - sample.rootNote) / 12);
     envelopeGain(env, start, duration, gainValue, options.attack || 0.006, options.decay || 0.08, options.sustain || gainValue * 0.45, options.release || 0.18);
     source.connect(env);
-    env.connect(options.destination || masterGain);
+    env.connect(options.destination || accentGain || masterGain);
     scheduledSources.add(source);
     source.start(start);
     source.stop(Math.min(start + buffer.duration / source.playbackRate.value, end + (options.release || 0.18) + 0.08));
@@ -779,12 +1048,12 @@
     var key = mode + ':' + lane;
     if (activeVoices >= maxActiveVoices) {
       counters.throttled += 1;
-      rememberDrop('audio-cap');
+      rememberAccentDrop('audio-cap');
       return false;
     }
     if (nowMs - (modeCooldowns[key] || 0) < cooldownForMode(mode, event)) {
       counters.throttled += 1;
-      rememberDrop('audio-cooldown:' + lane);
+      rememberAccentDrop('audio-cooldown:' + lane);
       return false;
     }
     modeCooldowns[key] = nowMs;
@@ -963,14 +1232,13 @@
       pkt.type,
     ]).toUpperCase() || 'UNKNOWN';
     var hops = pathFromPacket(pkt, decoded);
-    var rawHex = rawHexFromPacket(pkt);
     var hash = firstString([
       pkt.hash,
       pkt.packet && pkt.packet.hash,
       payload.hash,
-      rawHex ? rawHex.slice(0, 16) : '',
+      pkt.id,
     ]);
-    if (!hash && type === 'UNKNOWN' && !rawHex) return null;
+    if (!hash && type === 'UNKNOWN') return null;
 
     var channelName = firstString([
       payload.channelName,
@@ -991,11 +1259,13 @@
     ]));
     var observationCount = Math.max(1, intFrom(pkt.observation_count || (pkt.packet && pkt.packet.observation_count), 1));
     var hopCount = Math.max(1, intFrom(hops.length || payload.hopCount || decoded.hopCount || pkt.hop_count, 1));
-    var byteSeed = byteAt(rawHex, 3, observationCount * 17 + hopCount * 13);
-    var intensity = Math.max(0.05, Math.min(1, (byteSeed / 255) * 0.65 + Math.min(observationCount, 6) * 0.05 + Math.min(hopCount, 8) * 0.025));
     var isEmergency = isEmergencyChannel(channelName, channelHash, type);
     var isPriority = isEmergency || type === 'GRP_TXT' || type === 'CHAN' || observationCount >= 4;
     var timestamp = intFrom(pkt._ts || pkt.timestamp || pkt.received_at || Date.now(), Date.now());
+    var seed = hashSeed([hash, type, channelName, channelHash, observationCount, hopCount, timestamp].join('|'));
+    var typeWeight = type === 'GRP_TXT' || type === 'TEXT' || type === 'CHAN' ? 0.18 : type === 'NODEINFO' || type === 'ADVERT' ? 0.08 : 0.12;
+    var intensity = Math.max(0.05, Math.min(1, 0.14 + typeWeight + Math.min(observationCount, 8) * 0.055 + Math.min(hopCount, 8) * 0.025 + (seed % 37) / 370));
+    var isReplay = !!(pkt.replay || pkt.isReplay || pkt.historical || pkt.playback || pkt._replay);
 
     return {
       id: hash || [type, channelName || channelHash || 'no-channel', timestamp].join(':'),
@@ -1005,15 +1275,22 @@
       channelHash: channelHash,
       isEmergency: isEmergency,
       isPriority: isPriority,
+      isReplay: isReplay,
       observationCount: observationCount,
       hopCount: hopCount,
       intensity: intensity,
+      seed: seed,
       timestamp: timestamp,
     };
   }
 
   function rememberDrop(reason) {
     counters.dropped += 1;
+    lastDroppedReason = reason;
+  }
+
+  function rememberAccentDrop(reason) {
+    counters.accentDropped += 1;
     lastDroppedReason = reason;
   }
 
@@ -1029,7 +1306,7 @@
     var seenAt = dedupeSeen.get(event.id);
     if (seenAt && now - seenAt < dedupeWindowMs) {
       counters.deduped += 1;
-      rememberDrop('dedupe');
+      rememberAccentDrop('dedupe');
       return false;
     }
     dedupeSeen.set(event.id, now);
@@ -1044,7 +1321,7 @@
     bucket.updatedAt = now;
     if (bucket.tokens < 1) {
       counters.throttled += 1;
-      rememberDrop('throttle:' + lane);
+      rememberAccentDrop('throttle:' + lane);
       return false;
     }
     bucket.tokens -= 1;
@@ -1054,7 +1331,6 @@
   function markPlayed(event) {
     var accepted = playCurrentMode(event);
     if (!accepted) return false;
-    counters.played += 1;
     lastEvent = cloneEvent(event);
     return true;
   }
@@ -1089,23 +1365,18 @@
     }
 
     var now = Date.now();
-    if (!acceptDedupe(event, now)) {
-      notify();
-      return false;
-    }
-    if (!acceptBucket(event, now)) {
-      notify();
-      return false;
-    }
-
-    var accepted = markPlayed(event);
+    var traffic = ingestTraffic(event, now);
+    updateDensityOutput(traffic);
+    var accentAllowed = acceptDedupe(event, now) && acceptBucket(event, now);
+    var accepted = accentAllowed ? markPlayed(event) : false;
+    counters.routed += 1;
+    if (event.isPriority) counters.priority += 1;
     if (accepted) {
-      counters.routed += 1;
-      if (event.isPriority) counters.priority += 1;
+      counters.played += 1;
       lastDroppedReason = null;
     }
     notify();
-    return accepted;
+    return true;
   }
 
   function handlePacket(pkt) {

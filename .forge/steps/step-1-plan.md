@@ -1,44 +1,42 @@
-# Step 1 Execution Plan: Add overlay sound asset plumbing, branding corrections, and non-visual shell integration seams
+# Step 1 Execution Plan: Sound density engine and AudioWorklet bed
 
 ## Goal
-Make the build/runtime able to serve new sound overlay assets and correct the map logo/favicon foundations before adding sound behavior.
+Rework the Colorado Mesh map sound engine so every valid metadata-only packet contributes to a rolling traffic density model before any accent throttling, and render that density through a bounded AudioWorklet-backed procedural bed.
 
 ## Current Code Observations
-- `scripts/apply-corescope-overlay.mjs` currently copies a flat list of overlay assets and injects `denvermc-leaflet-zoom.js`, `denvermc-default-route.js`, `denvermc-shell.css`, and `denvermc-shell.js`.
-- `docker/nginx.conf` proxies `/map` and a narrow allowlist of CoreScope root `.js/.css` assets, currently including `denvermc-default-route`, `denvermc-leaflet-zoom`, and `denvermc-shell`, but not a sound overlay or `/sound/` assets.
-- `corescope-overlay/denvermc-shell.js` currently sets `BRAND_LOGO_SRC = '/logo.png'`, while the main-site header `BrandMark` uses `SITE_LOGO_PATH`, currently `/brand/linux/256x256.png`.
-- `src/components/Navigation.tsx` uses `BrandMark size="md" href="/" ariaLabel={`${SITE_NAME} — Home`}`; the map brand link should match the same `/` target and main-site asset.
-- `src/app/layout.tsx` already points metadata icons to `/brand/win/colorado-mesh.ico`, `/brand/linux/16x16.png`, `/brand/linux/32x32.png`, and `/brand/linux/256x256.png`; public root favicon files may still need checking/replacement if stale.
-- `vendor/CoreScope/public/live.js:2366` calls `MeshAudio.sonifyPacket(consolidated)`, confirming the later sound bridge can wrap the CoreScope public seam without editing vendor files.
+- `corescope-overlay/denvermc-sound.js` currently runs dedupe/token buckets before playback in `routeEvent`, so burst traffic is discarded before it can contribute to sound density.
+- `scheduleModeCue` applies active voice caps and lane cooldowns directly to the main audible output, which makes busy traffic thin out.
+- `normalizePacket` derives intensity from `raw_hex` via `rawHexFromPacket` and `byteAt`, which violates the stricter metadata-only boundary for this pass.
+- Existing public API is useful and should remain stable: `getState`, `setMode`, `setVolume`, `isUnlocked`, `subscribe`, `normalizePacket`, `routeEvent`, `injectTestEvent`, and `suppressCoreScopeAudio`.
+- `scripts/apply-corescope-overlay.mjs` already recursively copies `corescope-overlay/sound` into CoreScope public output, so a worklet under `corescope-overlay/sound/` can be served same-origin without changing the injector.
 
 ## Files to Change
-- `scripts/apply-corescope-overlay.mjs` — add sound overlay asset injection/copying and optional recursive sample asset copy support.
-- `docker/nginx.conf` — proxy the new sound overlay asset(s) and `/sound/` static sample/provenance files to CoreScope.
-- `corescope-overlay/denvermc-shell.js` — switch the map shell logo source to the main-site header asset and align the accessible label/title.
-- `corescope-overlay/denvermc-sound.js` — create a no-playback bootstrap/test seam for later steps.
-- `src/app/layout.tsx` and public favicon files — only change if current favicon routing/assets are demonstrably not using the correct brand logo.
+- `corescope-overlay/denvermc-sound.js` — add metadata-only density model, worklet loading/state, density scheduler, and retuned capped accents.
+- `corescope-overlay/sound/denvermc-density-worklet.js` — new AudioWorkletProcessor for the continuous procedural density bed.
 
 ## Ordered Implementation Checklist
-1. Verify whether public root favicon files differ from the correct brand favicon/icon assets using file metadata/hashes; only replace or reroute if they are stale.
-2. Create `corescope-overlay/denvermc-sound.js` with a safe no-audio bootstrap that exposes `window.__coloradoMeshSound` and a backwards-compatible internal alias if needed.
-3. Update `scripts/apply-corescope-overlay.mjs` to inject/copy `denvermc-sound.js` after `denvermc-shell.js` and support recursive copy of `corescope-overlay/sound/` to public `/sound/` when present.
-4. Update `docker/nginx.conf` to proxy `denvermc-sound.js` and `/sound/` assets to CoreScope without broadening unrelated routes.
-5. Update `corescope-overlay/denvermc-shell.js` so `BRAND_LOGO_SRC` uses `/brand/linux/256x256.png` and the brand `aria-label`/title matches the main-site home behavior.
-6. Run overlay application and validation commands.
-7. Stage only Step 1 files and run the Forge Claude step review.
+1. Remove raw-byte intensity as a sound input and change `normalizePacket` to compute event seed/intensity from metadata-only fields.
+2. Add `trafficModel` state and helper functions to record every valid event into rolling buckets before dedupe/accent throttling.
+3. Add worklet state, bed bus, accent bus, worklet load/create helpers, and a bounded fallback if `audioWorklet` is unavailable.
+4. Add a scheduler loop that snapshots traffic density and updates worklet AudioParams while sound is on/unlocked.
+5. Change `routeEvent` so ingestion happens before dedupe/bucket checks and those checks only gate optional accents.
+6. Retune mode accent functions to sit over the density bed and use lower bounded gains/cooldowns.
+7. Extend `getState()` diagnostics with `traffic`, `worklet`, scheduler, and active source data for later tests.
+8. Ensure Off/mode changes/suspend/closed context stop timers, sources, and worklet nodes cleanly.
 
 ## Interfaces and Data Contracts
-- New static overlay script: `/denvermc-sound.js?v=denvermc`.
-- New optional static sample/provenance prefix: `/sound/...` served from CoreScope public output.
-- `window.__coloradoMeshSound` bootstrap shape: `{ version, status, getState() }` initially no-op/no-audio.
-- Logo asset path: `/brand/linux/256x256.png`.
+- Public `window.__coloradoMeshSound` API remains backward-compatible.
+- New static worklet module path: `/sound/denvermc-density-worklet.js`.
+- Worklet parameters: `density`, `priority`, `pulse`, `mode`, and `level` in normalized 0..1-ish ranges.
+- `getState().traffic` exposes aggregate counters and recent density values without payload content.
+- `getState().worklet` exposes status/load/fallback state but not sensitive data.
 
 ## Verification Plan
-- Automated: `npm run corescope:apply-overlay`; `npm run lint`; `npm run typecheck`; `git diff --check`.
-- Manual: inspect generated CoreScope public `index.html` for `denvermc-sound.js` injection and verify bootstrap/global in browser if a dev/server check is available.
-- Regression: existing `/map` overlay assets still inject once, map shell still loads, and favicon metadata still resolves to Colorado Mesh brand assets.
+- Automated: `npm run lint`; `npm run typecheck`.
+- Manual: use browser console on local map to call `injectTestEvent` bursts and inspect `getState().traffic`/`getState().worklet`.
+- Regression: Sound Off remains default; saved non-off mode remains locked until explicit user gesture; upstream CoreScope audio remains suppressed.
 
 ## Stop Conditions
-- If favicon files need image conversion but no reliable local tool exists, stop and ask rather than committing a guessed binary asset.
-- If adding `/sound/` proxy would conflict with existing Next routes, stop and narrow the route instead of broadening the proxy.
-- If any change requires visual layout/CSS decisions, delegate that portion to Opus UI rather than editing visual styling directly in this Codex-backed session.
+- If AudioWorklet cannot be served from `/sound/` in Docker/static CoreScope without injector changes, pause and update the master plan.
+- If metadata-only normalization cannot preserve enough useful event identity without raw bytes, pause and ask before weakening privacy.
+- If worklet setup requires a new build tool/bundler, do not add it in this step; use a plain static worklet module.
