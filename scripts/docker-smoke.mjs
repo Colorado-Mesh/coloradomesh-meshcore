@@ -211,6 +211,17 @@ try {
     throw new Error('/api/config/map did not report zoom=7');
   }
 
+  const clientConfig = await expectJson('/api/config/client');
+  for (const variant of ['dark', 'light']) {
+    const tileUrl = clientConfig.tiles?.[variant];
+    if (typeof tileUrl !== 'string' || !tileUrl.includes('{z}') || !tileUrl.includes('{x}') || !tileUrl.includes('{y}')) {
+      throw new Error(`/api/config/client tiles.${variant} did not include Leaflet tile placeholders`);
+    }
+    if (/%7B|%7D/i.test(tileUrl)) {
+      throw new Error(`/api/config/client tiles.${variant} included encoded Leaflet placeholders`);
+    }
+  }
+
   const stats = await expectJson('/api/stats');
   if (typeof stats.totalNodes !== 'number' || typeof stats.totalPackets !== 'number') {
     throw new Error('/api/stats did not include CoreScope numeric counters');

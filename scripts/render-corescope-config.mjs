@@ -135,11 +135,19 @@ function mqttBrokerFromEnv() {
   return `${scheme}://${server}:${port}`;
 }
 
+function tileTemplate(name, fallback) {
+  return text(name, fallback)
+    .replaceAll('%7B', '{')
+    .replaceAll('%7D', '}')
+    .replaceAll('%7b', '{')
+    .replaceAll('%7d', '}');
+}
+
 const defaultRegion = text('CORESCOPE_DEFAULT_REGION', 'CO');
 const defaultChannelKeys = { Public: '8b3387e9c5cdea6ac9e5edbaa115cd72' };
 const regions = jsonObject('CORESCOPE_REGIONS_JSON', { [defaultRegion]: 'Colorado, US' });
 const defaultTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const tileUrl = text('CORESCOPE_TILE_URL', text('MESHCORE_MAP_TILE_URL', defaultTileUrl));
+const tileUrl = tileTemplate('CORESCOPE_TILE_URL', tileTemplate('MESHCORE_MAP_TILE_URL', defaultTileUrl));
 const mqttBroker = mqttBrokerFromEnv();
 const mqttTopics = list('CORESCOPE_MQTT_TOPICS', list('MESHCORE_MQTT_TOPIC', ['meshcore/#']));
 const mqttSourcesJson = env.CORESCOPE_MQTT_SOURCES_JSON;
@@ -203,8 +211,8 @@ const config = {
   },
   regions,
   tiles: {
-    light: text('CORESCOPE_TILE_LIGHT_URL', tileUrl),
-    dark: text('CORESCOPE_TILE_DARK_URL', tileUrl),
+    light: tileTemplate('CORESCOPE_TILE_LIGHT_URL', tileUrl),
+    dark: tileTemplate('CORESCOPE_TILE_DARK_URL', tileUrl),
   },
   mqttSources,
   observerIATAWhitelist: list('CORESCOPE_OBSERVER_IATA_WHITELIST'),
