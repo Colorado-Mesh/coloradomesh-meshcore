@@ -200,6 +200,9 @@
       traffic: trafficSnapshot(),
       worklet: workletSnapshot(),
       activeVoices: activeVoices,
+      scheduledSources: scheduledSources.size,
+      scheduledNodes: scheduledNodes.size,
+      cleanupTimers: cleanupTimers.size,
       ensemble: Object.assign({}, ensembleState),
     };
   }

@@ -6,41 +6,41 @@
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-2-plan.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-sound.js",
     "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.js",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.css"
+    "/Users/cjvana/Documents/GitHub/denvermc-org/tests/e2e/smoke.spec.ts"
   ],
   "diff_basis": "staged",
-  "plan_section": "Step 2: Implement the Colorado Mesh sound controller, selector state, volume control, and CoreScope audio suppression",
+  "plan_section": "Step 2: Add sound regression tests for density, privacy, modes, and high-traffic caps",
   "dimensions": {
     "plan_alignment": {
       "score": "PASS",
-      "notes": "The staged changes implement the Step 2 controller state, persistence keys, top-bar sound selector/volume control, user-gesture unlock behavior, and CoreScope audio suppression without vendor edits."
+      "notes": "The staged changes align with Step 2 by adding density, privacy, mode routing, and bounded cleanup regression coverage. The small public diagnostic additions in corescope-overlay/denvermc-sound.js are consistent with the step plan stop condition for bounded cleanup assertions."
     },
     "correctness_safety": {
       "score": "PASS",
-      "notes": "The previous unavailable-Web-Audio blocking issue is fixed: selector and volume controls remain enabled for Off switching and persistence while playback remains unavailable. No AudioContext is created on page load."
+      "notes": "Tests exercise public __coloradoMeshSound APIs and visible controls, assert traffic ingestion remains independent from accent drops, and verify raw payload/message-body content does not affect normalized sound metadata."
     },
     "code_quality": {
       "score": "PASS",
-      "notes": "The browser controller is readable, defensive around localStorage and DOM availability, and exposes a clear shell subscription API."
+      "notes": "The new typings and helpers are clear and localized to the existing smoke harness without introducing unnecessary abstraction."
     },
     "completeness": {
-      "score": "PASS",
-      "notes": "Step 2 acceptance criteria are covered: default Off behavior, persisted selected mode with locked runtime, volume persistence, topbar-only controls, and upstream CoreScope audio suppression."
+      "score": "FLAG",
+      "notes": "Automated verification reported by the implementer covers the required targeted Playwright run, lint, and typecheck. The brief manual browser harness inspection mentioned in the master plan was not reported, but the automated acceptance criteria are covered."
     },
     "patterns": {
       "score": "PASS",
-      "notes": "The implementation follows the overlay-owned asset pattern, keeps visible labels Colorado Mesh-oriented, and confines styling to the delegated shell CSS surface."
+      "notes": "The tests follow existing Playwright patterns and avoid private closure internals, using public diagnostics exposed through getState()."
     },
     "integration": {
       "score": "PASS",
-      "notes": "The shell integrates through window.__coloradoMeshSound, suppresses CoreScope MeshAudio safely, and preserves the existing overlay/vendor separation."
+      "notes": "Imports, helper usage, overlay mounting, and shell control interactions integrate cleanly with the existing smoke test structure and sound overlay API."
     }
   },
   "flags": [
     {
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.js",
-      "line": 208,
-      "note": "Opening the selector on a saved non-off mode can unlock via pointerdown before the user changes the value. This appears intentional for the one-click resume path, but should be validated during manual browser testing."
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
+      "line": 84,
+      "note": "Manual browser harness inspection of window.__coloradoMeshSound.getState() after bursts was not included in verification_performed; consider recording it if Forge requires manual validation evidence."
     }
   ]
 }

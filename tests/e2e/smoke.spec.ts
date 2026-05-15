@@ -81,11 +81,63 @@ function mockPrefixMatrixSnapshot(page: Page) {
   });
 }
 
+type NormalizedSoundEvent = {
+  id: string;
+  type: string;
+  modeHint: string;
+  channelName: string | null;
+  channelHash: string | number | null;
+  isEmergency: boolean;
+  isPriority: boolean;
+  isReplay: boolean;
+  observationCount: number;
+  hopCount: number;
+  intensity: number;
+  seed: number;
+  timestamp: number;
+};
+
 type SoundState = {
   mode: string;
   volume: number;
   unlocked: boolean;
   status: string;
+  available: boolean;
+  counters: Record<string, number>;
+  lastNormalizedEvent: NormalizedSoundEvent | null;
+  lastEvent: NormalizedSoundEvent | null;
+  lastDroppedReason: string | null;
+  traffic: {
+    total: number;
+    density: number;
+    priority: number;
+    pulse: number;
+    replay: number;
+    activeWindowEvents: number;
+    lastUpdatedAt: number;
+  };
+  worklet: {
+    status: string;
+    loaded: boolean;
+    fallback: boolean;
+    error: string | null;
+    updates: number;
+    active: boolean;
+    schedulerActive: boolean;
+    fallbackActive: boolean;
+  };
+  activeVoices: number;
+  scheduledSources: number;
+  scheduledNodes: number;
+  cleanupTimers: number;
+};
+
+type SoundApi = {
+  getModeOptions: () => Array<{ value: string; label: string }>;
+  getState: () => SoundState;
+  normalizePacket: (packet: unknown) => NormalizedSoundEvent | null;
+  injectTestEvent: (eventOrPacket?: unknown) => boolean;
+  setMode: (mode: string, options?: { userGesture?: boolean }) => boolean;
 };
 
 type SoundHarnessWindow = Window & {
@@ -96,9 +148,7 @@ type SoundHarnessWindow = Window & {
     restore: () => boolean;
     sonifyPacket: (packet?: unknown) => unknown;
   };
-  __coloradoMeshSound: {
-    getState: () => SoundState;
-  };
+  __coloradoMeshSound: SoundApi;
 };
 
 async function mountMapSoundOverlay(page: Page, options: { mode?: string; volume?: string } = {}) {
@@ -150,6 +200,35 @@ async function mountMapSoundOverlay(page: Page, options: { mode?: string; volume
 
 async function getSoundState(page: Page) {
   return page.evaluate(() => (window as unknown as SoundHarnessWindow).__coloradoMeshSound.getState());
+}
+
+async function chooseSoundMode(page: Page, mode: string) {
+  const select = page.getByLabel('Colorado Mesh map sound mode');
+  await select.selectOption(mode);
+  await expect.poll(() => getSoundState(page)).toMatchObject({ mode });
+}
+
+async function injectSoundBurst(page: Page, count: number, idPrefix = 'burst') {
+  await page.evaluate(({ count: eventCount, idPrefix: prefix }) => {
+    const api = (window as unknown as SoundHarnessWindow).__coloradoMeshSound;
+    for (let i = 0; i < eventCount; i += 1) {
+      api.injectTestEvent({
+        id: `${prefix}-${i % 4}`,
+        type: i % 7 === 0 ? 'NODEINFO' : 'GRP_TXT',
+        modeHint: 'normal',
+        channelName: i % 5 === 0 ? '#emergency' : 'Public',
+        channelHash: i % 5 === 0 ? 'emergency' : null,
+        isEmergency: i % 5 === 0,
+        isPriority: i % 5 === 0 || i % 7 !== 0,
+        isReplay: i % 11 === 0,
+        observationCount: 1 + (i % 6),
+        hopCount: 1 + (i % 4),
+        intensity: 0.3 + (i % 5) * 0.09,
+        seed: i,
+        timestamp: 1715800000000 + i,
+      });
+    }
+  }, { count, idPrefix });
 }
 
 test.describe('critical page smoke', () => {
@@ -238,6 +317,132 @@ test.describe('critical page smoke', () => {
       slider.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await expect.poll(() => page.evaluate(() => window.localStorage.getItem('coloradoMesh.map.soundVolume'))).toBe('0.42');
+  });
+
+  test('map sound density keeps rising under burst traffic even when accents are dropped', async ({ page }) => {
+    await mountMapSoundOverlay(page);
+    await chooseSoundMode(page, 'native');
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      mode: 'native',
+      unlocked: true,
+    });
+
+    await injectSoundBurst(page, 48, 'density-burst');
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      counters: expect.objectContaining({
+        ingested: 48,
+      }),
+      traffic: expect.objectContaining({
+        total: 48,
+      }),
+    });
+
+    const state = await getSoundState(page);
+    expect(state.traffic.density).toBeGreaterThan(0);
+    expect(state.traffic.activeWindowEvents).toBeGreaterThan(0);
+    expect(state.counters.accentDropped).toBeGreaterThan(0);
+    expect(state.counters.deduped).toBeGreaterThan(0);
+    expect(state.counters.routed).toBe(48);
+  });
+
+  test('map sound normalization ignores raw payload and decoded message body contents', async ({ page }) => {
+    await mountMapSoundOverlay(page);
+
+    const normalized = await page.evaluate(() => {
+      const api = (window as unknown as SoundHarnessWindow).__coloradoMeshSound;
+      const basePacket = {
+        hash: 'privacy-regression-hash',
+        raw_hex: '00010203040506070809',
+        observation_count: 3,
+        timestamp: 1715801234567,
+        decoded: {
+          header: { payloadTypeName: 'GRP_TXT' },
+          payload: {
+            channelName: 'Public',
+            text: 'first message body',
+            message: 'first message body',
+          },
+        },
+      };
+      const changedPacket = {
+        ...basePacket,
+        raw_hex: 'fffefdfcfbfaf9f8f7f6',
+        decoded: {
+          header: { payloadTypeName: 'GRP_TXT' },
+          payload: {
+            channelName: 'Public',
+            text: 'totally different message body',
+            message: 'totally different message body',
+          },
+        },
+      };
+      return [api.normalizePacket(basePacket), api.normalizePacket(changedPacket)];
+    });
+
+    expect(normalized[0]).toEqual(normalized[1]);
+    expect(normalized[0]).not.toMatchObject({ raw_hex: expect.any(String) });
+    expect(JSON.stringify(normalized[0])).not.toContain('message body');
+  });
+
+  for (const soundMode of ['native', 'generative', 'ensemble', 'blaster'] as const) {
+    test(`map sound mode ${soundMode} is selectable, locked until gesture, and exposes worklet diagnostics`, async ({ page }) => {
+      await mountMapSoundOverlay(page, { mode: soundMode });
+
+      await expect(page.getByLabel('Colorado Mesh map sound mode')).toHaveValue(soundMode);
+      await expect.poll(() => getSoundState(page)).toMatchObject({
+        mode: soundMode,
+        unlocked: false,
+        status: 'locked',
+      });
+
+      await chooseSoundMode(page, 'off');
+      await chooseSoundMode(page, soundMode);
+
+      await expect.poll(() => getSoundState(page)).toMatchObject({
+        mode: soundMode,
+        unlocked: true,
+        status: 'ready',
+      });
+
+      const state = await getSoundState(page);
+      expect(['loading', 'ready', 'fallback']).toContain(state.worklet.status);
+      expect(state.worklet.schedulerActive || state.worklet.fallbackActive || state.worklet.active || state.worklet.status === 'loading').toBe(true);
+    });
+  }
+
+  test('map sound burst cleanup stays bounded after switching Off', async ({ page }) => {
+    await mountMapSoundOverlay(page);
+    await chooseSoundMode(page, 'blaster');
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      mode: 'blaster',
+      unlocked: true,
+    });
+
+    await injectSoundBurst(page, 72, 'cleanup-burst');
+
+    const burstState = await getSoundState(page);
+    expect(burstState.activeVoices).toBeLessThanOrEqual(14);
+    expect(burstState.scheduledSources).toBeLessThanOrEqual(48);
+    expect(burstState.cleanupTimers).toBeLessThanOrEqual(96);
+
+    await chooseSoundMode(page, 'off');
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      mode: 'off',
+      unlocked: false,
+      activeVoices: 0,
+      scheduledSources: 0,
+      scheduledNodes: 0,
+      cleanupTimers: 0,
+      worklet: expect.objectContaining({
+        active: false,
+        schedulerActive: false,
+        fallbackActive: false,
+      }),
+    });
   });
 
   test('tools hub exposes all four operator tools as first-class entries', async ({ page }) => {
