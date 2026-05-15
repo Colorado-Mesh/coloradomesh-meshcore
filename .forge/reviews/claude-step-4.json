@@ -2,37 +2,43 @@
   "verdict": "APPROVED",
   "blocking_issues": 0,
   "reviewed_files": [
+    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-4-plan.md",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-4.json",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-sound.js"
+    "/Users/cjvana/Documents/GitHub/denvermc-org/scripts/docker-smoke.mjs"
   ],
-  "diff_basis": "staged",
-  "plan_section": "Step 4: Implement procedural Native+, Generative Key, and Space Blaster sound modes",
+  "diff_basis": "provided_list",
+  "plan_section": "Step 4: Full integration verification, Docker smoke, listening pass, and Forge reviews",
   "dimensions": {
     "plan_alignment": {
       "score": "PASS",
-      "notes": "The final hopCount normalization patch remains aligned with Step 4 metadata-only procedural mode handling."
+      "notes": "The staged Step 4 plan now matches the master plan, and the Docker smoke additions cover the planned density worklet and same-origin logo/favicon asset routes."
     },
     "correctness_safety": {
       "score": "PASS",
-      "notes": "The patch safely defaults malformed direct injected Generative Key events to a bounded hopCount and avoids NaN-derived scheduling errors."
+      "notes": "The new smoke checks use same-origin fetches, validate non-empty responses, and do not require or print secrets. Content-type checks are appropriate for the added PNG and favicon routes."
     },
     "code_quality": {
       "score": "PASS",
-      "notes": "The small normalization is simple, local, and reuses existing helper patterns."
+      "notes": "The new expectContentType helper follows existing script style, keeps validation simple, and avoids unnecessary complexity."
     },
     "completeness": {
-      "score": "FLAG",
-      "notes": "Automated verification was rerun successfully; browser harness validation was also performed for procedural modes, emergency accents, volume, Off drops, and burst throttling."
+      "score": "PASS",
+      "notes": "The staged changes satisfy the Step 4 code/documentation scope. Reported verification covers lint, typecheck, unit, Playwright smoke, Docker build, Docker smoke on alternate port, and diff checks."
     },
     "patterns": {
       "score": "PASS",
-      "notes": "The change preserves the existing overlay-owned, metadata-only, centered audio strategy."
+      "notes": "The change stays within the overlay/Docker smoke verification pattern and does not modify vendor/CoreScope or introduce new services."
     },
     "integration": {
       "score": "PASS",
-      "notes": "No approval-changing integration issues were introduced."
+      "notes": "The smoke script continues to verify /map, overlay assets, /sound/ assets, APIs, WebSocket, and now the worklet/logo routes required by the integration plan."
     }
   },
-  "flags": []
+  "flags": [
+    {
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-4-plan.md",
+      "line": 40,
+      "note": "The prompt reports synthetic/browser sound coverage but not an explicit 5–10 minute listening pass; ensure the final Forge summary records whether that manual listening validation was completed or intentionally substituted."
+    }
+  ]
 }

@@ -1,45 +1,48 @@
-# Step 4 Execution Plan: Procedural Native+, Generative Key, and Space Blaster modes
+# Step 4 Execution Plan: Full integration verification and final Forge review
 
 ## Goal
-Implement three active procedural sound modes in the overlay-owned sound controller: Native+ packet cues, Generative Key musical motifs, and procedural Space Blaster cues. The modes must use metadata-only sound events, shared Web Audio primitives, central caps/cooldowns, and no external samples or spatial audio.
+Verify the completed sound density engine, regression coverage, mobile overlay polish, and logo replacement as an integrated Docker-served product before final Forge review.
 
 ## Current Code Observations
-- `corescope-overlay/denvermc-sound.js` already owns mode/volume persistence, user-gesture unlock, CoreScope audio suppression, packet normalization, dedupe, priority lanes, and a placeholder `markPlaceholderPlayed(event)` dispatch path.
-- `ensureAudioContext()` currently creates a single `AudioContext` and `masterGain` connected directly to `audioCtx.destination`; Step 4 should insert shared output shaping there without creating audio on page load.
-- `routeEvent(event)` already drops Off, locked, and unavailable states before routing, then updates counters and calls the placeholder; Step 4 can replace that placeholder with mode strategy dispatch.
-- Normalized `SoundEvent` exposes only `{ id, type, modeHint, channelName, channelHash, isEmergency, isPriority, observationCount, hopCount, intensity, timestamp }`, so mode mapping can stay privacy-safe without reading message text.
-- CoreScope's `audio-v1-constellation.js` shows useful oscillator/filter/envelope cleanup patterns, but it uses stereo panning; this step must keep output centered.
-- CoreScope's `audio.js` helper patterns confirm simple scale quantization and active-voice release timers are enough; the overlay should own its engine instead of depending on upstream `MeshAudio` internals.
+- `scripts/docker-smoke.mjs` already builds a temporary container, checks `/map`, overlay JS/CSS injection, `/denvermc-sound.js`, orchestral manifest/sample assets, CoreScope APIs, WebSocket, and unencoded Leaflet tile placeholders.
+- `scripts/docker-smoke.mjs` does not yet fetch the new density worklet or new same-origin logo/favicon assets added in Steps 1 and 3.
+- `docker/nginx.conf` proxies `/sound/` and overlay JS/CSS assets to CoreScope, while root favicon and Next-managed `/brand/color/**` assets resolve through Next via the catch-all `/` route.
+- Step 3 Playwright coverage now exercises mobile sheet geometry, analyzer-mode topbar/sound trigger, focus-mode hiding, safe-area padding, 44px brand target, site icon metadata, and vendored overlay logo path.
+- Step 1 and Step 2 reviews are approved; Step 3 was approved after analyzer/safe-area/touch-target fixes.
 
 ## Files to Change
-- `.forge/steps/step-4-plan.md` — focused execution plan for this step.
-- `corescope-overlay/denvermc-sound.js` — shared audio primitives, procedural mode strategies, dispatch, counters/test seams if needed.
+- `scripts/docker-smoke.mjs` — add smoke checks for `/sound/denvermc-density-worklet.js`, `/brand/color/mesh-color-256.png`, `/favicon.ico`, `/favicon-16x16.png`, `/favicon-32x32.png`, and `/apple-touch-icon.png` if not already covered.
+- `.forge/steps/step-4-plan.md` — this execution plan.
+- `.forge/reviews/claude-step-4.json` — save Step 4 reviewer output.
+- `.forge/reviews/final-claude-review.json` — save final reviewer output if final review is separate.
 
 ## Ordered Implementation Checklist
-1. Add runtime audio-engine state for a shared limiter/output chain, active voice count, short cooldown tracking, and scheduled node cleanup without changing page-load behavior.
-2. Update `ensureAudioContext()` and `applyVolume()` so all procedural modes route through the same master gain and limiter, respect volume immediately, and remain muted when locked/off.
-3. Add small helper functions for clamping, deterministic event seeds, scale-to-frequency conversion, audio envelopes, safe disconnect/cleanup, and centered oscillator/noise cue scheduling.
-4. Implement `playNative(event)` for short polished packet tones with type/hash pitch variation, normal/low softer cues, and stronger emergency/priority accents.
-5. Implement `playGenerative(event)` for short event-driven motifs/arpeggios/chords in one pleasant key, with intensity/hop/observation metadata affecting density and register.
-6. Implement `playBlaster(event)` with generic procedural oscillator/noise/filter sweeps for zaps, impacts, and shield-like accents, avoiding samples and distinctive copyrighted imitation.
-7. Replace the placeholder dispatch with `playCurrentMode(event)` while preserving `played` counter and `lastEvent` updates only when a cue is accepted.
-8. Enforce central voice caps, per-mode/lane cooldowns, and bounded cleanup timers so burst injections cannot create unbounded AudioNodes.
-9. Expose enough existing state through `getState()` counters/last event to manually verify accepted/dropped playback without adding UI.
+1. Extend Docker smoke with static asset checks for the density worklet and new logo/favicon routes without printing or requiring any secrets.
+2. Run lint, typecheck, unit tests, full Chromium smoke tests, and `git diff --check`.
+3. Build `colorado-meshcore-site:sound-mobile-fix` locally and run `npm run docker:smoke -- --image colorado-meshcore-site:sound-mobile-fix`.
+4. Run a browser-based synthetic sound integration pass against the mounted overlay API for all modes under burst traffic, asserting density/ingestion stays active and cleanup remains bounded.
+5. Run or reuse portrait browser checks at 320, 360, 390, and 430px for mobile sheet/minimal/analyzer/focus behavior.
+6. Stage only Step 4 files and run Forge Step 4 review against the staged diff.
+7. Run final Forge review against all committed changes since `.forge/.base-ref`, save review output, and commit approved Step 4 artifacts.
 
 ## Interfaces and Data Contracts
-- Existing public API remains: `setMode`, `setVolume`, `isUnlocked`, `subscribe`, `normalizePacket`, `routeEvent`, `injectTestEvent`, and `getState`.
-- Internal mode strategies implement `play(event) -> boolean`, where `true` means the cue was scheduled and should increment `played`.
-- Procedural modes consume only the normalized `SoundEvent` metadata shape; no text/sender fields are read or added.
-- Modes covered in this step: `native`, `generative`, `blaster`; `ensemble` remains a safe placeholder until Step 5.
-- Output stays centered; no `StereoPannerNode` or geographic panning.
+- Docker image must serve `/map`, injected overlay assets, `/sound/denvermc-density-worklet.js`, orchestral sample assets, and same-origin logo/favicon assets.
+- Sound mode, volume, and user gesture contracts remain those verified in Steps 1–3.
+- No MQTT password or channel-key secrets are required or printed by any verification command.
 
 ## Verification Plan
-- Automated: `node --check corescope-overlay/denvermc-sound.js`; `npm run lint`; `npm run typecheck`; `git diff --check`; `npm run corescope:apply-overlay`; `git -C vendor/CoreScope status --short` after cleaning generated overlay artifacts if needed.
-- Manual: open `/map#/live`, enable Native+, Generative Key, and Space Blaster one at a time, then call `window.__coloradoMeshSound.injectTestEvent(...)` with normal and emergency metadata events to confirm distinct bounded cues.
-- Regression: confirm Off/locked still drop events; CoreScope upstream audio remains suppressed; volume slider affects all procedural modes; `ensemble` does not crash before Step 5.
+- Automated: `npm run lint`
+- Automated: `npm run typecheck`
+- Automated: `npm run test:unit`
+- Automated: `PLAYWRIGHT_PORT=4325 npx playwright test tests/e2e/smoke.spec.ts --project=chromium --workers=1`
+- Automated: `git diff --check`
+- Automated: `docker build -t colorado-meshcore-site:sound-mobile-fix .`
+- Automated: `npm run docker:smoke -- --image colorado-meshcore-site:sound-mobile-fix`
+- Browser/synthetic: all sound modes under burst traffic retain density/ingestion and bounded cleanup.
+- Browser/portrait: 320, 360, 390, and 430px portrait checks for mobile sheet, analyzer topbar, and focus hiding.
 
 ## Stop Conditions
-- If high-quality mode behavior requires external samples, defer that to Step 5 instead of adding assets here.
-- If implementation would require editing `vendor/CoreScope`, stop and keep the overlay-owned engine approach.
-- If browser autoplay prevents manual audio validation, keep the code gated by user gesture and report the validation limitation instead of adding auto-unlock behavior.
-- If Space Blaster starts depending on recognizable copyrighted audio patterns or samples, simplify to generic synthetic zaps/impacts.
+- Stop and ask before using any real MQTT password or external live secret-dependent environment.
+- Stop if Docker is unavailable or a local port conflict blocks smoke verification after trying a different non-shared smoke port.
+- Stop if a verification failure requires UI/visual implementation beyond small non-visual test/smoke adjustments; delegate visual fixes to Opus UI.
+- Do not publish a release in this step unless the user explicitly asks after the Forge workflow is complete.

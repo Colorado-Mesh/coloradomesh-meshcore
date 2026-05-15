@@ -2,74 +2,69 @@
   "verdict": "APPROVED",
   "blocking_issues": 0,
   "reviewed_files": [
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PROJECT.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-1-plan.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-2-plan.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-3-plan.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-4-plan.md",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-5-plan.md",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/steps/step-6-plan.md",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-1.json",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-2.json",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-3.json",
     "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-4.json",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-5.json",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/reviews/claude-step-6.json",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/scripts/apply-corescope-overlay.mjs",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/docker/nginx.conf",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.js",
     "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.css",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-shell.js",
     "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-sound.js",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/sound/orchestral/manifest.json",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/sound/orchestral/ATTRIBUTION.md",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/README.md",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/scripts/docker-smoke.mjs",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/tests/e2e/smoke.spec.ts",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/layout.tsx",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/public/favicon.ico",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/sound/denvermc-density-worklet.js",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/apple-touch-icon.png",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/brand/color/mesh-color-128.png",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/brand/color/mesh-color-256.png",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/brand/color/mesh-color-512.png",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/brand/color/mesh-color.png",
     "/Users/cjvana/Documents/GitHub/denvermc-org/public/favicon-16x16.png",
     "/Users/cjvana/Documents/GitHub/denvermc-org/public/favicon-32x32.png",
-    "/Users/cjvana/Documents/GitHub/denvermc-org/public/apple-touch-icon.png"
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/favicon.ico",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/public/manifest.json",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/scripts/docker-smoke.mjs",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/layout.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/app/why-meshcore/page.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/components/brand/BrandMark.tsx",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/constants.ts",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/src/lib/schemas/blog.ts",
+    "/Users/cjvana/Documents/GitHub/denvermc-org/tests/e2e/smoke.spec.ts"
   ],
   "diff_basis": "provided_list",
-  "plan_section": "Full CoreScope map sound-mode implementation, Steps 1-6",
+  "plan_section": "Complete Forge feature: Steps 1-4 sound density engine, regression coverage, mobile/logo polish, and final Docker integration verification",
   "dimensions": {
     "plan_alignment": {
       "score": "PASS",
-      "notes": "The cumulative implementation matches the Forge plan: overlay-owned sound assets, Colorado Mesh branding, controller state, packet routing, procedural modes, bundled orchestral samples, Docker smoke coverage, and documentation are all present without direct vendor/CoreScope edits."
+      "notes": "The implemented feature matches the master plan: density-first metadata-only sound routing, AudioWorklet/fallback bed, public diagnostics, regression coverage, mobile bottom-sheet sound controls, same-origin Colorado Mesh logo assets, and Docker smoke coverage for the new worklet and static assets."
     },
     "correctness_safety": {
       "score": "PASS",
-      "notes": "Audio remains opt-in and user-gesture gated, persisted state is browser-local localStorage only, CoreScope's old audio path is suppressed, normalized sound events avoid message text/sender fields, and no secrets or new server/env requirements were added."
+      "notes": "Sound remains opt-in and locked behind user gesture, Off mode avoids rendering, traffic ingestion occurs before accent dedupe/throttling, cleanup counters are bounded, upstream CoreScope audio is suppressed, and sound normalization excludes raw payload/message-body content. No secret-dependent behavior or runtime remote logo URLs were found."
     },
     "code_quality": {
       "score": "PASS",
-      "notes": "The overlay code is defensive around browser APIs, localStorage, Web Audio, sample fetch/decode failures, and DOM timing. The sound router, mode strategies, and sample-loading paths are cohesive and bounded."
+      "notes": "Changes are localized to the overlay, tests, static assets, site metadata/constants, and Docker smoke script. The sound engine lifecycle, shell sheet behavior, CSS breakpoints, and smoke helpers are readable and consistent with existing project style."
     },
     "completeness": {
-      "score": "PASS",
-      "notes": "Step acceptance criteria are satisfied, including default Off behavior, saved non-off locked state, volume persistence, old audio suppression, lazy orchestral asset loading, procedural Space Blaster, Docker/static route checks, and README operator notes. Reported lint, typecheck, unit, e2e, Docker build, Docker smoke, and diff checks are adequate."
+      "score": "FLAG",
+      "notes": "Automated verification is comprehensive: lint, typecheck, unit tests, full Chromium smoke, diff check, Docker build, and Docker smoke passed. Synthetic/browser tests cover burst density, privacy, modes, cleanup, mobile sheet geometry, analyzer/focus behavior, safe-area padding, touch targets, and icon assets. The only remaining gap is that the planned 5-10 minute audible listening pass was not performed; this should be recorded as a release caveat rather than a code-blocking issue."
     },
     "patterns": {
       "score": "PASS",
-      "notes": "The implementation follows the approved overlay architecture, keeps Docker/same-container routing intact, uses existing CoreScope seams instead of vendor edits, and keeps visible user-facing labels aligned to Colorado Mesh."
+      "notes": "The implementation stays in the overlay/public/site layers, preserves existing __coloradoMeshSound API and localStorage keys, avoids vendor/CoreScope edits, uses same-origin static assets, and keeps user-facing branding aligned to Colorado Mesh."
     },
     "integration": {
       "score": "PASS",
-      "notes": "Overlay injection, nginx routing, shell controls, CoreScope MeshAudio wrapping, orchestral static assets, e2e harness coverage, and Docker smoke coverage integrate cleanly. vendor/CoreScope shows no cumulative diff or dirty working tree."
+      "notes": "The Docker smoke script now verifies /sound/denvermc-density-worklet.js and logo/favicon routes in addition to map overlay injection, orchestral assets, CoreScope APIs, WebSocket, and tile placeholder behavior. Site metadata, manifest, JSON-LD, BrandMark, overlay logo path, and Playwright expectations are aligned with the vendored assets."
     }
   },
   "flags": [
     {
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/corescope-overlay/denvermc-sound.js",
-      "line": 997,
-      "note": "Minor existing flag: ISO/string timestamps passed via received_at are parsed numerically rather than with Date.parse, which can reduce fidelity for synthetic/hashless events."
-    },
-    {
-      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/public/favicon.ico",
-      "line": 1,
-      "note": "Root favicon.ico contains PNG image data. Browser metadata points at the correct brand ICO path, so this is non-blocking unless strict root favicon.ico consumers matter."
+      "file": "/Users/cjvana/Documents/GitHub/denvermc-org/.forge/PLAN.md",
+      "line": 154,
+      "note": "The final 5-10 minute audible listening pass was not performed. The synthetic/browser public-API burst coverage is acceptable for this code review gate, but release notes or final Forge summary should keep this as a validation caveat until an actual listening pass confirms subjective sound quality."
     }
   ]
 }

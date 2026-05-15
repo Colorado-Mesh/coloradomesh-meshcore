@@ -69,6 +69,19 @@ async function expectNonEmpty(path) {
   return body;
 }
 
+async function expectContentType(path, expected) {
+  const response = await expectOk(path);
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes(expected)) {
+    throw new Error(`${path} returned unexpected content-type: ${contentType}`);
+  }
+  const body = await response.arrayBuffer();
+  if (body.byteLength <= 0) {
+    throw new Error(`${path} returned an empty response`);
+  }
+  return body;
+}
+
 async function expectApiSuccess(path) {
   const body = await expectJson(path);
   if (body?.success !== true || body.data === undefined) {
@@ -138,6 +151,12 @@ try {
     }
   }
   await expectTextIncludes('/denvermc-sound.js?v=denvermc', 'window.__coloradoMeshSound');
+  await expectTextIncludes('/sound/denvermc-density-worklet.js', "registerProcessor('colorado-mesh-density'");
+  await expectContentType('/brand/color/mesh-color-256.png', 'image/png');
+  await expectContentType('/favicon-16x16.png', 'image/png');
+  await expectContentType('/favicon-32x32.png', 'image/png');
+  await expectContentType('/apple-touch-icon.png', 'image/png');
+  await expectContentType('/favicon.ico', 'image/');
 
   const orchestralManifest = await expectJson('/sound/orchestral/manifest.json');
   if (orchestralManifest?.version === undefined || !Array.isArray(orchestralManifest.samples) || !orchestralManifest.samples.length) {
