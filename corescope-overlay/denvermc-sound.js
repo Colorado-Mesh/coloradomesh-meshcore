@@ -13,21 +13,31 @@
   var ENSEMBLE_MANIFEST_URL = '/sound/orchestral/manifest.json';
   var DENSITY_WORKLET_URL = '/sound/denvermc-density-worklet.js';
   var TRAFFIC_WINDOW_MS = 4000;
-  var MUSIC_QUEUE_MAX = 96;
+  var MUSIC_QUEUE_MAX = 160;
   var MUSIC_SCHEDULE_AHEAD_SECONDS = 0.9;
   var MUSIC_TICK_MS = 28;
   var COALESCE_THRESHOLD = 3;
   var COALESCE_MAX_KEYS = 16;
   var COALESCE_STALE_MS = 9000;
+  var HARMONY_TEMPO_BPM = 96;
+  var HARMONY_BEATS_PER_BAR = 4;
+  var HARMONY_PROGRESSION = [
+    { name: 'Cm7',    root: 60, intervals: [0, 3, 7, 10] },
+    { name: 'F7',     root: 53, intervals: [0, 4, 7, 10] },
+    { name: 'EbMaj7', root: 63, intervals: [0, 4, 7, 11] },
+    { name: 'Dm7',    root: 62, intervals: [0, 3, 7, 10] },
+  ];
   var ENSEMBLE_ROOT_MIDI = 60;
   var ENSEMBLE_SCALE = [0, 2, 3, 5, 7, 9, 10];
-  var ENSEMBLE_CHORD = [0, 3, 7, 10];
+  var CHIME_PARTIAL_RATIOS = [1, 2.756, 5.404, 8.933, 13.345];
+  var CHIME_PARTIAL_GAINS = [1, 0.46, 0.24, 0.13, 0.07];
   var AudioCtor = window.AudioContext || window.webkitAudioContext || null;
   var modes = [
     { value: 'off', label: 'Sound Off' },
     { value: 'native', label: 'Native+' },
     { value: 'generative', label: 'Generative Key' },
     { value: 'ensemble', label: 'Orchestral Ensemble' },
+    { value: 'chime', label: 'Wind Chimes' },
     { value: 'blaster', label: 'Space Blaster' },
   ];
   var modeLookup = modes.reduce(function (acc, mode) {
@@ -45,7 +55,7 @@
   var densityFallbackTimer = null;
   var densitySchedulerTimer = null;
   var activeVoices = 0;
-  var maxActiveVoices = 14;
+  var maxActiveVoices = 24;
   var cueGeneration = 0;
   var modeCooldowns = {};
   var cleanupTimers = new Set();
@@ -95,12 +105,12 @@
   };
   var suppressObserver = null;
   var suppressTimer = null;
-  var dedupeWindowMs = 2500;
+  var dedupeWindowMs = 900;
   var dedupeSeen = new Map();
   var buckets = {
-    priority: { capacity: 6, tokens: 6, refillPerSecond: 3, updatedAt: Date.now() },
-    normal: { capacity: 4, tokens: 4, refillPerSecond: 1.5, updatedAt: Date.now() },
-    low: { capacity: 2, tokens: 2, refillPerSecond: 0.75, updatedAt: Date.now() },
+    priority: { capacity: 24, tokens: 24, refillPerSecond: 18, updatedAt: Date.now() },
+    normal: { capacity: 24, tokens: 24, refillPerSecond: 14, updatedAt: Date.now() },
+    low: { capacity: 12, tokens: 12, refillPerSecond: 6, updatedAt: Date.now() },
   };
   var lastNormalizedEvent = null;
   var lastEvent = null;
@@ -314,6 +324,7 @@
     if (state.mode === 'native') return 0.18;
     if (state.mode === 'generative') return 0.42;
     if (state.mode === 'ensemble') return 0.66;
+    if (state.mode === 'chime') return 0.55;
     if (state.mode === 'blaster') return 0.92;
     return 0;
   }
@@ -733,6 +744,7 @@
     if (state.mode === 'native') return 0.74;
     if (state.mode === 'generative') return 0.9;
     if (state.mode === 'ensemble') return 1;
+    if (state.mode === 'chime') return 0.7;
     if (state.mode === 'blaster') return 0.82;
     return 0;
   }
@@ -804,24 +816,10 @@
     return 440 * Math.pow(2, (midi - 69) / 12);
   }
 
-  function scaleFreq(seed, root, intervals, octaves) {
-    var span = intervals.length * octaves;
-    var index = seed % span;
-    var octave = Math.floor(index / intervals.length);
-    return midiToFreq(root + octave * 12 + intervals[index % intervals.length]);
-  }
-
   function safeDisconnect(node) {
     if (!node || typeof node.disconnect !== 'function') return;
     try { node.disconnect(); }
     catch { /* node may already be disconnected */ }
-  }
-
-  function inScaleMidi(root, scale, index, octaveOffset) {
-    var span = scale.length;
-    var degree = ((index % span) + span) % span;
-    var octave = Math.floor(index / span) + (octaveOffset || 0);
-    return root + octave * 12 + scale[degree];
   }
 
   function nearestInScaleMidi(target, root, scale, min, max) {
@@ -841,8 +839,76 @@
     return best;
   }
 
-  function semitoneRatio(semitones) {
-    return Math.pow(2, semitones / 12);
+  function harmonyClockSeconds() {
+    if (audioCtx) return audioCtx.currentTime;
+    if (typeof performance !== 'undefined' && performance.now) return performance.now() / 1000;
+    return Date.now() / 1000;
+  }
+
+  function currentHarmonyContext(atSeconds) {
+    var now = typeof atSeconds === 'number' ? atSeconds : harmonyClockSeconds();
+    var beatSeconds = 60 / HARMONY_TEMPO_BPM;
+    var sixteenthSeconds = beatSeconds / 4;
+    var barSeconds = beatSeconds * HARMONY_BEATS_PER_BAR;
+    var totalBars = Math.floor(now / barSeconds);
+    var len = HARMONY_PROGRESSION.length;
+    var chordIndex = ((totalBars % len) + len) % len;
+    var chord = HARMONY_PROGRESSION[chordIndex];
+    var positionInBar = now - totalBars * barSeconds;
+    var beatPosition = positionInBar / beatSeconds;
+    return {
+      now: now,
+      chord: chord,
+      chordIndex: chordIndex,
+      bar: totalBars,
+      beatSeconds: beatSeconds,
+      sixteenthSeconds: sixteenthSeconds,
+      barSeconds: barSeconds,
+      beatPosition: beatPosition,
+      barPosition: positionInBar,
+    };
+  }
+
+  function quantizeAudioTime(rawTime) {
+    if (!audioCtx) return rawTime;
+    var earliest = Math.max(rawTime, audioCtx.currentTime + 0.025);
+    var ctx = currentHarmonyContext(earliest);
+    var step = ctx.sixteenthSeconds;
+    var tickIndex = Math.ceil(earliest / step);
+    var snapped = tickIndex * step;
+    if (tickIndex % 2 !== 0) snapped += step * 0.14;
+    return Math.max(snapped, audioCtx.currentTime + 0.02);
+  }
+
+  var MELODIC_PATTERNS = {
+    bass:    { degrees: [0,0,0,0,2,2,2,2,0,0,0,0,2,2,2,2], octave: -2 },
+    root:    { degrees: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], octave:  0 },
+    third:   { degrees: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], octave:  0 },
+    fifth:   { degrees: [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2], octave:  0 },
+    seventh: { degrees: [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3], octave:  0 },
+    melody:  { degrees: [0,1,2,1,0,1,2,1,0,2,3,2,0,2,1,0], octave:  0 },
+    harmony: { degrees: [1,3,1,3,2,3,1,3,1,3,2,3,1,3,2,3], octave:  0 },
+    sparkle: { degrees: [0,1,2,3,2,1,0,3,1,2,3,0,3,2,1,0], octave:  1 },
+    support: { degrees: [2,2,1,1,2,2,1,1,2,2,3,3,2,2,1,1], octave:  0 },
+  };
+
+  function patternedChordMidi(role, lane, atSeconds) {
+    var ctx = currentHarmonyContext(typeof atSeconds === 'number' ? atSeconds : undefined);
+    var sixteenth = ctx.sixteenthSeconds || (60 / HARMONY_TEMPO_BPM / 4);
+    var barSeconds = ctx.barSeconds || (60 / HARMONY_TEMPO_BPM * HARMONY_BEATS_PER_BAR);
+    var t = typeof atSeconds === 'number' ? atSeconds : ctx.now;
+    var positionInBar = t - Math.floor(t / barSeconds) * barSeconds;
+    var idx = Math.round(positionInBar / sixteenth);
+    idx = ((idx % 16) + 16) % 16;
+    var pattern = MELODIC_PATTERNS[role] || MELODIC_PATTERNS.melody;
+    var degrees = ctx.chord.intervals;
+    var degreeIdx = pattern.degrees[idx] % degrees.length;
+    var degree = degrees[degreeIdx];
+    var laneStr = stringFrom(lane) || 'normal';
+    var laneAdjust = 0;
+    if (laneStr === 'priority' && role !== 'bass' && role !== 'root') laneAdjust = -1;
+    if (laneStr === 'low' && role !== 'bass') laneAdjust = 1;
+    return ctx.chord.root + (pattern.octave + laneAdjust) * 12 + degree;
   }
 
   function scheduleCleanup(nodes, delaySeconds) {
@@ -955,6 +1021,209 @@
     };
     scheduleCleanup(nodes, end - audioCtx.currentTime + 0.4);
     return end - audioCtx.currentTime + (options.release || 0.08);
+  }
+
+  function scheduleChime(midi, start, options) {
+    options = options || {};
+    if (!audioCtx) return 0;
+    var baseFreq = midiToFreq(midi);
+    var gain = options.gain != null ? options.gain : 0.06;
+    var attack = options.attack != null ? options.attack : 0.012;
+    var decay = options.decay != null ? options.decay : 0.42;
+    var release = options.release != null ? options.release : 1.8;
+    var duration = options.duration != null ? options.duration : 0.55;
+    var brightness = options.brightness != null ? options.brightness : 0.9;
+    var detune = options.detune != null ? options.detune : 6;
+    var partials = options.partials || CHIME_PARTIAL_RATIOS;
+    var partialGains = options.partialGains || CHIME_PARTIAL_GAINS;
+    var destination = options.destination || accentGain || masterGain;
+    var filterCeiling = options.maxFilterFrequency != null ? options.maxFilterFrequency : 16500;
+    var partialCeiling = options.maxPartialFrequency != null ? options.maxPartialFrequency : 16500;
+    var totalRelease = release;
+    for (var i = 0; i < partials.length; i++) {
+      var ratio = partials[i];
+      var freq = baseFreq * ratio;
+      if (freq > partialCeiling || freq < 18) continue;
+      var weight = partialGains[i] != null ? partialGains[i] : Math.pow(0.55, i);
+      var partialGain = gain * weight * brightness;
+      if (partialGain < 0.00045) continue;
+      var partialDecay = decay * Math.max(0.42, 1 - i * 0.14);
+      var partialRelease = release * Math.max(0.36, 1 - i * 0.16);
+      var partialDuration = duration * Math.max(0.32, 1 - i * 0.14);
+      var ringEnd = scheduleTone(freq, start + i * 0.0015, partialDuration, {
+        type: 'sine',
+        gain: partialGain,
+        attack: attack + i * 0.0025,
+        decay: partialDecay,
+        sustain: partialGain * 0.18,
+        release: partialRelease,
+        filterFrequency: Math.min(filterCeiling, baseFreq * (3.0 + brightness * 2.4)),
+        q: 0.4,
+        detune: i === 0 ? 0 : (i % 2 === 0 ? detune : -detune),
+        destination: destination,
+      });
+      totalRelease = Math.max(totalRelease, ringEnd);
+    }
+    if (options.airGain && options.airGain > 0) {
+      totalRelease = Math.max(totalRelease, scheduleNoiseBurst(start, Math.min(0.18, duration * 0.6), options.airGain, baseFreq * 4.5, {
+        attack: 0.012,
+        decay: 0.05,
+        release: 0.18,
+        q: 1.4,
+        filterType: 'bandpass',
+        destination: destination,
+      }));
+    }
+    return totalRelease;
+  }
+
+  function chimeProfileForMode(mode, lane, intensity, burst) {
+    var laneStr = stringFrom(lane) || 'normal';
+    var hot = clamp(numberFrom(intensity, 0.5), 0.05, 1);
+    var burstLift = burst ? 1.2 : 1;
+    if (mode === 'chime') {
+      return {
+        gain: (laneStr === 'priority' ? 0.034 : laneStr === 'low' ? 0.018 : 0.024) * (0.78 + hot * 0.42) * burstLift,
+        attack: 0.024,
+        decay: 0.7,
+        release: laneStr === 'priority' ? 3.2 : laneStr === 'low' ? 2.0 : 2.6,
+        duration: laneStr === 'priority' ? 1.0 : laneStr === 'low' ? 0.45 : 0.7,
+        brightness: 0.55 + hot * 0.18,
+        airGain: 0,
+        detune: 10,
+        maxFilterFrequency: 3800,
+        maxPartialFrequency: 7500,
+        partials: [1, 2.756, 5.404, 8.933],
+        partialGains: [1, 0.34, 0.14, 0.06],
+      };
+    }
+    if (mode === 'ensemble') {
+      return {
+        gain: (laneStr === 'priority' ? 0.082 : laneStr === 'low' ? 0.038 : 0.052) * (0.78 + hot * 0.46) * burstLift,
+        attack: 0.014,
+        decay: laneStr === 'priority' ? 0.7 : 0.55,
+        release: laneStr === 'priority' ? 2.4 : laneStr === 'low' ? 1.5 : 2.0,
+        duration: laneStr === 'priority' ? 0.85 : laneStr === 'low' ? 0.45 : 0.65,
+        brightness: 0.78 + hot * 0.18,
+        airGain: laneStr === 'priority' ? 0.012 : 0.006,
+        detune: 7,
+      };
+    }
+    if (mode === 'generative') {
+      return {
+        gain: (laneStr === 'priority' ? 0.07 : laneStr === 'low' ? 0.034 : 0.05) * (0.78 + hot * 0.44) * burstLift,
+        attack: 0.01,
+        decay: 0.38,
+        release: laneStr === 'priority' ? 1.6 : 1.2,
+        duration: laneStr === 'priority' ? 0.5 : 0.42,
+        brightness: 0.82 + hot * 0.16,
+        airGain: 0,
+        detune: 5,
+      };
+    }
+    if (mode === 'blaster') {
+      return {
+        gain: (laneStr === 'priority' ? 0.072 : laneStr === 'low' ? 0.034 : 0.05) * (0.8 + hot * 0.42) * burstLift,
+        attack: 0.006,
+        decay: 0.26,
+        release: laneStr === 'priority' ? 1.0 : 0.78,
+        duration: laneStr === 'priority' ? 0.4 : 0.32,
+        brightness: 1.0 + hot * 0.16,
+        airGain: laneStr === 'priority' ? 0.018 : 0.01,
+        detune: 9,
+        partials: [1, 2.4, 4.1, 6.7, 9.2],
+        partialGains: [1, 0.5, 0.3, 0.18, 0.1],
+      };
+    }
+    return {
+      gain: (laneStr === 'priority' ? 0.06 : laneStr === 'low' ? 0.03 : 0.044) * (0.8 + hot * 0.36) * burstLift,
+      attack: 0.008,
+      decay: 0.26,
+      release: laneStr === 'priority' ? 1.0 : 0.72,
+      duration: laneStr === 'priority' ? 0.38 : 0.3,
+      brightness: 0.88 + hot * 0.14,
+      airGain: 0,
+      detune: 4,
+    };
+  }
+
+  function schedulePluck(midi, start, options) {
+    options = options || {};
+    if (!audioCtx) return 0;
+    var baseFreq = midiToFreq(midi);
+    var gain = options.gain != null ? options.gain : 0.06;
+    var attack = options.attack != null ? options.attack : 0.005;
+    var decay = options.decay != null ? options.decay : 0.18;
+    var release = options.release != null ? options.release : 0.4;
+    var duration = options.duration != null ? options.duration : 0.32;
+    var brightness = options.brightness != null ? options.brightness : 0.9;
+    var detuneCents = options.detune != null ? options.detune : 7;
+    var q = options.q != null ? options.q : 2.1;
+    var destination = options.destination || accentGain || masterGain;
+    var voices = options.voices || [
+      { type: 'sawtooth', detune: 0,             gainScale: 0.46, freqMul: 1 },
+      { type: 'sawtooth', detune: detuneCents,   gainScale: 0.36, freqMul: 1 },
+      { type: 'sawtooth', detune: -detuneCents,  gainScale: 0.36, freqMul: 1 },
+      { type: 'sine',     detune: 0,             gainScale: 0.55, freqMul: 0.5 },
+      { type: 'triangle', detune: 3,             gainScale: 0.28, freqMul: 2 },
+    ];
+    var filterStart = Math.min(15000, baseFreq * (7 + brightness * 7));
+    var filterEnd = Math.max(380, baseFreq * (1.4 + brightness * 1.2));
+    var total = 0;
+    for (var i = 0; i < voices.length; i++) {
+      var v = voices[i];
+      var freq = baseFreq * v.freqMul;
+      if (freq > 16000 || freq < 18) continue;
+      var voiceGain = gain * v.gainScale;
+      if (voiceGain < 0.0006) continue;
+      var voiceFilterStart = filterStart * (v.freqMul > 1 ? 0.7 : 1);
+      var voiceFilterEnd = filterEnd * (v.freqMul > 1 ? 0.85 : 1);
+      var voiceRelease = release * (v.freqMul > 1 ? 0.82 : 1);
+      var voiceDuration = duration * (v.freqMul < 1 ? 1.05 : 1);
+      var ringEnd = scheduleTone(freq, start + i * 0.0008, voiceDuration, {
+        type: v.type,
+        gain: voiceGain,
+        attack: attack + (v.freqMul > 1 ? 0.002 : 0),
+        decay: decay,
+        sustain: voiceGain * 0.18,
+        release: voiceRelease,
+        filterFrequency: voiceFilterStart,
+        endFilterFrequency: voiceFilterEnd,
+        q: q,
+        detune: v.detune,
+        destination: destination,
+      });
+      total = Math.max(total, ringEnd);
+    }
+    return total;
+  }
+
+  function pluckProfileForMode(mode, lane, intensity, burst) {
+    var laneStr = stringFrom(lane) || 'normal';
+    var hot = clamp(numberFrom(intensity, 0.5), 0.05, 1);
+    var burstLift = burst ? 1.18 : 1;
+    if (mode === 'generative') {
+      return {
+        gain: (laneStr === 'priority' ? 0.082 : laneStr === 'low' ? 0.034 : 0.058) * (0.78 + hot * 0.44) * burstLift,
+        attack: 0.005,
+        decay: 0.14,
+        release: laneStr === 'priority' ? 0.55 : 0.42,
+        duration: laneStr === 'priority' ? 0.36 : 0.28,
+        brightness: 0.9 + hot * 0.16,
+        detune: 8,
+        q: 2.0,
+      };
+    }
+    return {
+      gain: (laneStr === 'priority' ? 0.088 : laneStr === 'low' ? 0.04 : 0.064) * (0.78 + hot * 0.42) * burstLift,
+      attack: 0.004,
+      decay: 0.12,
+      release: laneStr === 'priority' ? 0.5 : 0.32,
+      duration: laneStr === 'priority' ? 0.32 : 0.22,
+      brightness: 0.8 + hot * 0.18,
+      detune: 6,
+      q: 1.8,
+    };
   }
 
   function warnEnsembleOnce(key, message) {
@@ -1092,29 +1361,31 @@
     return null;
   }
 
-  function noteForEnsembleEvent(event, role, seed, ordinal) {
-    ordinal = ordinal || 0;
+  function noteForEnsembleEvent(event, role, atSeconds) {
+    var lane = eventLane(event);
     if (role === 'priority' || role === 'percussion' || role === 'brass') {
-      var priorityDegrees = [0, 3, 7, 10, 7, 3];
-      return ENSEMBLE_ROOT_MIDI - 12 + priorityDegrees[(seed + ordinal) % priorityDegrees.length];
+      return patternedChordMidi('root', 'priority', atSeconds);
     }
     if (role === 'node' || role === 'strings') {
-      var chordDegree = ENSEMBLE_CHORD[(seed + ordinal) % ENSEMBLE_CHORD.length];
-      return ENSEMBLE_ROOT_MIDI + chordDegree;
+      return patternedChordMidi('root', lane, atSeconds);
     }
-    var step = ordinal + (seed % 5) + Math.max(0, intFrom(event.hopCount, 1) - 1);
-    return inScaleMidi(ENSEMBLE_ROOT_MIDI + 12, ENSEMBLE_SCALE, step, 0);
+    return patternedChordMidi('melody', lane, atSeconds);
   }
 
-  function noteForEnsembleLayer(event, role, seed, ordinal, layer) {
-    var step = intFrom(layer.step, 0);
-    var nextOrdinal = (ordinal || 0) + step;
-    if (layer.pitch === 'bass') return ENSEMBLE_ROOT_MIDI - 12 + ENSEMBLE_CHORD[(seed + nextOrdinal) % ENSEMBLE_CHORD.length];
-    if (layer.pitch === 'root') return ENSEMBLE_ROOT_MIDI + ENSEMBLE_CHORD[(seed + nextOrdinal) % ENSEMBLE_CHORD.length];
-    if (layer.pitch === 'fifth') return ENSEMBLE_ROOT_MIDI + 7;
-    if (layer.pitch === 'support') return inScaleMidi(ENSEMBLE_ROOT_MIDI, ENSEMBLE_SCALE, nextOrdinal + (seed % 3), 0);
-    if (layer.pitch === 'harmony') return inScaleMidi(ENSEMBLE_ROOT_MIDI + 12, ENSEMBLE_SCALE, nextOrdinal + 4 + (seed % 4), 0);
-    return noteForEnsembleEvent(event, role, seed, nextOrdinal);
+  function noteForEnsembleLayer(event, role, atSeconds, layer) {
+    var lane = eventLane(event);
+    var pitchRole = layer.pitch;
+    if (pitchRole === 'bass'
+      || pitchRole === 'root'
+      || pitchRole === 'fifth'
+      || pitchRole === 'support'
+      || pitchRole === 'harmony'
+      || pitchRole === 'melody'
+      || pitchRole === 'sparkle'
+    ) {
+      return patternedChordMidi(pitchRole, lane, atSeconds);
+    }
+    return noteForEnsembleEvent(event, role, atSeconds);
   }
 
   function clampSampleMidi(sample, midi) {
@@ -1254,8 +1525,9 @@
   function scheduleEnsembleLayer(event, intent, layer, start, seed, ordinal) {
     var selected = loadedSampleForAnyRole(layer.roles, seed + intFrom(layer.seedOffset, 0), ordinal + intFrom(layer.ordinalOffset, 0));
     if (!selected) return 0;
-    var midi = noteForEnsembleLayer(event, selected.role, seed, ordinal, layer);
-    var total = scheduleSample(selected.sample, midi, start + numberFrom(layer.offset, 0), numberFrom(layer.duration, 0.24), ensembleLayerGain(layer, intent), {
+    var layerStart = start + numberFrom(layer.offset, 0);
+    var midi = noteForEnsembleLayer(event, selected.role, layerStart, layer);
+    var total = scheduleSample(selected.sample, midi, layerStart, numberFrom(layer.duration, 0.24), ensembleLayerGain(layer, intent), {
       attack: layer.attack,
       decay: layer.decay,
       sustain: layer.sustain,
@@ -1265,12 +1537,13 @@
     return total;
   }
 
-  function scheduleEnsembleTone(event, intent, template, start, seed, ordinal) {
+  function scheduleEnsembleTone(event, intent, template, start) {
     if (!template.tone) return 0;
     var tone = template.tone;
-    var midi = noteForEnsembleLayer(event, intent.role, seed, ordinal, tone);
+    var toneStart = start + numberFrom(tone.offset, 0);
+    var midi = noteForEnsembleLayer(event, intent.role, toneStart, tone);
     var gain = tone.gain * (0.7 + intent.intensity * 0.35) * (intent.replay ? 0.55 : 1);
-    return scheduleTone(midiToFreq(midi), start + numberFrom(tone.offset, 0), numberFrom(tone.duration, 0.22), {
+    return scheduleTone(midiToFreq(midi), toneStart, numberFrom(tone.duration, 0.22), {
       type: tone.type || 'sine',
       gain: gain,
       attack: tone.attack || 0.024,
@@ -1302,7 +1575,8 @@
       return fallbackEnsemble(event, options);
     }
     return scheduleModeCue('ensemble', event, function (soundEvent, cueOptions) {
-      var start = cueOptions.start || audioCtx.currentTime + 0.018;
+      var rawStart = cueOptions.start || audioCtx.currentTime + 0.018;
+      var start = quantizeAudioTime(rawStart);
       var soundIntent = ensembleIntent(soundEvent, cueOptions);
       var soundTemplate = ensembleTemplate(soundIntent);
       var total = 0;
@@ -1310,16 +1584,18 @@
       for (var i = 0; i < soundTemplate.layers.length; i++) {
         total = Math.max(total, scheduleEnsembleLayer(soundEvent, soundIntent, soundTemplate.layers[i], start, seed + i * 17, (cueOptions.ordinal || 0) + i));
       }
-      total = Math.max(total, scheduleEnsembleTone(soundEvent, soundIntent, soundTemplate, start, seed + 101, cueOptions.ordinal || 0));
+      total = Math.max(total, scheduleEnsembleTone(soundEvent, soundIntent, soundTemplate, start));
       return total || 0.08;
     }, options);
   }
 
   function cooldownForMode(mode, event) {
     var lane = eventLane(event);
-    if (mode === 'generative') return lane === 'priority' ? 110 : lane === 'low' ? 520 : 220;
-    if (mode === 'blaster') return lane === 'priority' ? 70 : lane === 'low' ? 240 : 130;
-    return lane === 'priority' ? 45 : lane === 'low' ? 160 : 85;
+    if (mode === 'ensemble') return lane === 'priority' ? 60 : lane === 'low' ? 200 : 90;
+    if (mode === 'chime') return lane === 'priority' ? 50 : lane === 'low' ? 220 : 80;
+    if (mode === 'generative') return lane === 'priority' ? 40 : lane === 'low' ? 180 : 70;
+    if (mode === 'blaster') return lane === 'priority' ? 50 : lane === 'low' ? 180 : 80;
+    return lane === 'priority' ? 30 : lane === 'low' ? 120 : 55;
   }
 
   function scheduleModeCue(mode, event, play, options) {
@@ -1358,9 +1634,9 @@
 
   function currentMusicStep(event) {
     var lane = eventLane(event);
-    if (lane === 'priority') return 0.072;
-    if (lane === 'low') return 0.12;
-    return 0.088;
+    if (lane === 'priority') return 0.07;
+    if (lane === 'low') return 0.11;
+    return 0.085;
   }
 
   function drainMusicQueue() {
@@ -1369,10 +1645,10 @@
       return;
     }
     var now = audioCtx.currentTime;
-    if (!musicNextTime || musicNextTime < now + 0.025) musicNextTime = now + 0.035;
+    if (!musicNextTime || musicNextTime < now + 0.025) musicNextTime = quantizeAudioTime(now + 0.035);
     var horizon = now + MUSIC_SCHEDULE_AHEAD_SECONDS;
     var scheduled = 0;
-    while (musicQueue.length && musicNextTime <= horizon && scheduled < 18 && activeVoices < maxActiveVoices) {
+    while (musicQueue.length && musicNextTime <= horizon && scheduled < 24 && activeVoices < maxActiveVoices) {
       var item = musicQueue.shift();
       sequencerState.queued = musicQueue.length;
       var accepted = playCurrentMode(item.event, {
@@ -1445,35 +1721,24 @@
   function playNative(event, options) {
     options = options || {};
     return scheduleModeCue('native', event, function (soundEvent, cueOptions) {
-      var seed = eventSeed(soundEvent, 'native') + (cueOptions.ordinal || 0);
       var lane = eventLane(soundEvent);
-      var start = cueOptions.start || audioCtx.currentTime + 0.018;
+      var rawStart = cueOptions.start || audioCtx.currentTime + 0.018;
+      var start = quantizeAudioTime(rawStart);
       var intensity = clamp(soundEvent.intensity, 0.05, 1);
-      var root = soundEvent.isPriority ? 57 : 50;
-      var freq = scaleFreq(seed, root, [0, 2, 4, 7, 9], 3);
-      var duration = lane === 'priority' ? 0.22 : lane === 'low' ? 0.105 : 0.145;
-      var gain = (lane === 'priority' ? 0.12 : lane === 'low' ? 0.045 : 0.07) * (0.75 + intensity * 0.7);
-      var wave = soundEvent.type === 'GRP_TXT' ? 'triangle' : soundEvent.type === 'NODEINFO' ? 'sine' : 'sine';
-      var total = scheduleTone(freq, start, duration, {
-        type: wave,
-        gain: gain,
-        attack: 0.006,
-        decay: 0.05,
-        release: 0.09,
-        filterFrequency: lane === 'low' ? 1800 : 4200,
-        endFilterFrequency: lane === 'priority' ? 6200 : 2400,
-        q: lane === 'priority' ? 1.4 : 0.8,
-      });
+      var role = lane === 'priority' ? 'root' : 'melody';
+      var midi = patternedChordMidi(role, lane, start);
+      var profile = pluckProfileForMode('native', lane, intensity, !!cueOptions.coalesced);
+      var total = schedulePluck(midi, start, profile);
+      rememberSequencerValue('lastMidi', 'recentMidi', midi);
       if (lane === 'priority') {
-        total = Math.max(total, scheduleTone(freq * 1.5, start + 0.035, 0.16, {
-          type: 'triangle',
-          gain: gain * 0.55,
-          attack: 0.004,
-          decay: 0.035,
-          release: 0.12,
-          filterFrequency: 5200,
-          q: 1.1,
-        }));
+        var supportMidi = patternedChordMidi('fifth', lane, start + 0.06);
+        total = Math.max(total, schedulePluck(supportMidi, start + 0.06, Object.assign({}, profile, {
+          gain: profile.gain * 0.55,
+          duration: profile.duration * 0.72,
+          release: profile.release * 0.72,
+          brightness: profile.brightness * 0.92,
+        })));
+        rememberSequencerValue('lastMidi', 'recentMidi', supportMidi);
       }
       return total;
     }, options);
@@ -1484,44 +1749,44 @@
     return scheduleModeCue('generative', event, function (soundEvent, cueOptions) {
       var seed = eventSeed(soundEvent, 'generative') + (cueOptions.ordinal || 0);
       var lane = eventLane(soundEvent);
-      var start = cueOptions.start || audioCtx.currentTime + 0.025;
-      var scale = [0, 2, 3, 5, 7, 9, 10];
+      var rawStart = cueOptions.start || audioCtx.currentTime + 0.025;
+      var start = quantizeAudioTime(rawStart);
       var intensity = clamp(soundEvent.intensity, 0.05, 1);
       var hopCount = Math.max(1, intFrom(soundEvent.hopCount, 1));
-      var notes = lane === 'priority' ? 5 : lane === 'low' ? 2 : 3 + (seed % 2);
-      var root = lane === 'priority' ? 50 : 62;
-      var gap = lane === 'priority' ? 0.075 : 0.105;
+      var notes = lane === 'priority' ? 4 : lane === 'low' ? 1 : 2 + (seed % 2);
+      var ctx = currentHarmonyContext();
+      var gap = lane === 'priority' ? ctx.sixteenthSeconds * 0.95 : ctx.sixteenthSeconds * 1.15;
+      var profile = pluckProfileForMode('generative', lane, intensity, !!cueOptions.coalesced);
+      var arpRoles = lane === 'priority'
+        ? ['root', 'fifth', 'seventh', 'melody']
+        : lane === 'low'
+          ? ['melody']
+          : ['melody', 'harmony', 'fifth'];
       var total = 0;
       for (var i = 0; i < notes; i++) {
-        var degreeSeed = seed + i * (17 + hopCount);
-        var freq = scaleFreq(degreeSeed, root, scale, 2);
+        var role = arpRoles[(i + hopCount) % arpRoles.length];
         var noteStart = start + i * gap;
-        var noteDur = lane === 'priority' ? 0.16 : 0.18;
-        total = Math.max(total, scheduleTone(freq, noteStart, noteDur, {
-          type: i % 2 === 0 ? 'triangle' : 'sine',
-          gain: (0.035 + intensity * 0.045) * (lane === 'low' ? 0.58 : 1),
-          attack: 0.012,
-          decay: 0.06,
-          sustain: 0.022,
-          release: 0.16,
-          filterFrequency: lane === 'priority' ? 5200 : 3400,
-          q: 0.7,
-        }));
+        var midi = patternedChordMidi(role, lane, noteStart);
+        var noteProfile = Object.assign({}, profile, {
+          gain: profile.gain * (i === 0 ? 1 : Math.max(0.55, 1 - i * 0.12)),
+          duration: profile.duration * (i === 0 ? 1 : 0.82),
+          brightness: profile.brightness * (i === 0 ? 1 : 1.04),
+        });
+        total = Math.max(total, schedulePluck(midi, noteStart, noteProfile));
+        rememberSequencerValue('lastMidi', 'recentMidi', midi);
       }
       if (lane === 'priority' || soundEvent.observationCount >= 4) {
-        var chordStart = start + notes * gap + 0.035;
-        var base = scaleFreq(seed + 31, 50, scale, 2);
-        [1, 1.25, 1.5].forEach(function (ratio, idx) {
-          total = Math.max(total, scheduleTone(base * ratio, chordStart, 0.34, {
-            type: 'sine',
-            gain: (0.028 + intensity * 0.025) / (idx + 1),
-            attack: 0.025,
-            decay: 0.09,
-            sustain: 0.018,
-            release: 0.22,
-            filterFrequency: 4100,
-            q: 0.55,
-          }));
+        var chordStart = start + notes * gap + 0.04;
+        ['root', 'third', 'fifth'].forEach(function (role, idx) {
+          var midi = patternedChordMidi(role, lane, chordStart + idx * 0.005);
+          var chordProfile = Object.assign({}, profile, {
+            gain: profile.gain * (0.45 - idx * 0.08),
+            duration: profile.duration * 1.4,
+            release: profile.release * 1.3,
+            brightness: profile.brightness * 0.88,
+          });
+          total = Math.max(total, schedulePluck(midi, chordStart, chordProfile));
+          rememberSequencerValue('lastMidi', 'recentMidi', midi);
         });
       }
       return total;
@@ -1560,19 +1825,42 @@
     rememberSequencerValue('lastBlasterCue', 'recentBlasterCues', cue, 48);
   }
 
+  function blasterRoleFromPatch(name, lane) {
+    if (name === 'priority-surge') return 'root';
+    if (name === 'traffic-sweep') return 'fifth';
+    if (name === 'priority-chime') return lane === 'priority' ? 'root' : 'fifth';
+    if (name === 'node-beacon') return 'sparkle';
+    return 'melody';
+  }
+
+  function clampBlasterMidi(midi) {
+    var m = midi;
+    while (m < 48) m += 12;
+    while (m > 67) m -= 12;
+    return m;
+  }
+
   function playBlaster(event, options) {
     options = options || {};
     return scheduleModeCue('blaster', event, function (soundEvent, cueOptions) {
       var seed = eventSeed(soundEvent, 'blaster') + (cueOptions.ordinal || 0);
-      var start = cueOptions.start || audioCtx.currentTime + 0.012;
+      var rawStart = cueOptions.start || audioCtx.currentTime + 0.012;
+      var start = quantizeAudioTime(rawStart);
       var intensity = clamp(soundEvent.intensity, 0.05, 1);
       var patch = blasterPatchForEvent(soundEvent, cueOptions);
-      var degree = patch.degrees[(seed + Math.max(1, intFrom(soundEvent.hopCount, 1))) % patch.degrees.length];
-      var baseMidi = patch.rootMidi + degree;
+      var lane = patch.lane;
+      var role = blasterRoleFromPatch(patch.name, lane);
+      var baseMidi = clampBlasterMidi(patternedChordMidi(role, lane, start));
+      var supportMidi = clampBlasterMidi(patternedChordMidi('third', lane, start + (patch.supportOffset || 0.06)));
+      if (supportMidi === baseMidi) supportMidi = clampBlasterMidi(baseMidi + 5);
+      var extraMidi = patch.extraInterval ? clampBlasterMidi(patternedChordMidi('fifth', lane, start + (patch.extraOffset || 0.12))) : null;
       var base = midiToFreq(baseMidi);
-      var end = base * semitoneRatio(patch.glide);
-      var support = midiToFreq(baseMidi + patch.supportInterval);
-      var maxFrequency = Math.max(base, end, support);
+      var support = midiToFreq(supportMidi);
+      var endMidi = baseMidi + (patch.glide || 0);
+      var end = midiToFreq(endMidi);
+      var extraFreq = extraMidi !== null ? midiToFreq(extraMidi) : 0;
+      var maxFrequency = Math.max(base, end, support, extraFreq);
+      var replayTrim = soundEvent.isReplay ? 0.62 : 1;
       var total = scheduleTone(base, start, patch.duration, {
         type: patch.type,
         endFrequency: end,
@@ -1596,10 +1884,8 @@
         endFilterFrequency: Math.max(620, patch.endFilterFrequency * 0.62),
         q: patch.supportQ,
       }));
-      if (patch.extraInterval) {
-        var extra = midiToFreq(baseMidi + patch.extraInterval);
-        maxFrequency = Math.max(maxFrequency, extra);
-        total = Math.max(total, scheduleTone(extra, start + patch.extraOffset, patch.extraDuration, {
+      if (extraFreq) {
+        total = Math.max(total, scheduleTone(extraFreq, start + patch.extraOffset, patch.extraDuration, {
           type: 'sine',
           gain: blasterCueGain(patch.extraGain, intensity, soundEvent.isReplay),
           attack: 0.02,
@@ -1612,7 +1898,7 @@
         }));
       }
       if (patch.noiseGain > 0) {
-        total = Math.max(total, scheduleNoiseBurst(start + patch.noiseOffset, patch.noiseDuration, blasterCueGain(patch.noiseGain, intensity, soundEvent.isReplay), patch.noiseFrequency + (seed % 120), {
+        total = Math.max(total, scheduleNoiseBurst(start + patch.noiseOffset, patch.noiseDuration, blasterCueGain(patch.noiseGain, intensity, soundEvent.isReplay) * replayTrim, patch.noiseFrequency + (seed % 120), {
           q: patch.noiseQ,
           attack: 0.008,
           decay: 0.03,
@@ -1640,6 +1926,45 @@
         burstCount: patch.burstCount,
       };
       rememberBlasterCue(cue);
+      rememberSequencerValue('lastMidi', 'recentMidi', baseMidi);
+      return total;
+    }, options);
+  }
+
+  function liftToChimeRegister(midi) {
+    var m = midi;
+    while (m < 76) m += 12;
+    while (m > 96) m -= 12;
+    return m;
+  }
+
+  function playChime(event, options) {
+    options = options || {};
+    return scheduleModeCue('chime', event, function (soundEvent, cueOptions) {
+      var seed = eventSeed(soundEvent, 'chime') + (cueOptions.ordinal || 0);
+      var lane = eventLane(soundEvent);
+      var rawStart = cueOptions.start || audioCtx.currentTime + 0.02;
+      var start = quantizeAudioTime(rawStart);
+      var intensity = clamp(soundEvent.intensity, 0.05, 1);
+      var profile = chimeProfileForMode('chime', lane, intensity, !!cueOptions.coalesced);
+      var tubes = lane === 'priority' ? 3 : lane === 'low' ? 1 : 2;
+      var tubeRoles = ['sparkle', 'melody', 'harmony'];
+      var total = 0;
+      for (var i = 0; i < tubes; i++) {
+        var role = tubeRoles[i % tubeRoles.length];
+        var jitter = ((seed + i * 31) % 26) * 0.001;
+        var tubeStart = start + i * 0.022 + jitter;
+        var midi = liftToChimeRegister(patternedChordMidi(role, lane, tubeStart));
+        var tubeProfile = Object.assign({}, profile, {
+          gain: profile.gain * (i === 0 ? 1 : (0.6 - i * 0.12)),
+          brightness: profile.brightness * (1 + i * 0.04),
+          detune: profile.detune + (i % 2 === 0 ? i * 3 : -i * 3),
+          airGain: i === 0 ? profile.airGain : profile.airGain * 0.35,
+          release: profile.release * (i === 0 ? 1 : 0.85),
+        });
+        total = Math.max(total, scheduleChime(midi, tubeStart, tubeProfile));
+        rememberSequencerValue('lastMidi', 'recentMidi', midi);
+      }
       return total;
     }, options);
   }
@@ -1649,6 +1974,7 @@
     if (state.mode === 'generative') return playGenerative(event, options);
     if (state.mode === 'blaster') return playBlaster(event, options);
     if (state.mode === 'ensemble') return playEnsemble(event, options);
+    if (state.mode === 'chime') return playChime(event, options);
     return false;
   }
 

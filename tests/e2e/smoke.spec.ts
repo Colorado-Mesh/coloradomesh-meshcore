@@ -530,7 +530,7 @@ test.describe('critical page smoke', () => {
     }
   });
 
-  test('map sound overlay defaults Off, uses the Colorado Mesh logo, and suppresses upstream audio', async ({ page }) => {
+  test('@sound map sound overlay defaults Off, uses the Colorado Mesh logo, and suppresses upstream audio', async ({ page }) => {
     await mountMapSoundOverlay(page);
 
     await expect(page.getByLabel('Colorado Mesh map sound mode')).toHaveValue('off');
@@ -551,7 +551,7 @@ test.describe('critical page smoke', () => {
     });
   });
 
-  test('map sound overlay shows persisted modes as locked and persists volume changes', async ({ page }) => {
+  test('@sound map sound overlay shows persisted modes as locked and persists volume changes', async ({ page }) => {
     await mountMapSoundOverlay(page, { mode: 'ensemble', volume: '0.72' });
 
     const mode = page.getByLabel('Colorado Mesh map sound mode');
@@ -575,7 +575,7 @@ test.describe('critical page smoke', () => {
     await expect.poll(() => page.evaluate(() => window.localStorage.getItem('coloradoMesh.map.soundVolume'))).toBe('0.42');
   });
 
-  test('map sound density keeps rising under burst traffic even when accents are dropped', async ({ page }) => {
+  test('@sound map sound density keeps rising under burst traffic even when accents are dropped', async ({ page }) => {
     await mountMapSoundOverlay(page);
     await chooseSoundMode(page, 'native');
 
@@ -605,13 +605,13 @@ test.describe('critical page smoke', () => {
     expect(state.counters.played).toBeLessThan(48);
     expect(state.counters.routed).toBe(48);
     expect(state.sequencer.lastBurst).toMatchObject({ coalesced: true });
-    expect(state.sequencer.queueLength).toBeLessThanOrEqual(96);
-    expect(state.activeVoices).toBeLessThanOrEqual(14);
-    expect(state.scheduledSources).toBeLessThanOrEqual(48);
-    expect(state.cleanupTimers).toBeLessThanOrEqual(96);
+    expect(state.sequencer.queueLength).toBeLessThanOrEqual(160);
+    expect(state.activeVoices).toBeLessThanOrEqual(24);
+    expect(state.scheduledSources).toBeLessThanOrEqual(240);
+    expect(state.cleanupTimers).toBeLessThanOrEqual(240);
   });
 
-  test('map sound normalization ignores raw payload and decoded message body contents', async ({ page }) => {
+  test('@sound map sound normalization ignores raw payload and decoded message body contents', async ({ page }) => {
     await mountMapSoundOverlay(page);
 
     const normalized = await page.evaluate(() => {
@@ -651,7 +651,7 @@ test.describe('critical page smoke', () => {
   });
 
   for (const soundMode of ['native', 'generative', 'ensemble', 'blaster'] as const) {
-    test(`map sound mode ${soundMode} is selectable, locked until gesture, and exposes worklet diagnostics`, async ({ page }) => {
+    test(`@sound map sound mode ${soundMode} is selectable, locked until gesture, and exposes worklet diagnostics`, async ({ page }) => {
       await mountMapSoundOverlay(page, { mode: soundMode });
 
       await expect(page.getByLabel('Colorado Mesh map sound mode')).toHaveValue(soundMode);
@@ -676,7 +676,101 @@ test.describe('critical page smoke', () => {
     });
   }
 
-  test('map sound coalesces same-id ping-pong bursts instead of scheduling every duplicate', async ({ page }) => {
+  test('@sound map sound exposes stable public APIs and mode-specific diagnostics', async ({ page }) => {
+    await mockOrchestralManifest(page);
+    await installAudioProbe(page);
+    await mountMapSoundOverlay(page);
+
+    const options = await page.evaluate(() => {
+      const api = (window as unknown as SoundHarnessWindow).__coloradoMeshSound;
+      return {
+        sameApi: api === (window as unknown as { __denvermcMapSound: SoundApi }).__denvermcMapSound,
+        modes: api.getModeOptions(),
+      };
+    });
+    expect(options.sameApi).toBe(true);
+    expect(options.modes).toEqual([
+      { value: 'off', label: 'Sound Off' },
+      { value: 'native', label: 'Native+' },
+      { value: 'generative', label: 'Generative Key' },
+      { value: 'ensemble', label: 'Orchestral Ensemble' },
+      { value: 'chime', label: 'Wind Chimes' },
+      { value: 'blaster', label: 'Space Blaster' },
+    ]);
+
+    await chooseSoundMode(page, 'ensemble');
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      mode: 'ensemble',
+      unlocked: true,
+      ensemble: expect.objectContaining({ loaded: true }),
+    });
+
+    await page.evaluate(() => {
+      const api = (window as unknown as SoundHarnessWindow).__coloradoMeshSound;
+      api.injectTestEvent({
+        id: 'final-ensemble-0',
+        type: 'GRP_TXT',
+        modeHint: 'normal',
+        channelName: 'Public',
+        channelHash: null,
+        isEmergency: false,
+        isPriority: false,
+        isReplay: false,
+        observationCount: 1,
+        hopCount: 1,
+        intensity: 0.46,
+        seed: 7100,
+        timestamp: 1715808000000,
+      });
+    });
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      sequencer: expect.objectContaining({
+        scheduled: 1,
+        recentEnsembleTemplates: expect.arrayContaining(['message-phrase']),
+      }),
+    });
+    const ensembleState = await getSoundState(page);
+    expect(ensembleState.sequencer.recentEnsembleRoles).toEqual(expect.arrayContaining(['messages', 'woodwinds', 'mallets']));
+    expect(ensembleState.sequencer.recentBlasterPatches).toHaveLength(0);
+
+    await chooseSoundMode(page, 'blaster');
+    await page.evaluate(() => {
+      const api = (window as unknown as SoundHarnessWindow).__coloradoMeshSound;
+      for (let i = 0; i < 4; i += 1) {
+        api.injectTestEvent({
+          id: `final-blaster-${i}`,
+          type: i === 0 ? 'NODEINFO' : 'GRP_TXT',
+          modeHint: 'normal',
+          channelName: i === 2 ? '#emergency' : 'Public',
+          channelHash: i === 2 ? 'emergency' : null,
+          isEmergency: i === 2,
+          isPriority: i === 2,
+          isReplay: false,
+          observationCount: 1 + i,
+          hopCount: 1,
+          intensity: 0.52,
+          seed: 7200 + i,
+          timestamp: 1715809000000 + i,
+        });
+      }
+    });
+
+    await expect.poll(() => getSoundState(page)).toMatchObject({
+      sequencer: expect.objectContaining({
+        scheduled: 4,
+        recentBlasterPatches: expect.arrayContaining(['node-beacon', 'signal-pulse', 'priority-chime']),
+      }),
+    });
+    const blasterState = await getSoundState(page);
+    expect(blasterState.sequencer.recentEnsembleTemplates).toHaveLength(0);
+    for (const cue of blasterState.sequencer.recentBlasterCues) {
+      expect(cue.filterQ).toBeLessThanOrEqual(1.1);
+      expect(cue.maxFrequency).toBeLessThanOrEqual(523.26);
+    }
+  });
+
+  test('@sound map sound coalesces same-id ping-pong bursts instead of scheduling every duplicate', async ({ page }) => {
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
     await chooseSoundMode(page, 'generative');
@@ -751,7 +845,7 @@ test.describe('critical page smoke', () => {
     expect(state.lastDroppedReason).toBeNull();
   });
 
-  test('map sound Orchestral Ensemble rotates message samples and keeps scheduled notes in one key', async ({ page }) => {
+  test('@sound map sound Orchestral Ensemble rotates message samples and keeps scheduled notes in one key', async ({ page }) => {
     await mockOrchestralManifest(page);
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
@@ -787,16 +881,16 @@ test.describe('critical page smoke', () => {
     await expect.poll(() => getSoundState(page)).toMatchObject({
       counters: expect.objectContaining({
         routed: 6,
-        admitted: 4,
+        admitted: 6,
       }),
       sequencer: expect.objectContaining({
-        scheduled: 4,
+        scheduled: 6,
       }),
     });
 
     const state = await getSoundState(page);
     const allowedPitchClasses = new Set([0, 2, 3, 5, 7, 9, 10]);
-    expect(state.sequencer.recentMidi.length).toBeGreaterThanOrEqual(4);
+    expect(state.sequencer.recentMidi.length).toBeGreaterThanOrEqual(6);
     for (const midi of state.sequencer.recentMidi) {
       expect(allowedPitchClasses.has(((midi % 12) + 12) % 12)).toBe(true);
     }
@@ -807,7 +901,7 @@ test.describe('critical page smoke', () => {
     expect(state.sequencer.recentEnsembleTemplates).toEqual(expect.arrayContaining(['message-phrase']));
   });
 
-  test('map sound Orchestral Ensemble keeps normalized public text on message templates', async ({ page }) => {
+  test('@sound map sound Orchestral Ensemble keeps normalized public text on message templates', async ({ page }) => {
     await mockOrchestralManifest(page);
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
@@ -859,7 +953,7 @@ test.describe('critical page smoke', () => {
     expect(state.sequencer.recentEnsembleRoles).not.toContain('brass');
   });
 
-  test('map sound Orchestral Ensemble uses cinematic burst and priority templates within resource bounds', async ({ page }) => {
+  test('@sound map sound Orchestral Ensemble uses cinematic burst and priority templates within resource bounds', async ({ page }) => {
     await mockOrchestralManifest(page);
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
@@ -930,12 +1024,12 @@ test.describe('critical page smoke', () => {
     for (const midi of state.sequencer.recentMidi) {
       expect(allowedPitchClasses.has(((midi % 12) + 12) % 12)).toBe(true);
     }
-    expect(state.activeVoices).toBeLessThanOrEqual(14);
-    expect(state.scheduledSources).toBeLessThanOrEqual(48);
-    expect(state.cleanupTimers).toBeLessThanOrEqual(96);
+    expect(state.activeVoices).toBeLessThanOrEqual(24);
+    expect(state.scheduledSources).toBeLessThanOrEqual(240);
+    expect(state.cleanupTimers).toBeLessThanOrEqual(240);
   });
 
-  test('map sound Space Blaster uses musical patch bounds for normal and priority traffic', async ({ page }) => {
+  test('@sound map sound Space Blaster uses musical patch bounds for normal and priority traffic', async ({ page }) => {
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
     await chooseSoundMode(page, 'blaster');
@@ -988,7 +1082,7 @@ test.describe('critical page smoke', () => {
     }
   });
 
-  test('map sound Space Blaster uses softer burst patches within resource bounds', async ({ page }) => {
+  test('@sound map sound Space Blaster uses softer burst patches within resource bounds', async ({ page }) => {
     await installAudioProbe(page);
     await mountMapSoundOverlay(page);
     await chooseSoundMode(page, 'blaster');
@@ -1057,12 +1151,12 @@ test.describe('critical page smoke', () => {
       expect(cue.noiseGain).toBeLessThanOrEqual(cue.lane === 'priority' ? 0.022 : 0.014);
       expect(cue.duration).toBeLessThanOrEqual(0.75);
     }
-    expect(state.activeVoices).toBeLessThanOrEqual(14);
-    expect(state.scheduledSources).toBeLessThanOrEqual(48);
-    expect(state.cleanupTimers).toBeLessThanOrEqual(96);
+    expect(state.activeVoices).toBeLessThanOrEqual(24);
+    expect(state.scheduledSources).toBeLessThanOrEqual(240);
+    expect(state.cleanupTimers).toBeLessThanOrEqual(240);
   });
 
-  test('map sound burst cleanup stays bounded after switching Off', async ({ page }) => {
+  test('@sound map sound burst cleanup stays bounded after switching Off', async ({ page }) => {
     await mountMapSoundOverlay(page);
     await chooseSoundMode(page, 'blaster');
 
@@ -1074,9 +1168,9 @@ test.describe('critical page smoke', () => {
     await injectSoundBurst(page, 72, 'cleanup-burst');
 
     const burstState = await getSoundState(page);
-    expect(burstState.activeVoices).toBeLessThanOrEqual(14);
-    expect(burstState.scheduledSources).toBeLessThanOrEqual(48);
-    expect(burstState.cleanupTimers).toBeLessThanOrEqual(96);
+    expect(burstState.activeVoices).toBeLessThanOrEqual(24);
+    expect(burstState.scheduledSources).toBeLessThanOrEqual(240);
+    expect(burstState.cleanupTimers).toBeLessThanOrEqual(240);
 
     await chooseSoundMode(page, 'off');
 

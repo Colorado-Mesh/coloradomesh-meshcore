@@ -117,6 +117,7 @@
     { value: 'native', label: 'Native+' },
     { value: 'generative', label: 'Generative Key' },
     { value: 'ensemble', label: 'Orchestral Ensemble' },
+    { value: 'chime', label: 'Wind Chimes' },
     { value: 'blaster', label: 'Space Blaster' },
   ];
 
