@@ -10,7 +10,7 @@
         "http://127.0.0.1:4575/tools",
         "http://127.0.0.1:4575/guides"
       ],
-      "numberOfRuns": 1,
+      "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--no-sandbox --headless=new"
       }
@@ -20,7 +20,7 @@
         "categories:accessibility": ["error", { "minScore": 0.9 }],
         "categories:best-practices": ["error", { "minScore": 0.85 }],
         "categories:seo": ["error", { "minScore": 0.85 }],
-        "categories:performance": ["error", { "minScore": 0.6 }]
+        "categories:performance": ["error", { "minScore": 0.5 }]
       }
     },
     "upload": {

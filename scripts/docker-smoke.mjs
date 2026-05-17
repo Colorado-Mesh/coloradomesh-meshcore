@@ -188,7 +188,11 @@ try {
     throw new Error(run.stderr || run.stdout || 'docker run failed');
   }
 
+  // Wait for both upstreams. /api/healthz goes through nginx to corescope;
+  // / goes through nginx to next. Both must be live or nginx 502s on whichever
+  // upstream is still booting.
   await waitFor(`${baseUrl}/api/healthz`);
+  await waitFor(`${baseUrl}/`);
   await expectTextIncludes('/', 'Colorado MeshCore');
   const mapHtml = await expectTextIncludes('/map', 'denvermc-shell.js?v=denvermc');
   for (const expected of ['denvermc-leaflet-zoom.js?v=denvermc', 'denvermc-default-route.js?v=denvermc', 'denvermc-shell.css?v=denvermc', 'denvermc-sound.js?v=denvermc']) {
