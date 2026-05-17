@@ -57,6 +57,7 @@ describe('site route metadata', () => {
       'Get Started',
       'Live Map',
       'Tools',
+      'Bot',
       'Guides',
       'Learn',
       'About',
